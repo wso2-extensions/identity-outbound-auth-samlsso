@@ -27,16 +27,16 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>identity-application-auth-samlsso</artifactId>
     <packaging>pom</packaging>
-    <name>WSO2 Carbon - SAML SSO Application Autenticator Feature Aggregator Module</name>
+    <name>WSO2 Carbon - SAML SSO Application Authenticator Feature Aggregator Module</name>
     <description>
 
     </description>
     <url>http://wso2.org</url>
 
     <scm>
-        <url>https://github.com/wso2-extensions/identity-agent-sso.git</url>
-        <developerConnection>scm:git:https://github.com/wso2-extensions/identity-agent-sso.git</developerConnection>
-        <connection>scm:git:https://github.com/wso2-extensions/identity-agent-sso.git</connection>
+        <url>https://github.com/wso2-extensions/identity-application-auth-samlsso.git</url>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/identity-application-auth-samlsso.git</developerConnection>
+        <connection>scm:git:https://github.com/wso2-extensions/identity-application-auth-samlsso.git</connection>
         <tag>HEAD</tag>
     </scm>
 
