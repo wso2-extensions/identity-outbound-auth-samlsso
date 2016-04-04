@@ -128,6 +128,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private static final String SIGN_AUTH2_SAML_USING_SUPER_TENANT = "SignAuth2SAMLUsingSuperTenant";
     private static Log log = LogFactory.getLog(DefaultSAML2SSOManager.class);
     private static boolean bootStrapped = false;
+    private static String DEFAULT_MULTI_ATTRIBUTE_SEPARATOR = ",";
+    private static String MULTI_ATTRIBUTE_SEPARATOR = "MultiAttributeSeparator";
     private IdentityProvider identityProvider = null;
     private Map<String, String> properties;
     private String tenantDomain;
@@ -787,7 +789,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private Map<ClaimMapping, String> getAssertionStatements(Assertion assertion) {
 
         Map<ClaimMapping, String> results = new HashMap<ClaimMapping, String>();
-        String multiAttributeSeparator = ",";
+        String multiAttributeSeparator = DEFAULT_MULTI_ATTRIBUTE_SEPARATOR;
 
         UserRealm realm;
         try {
@@ -796,7 +798,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
 
             multiAttributeSeparator = userStoreManager.
-                    getRealmConfiguration().getUserStoreProperty("MultiAttributeSeparator");
+                    getRealmConfiguration().getUserStoreProperty(MULTI_ATTRIBUTE_SEPARATOR);
         } catch (UserStoreException e) {
             log.warn("Error while reading MultiAttributeSeparator valaue from primary user store ", e);
         }
