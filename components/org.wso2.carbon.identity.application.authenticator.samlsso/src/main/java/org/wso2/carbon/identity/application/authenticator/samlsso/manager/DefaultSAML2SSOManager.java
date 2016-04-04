@@ -80,13 +80,18 @@ import org.opensaml.xml.util.XMLHelper;
 import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
+import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceComponent;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.CarbonEntityResolver;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
@@ -95,6 +100,10 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserStoreManager;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
@@ -783,6 +792,19 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private Map<ClaimMapping, String> getAssertionStatements(Assertion assertion) {
 
         Map<ClaimMapping, String> results = new HashMap<ClaimMapping, String>();
+        String multiAttributeSeparator = ",";
+
+        UserRealm realm;
+        try {
+            realm = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantUserRealm
+                    (MultitenantConstants.SUPER_TENANT_ID);
+            UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
+
+            multiAttributeSeparator = userStoreManager.
+                    getRealmConfiguration().getUserStoreProperty("MultiAttributeSeparator");
+        } catch (UserStoreException e) {
+            log.warn("Error while reading MultiAttributeSeparator valaue from primary user store ", e);
+        }
 
         if (assertion != null) {
 
@@ -792,11 +814,22 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 for (AttributeStatement statement : attributeStatementList) {
                     List<Attribute> attributesList = statement.getAttributes();
                     for (Attribute attribute : attributesList) {
-                        Element value = attribute.getAttributeValues().get(0)
-                                .getDOM();
-                        String attributeValue = value.getTextContent();
+                        List<XMLObject> values = attribute.getAttributeValues();
+                        String attributesValue = null;
+                        if (values != null) {
+                            for (int i = 0; i < values.size(); i++) {
+                                Element value = attribute.getAttributeValues().get(i).getDOM();
+                                String attributeValue = value.getTextContent();
+                                if (StringUtils.isBlank(attributesValue)) {
+                                    attributesValue = attributeValue;
+                                } else {
+                                    attributesValue = attributesValue + multiAttributeSeparator + attributeValue;
+                                }
+                            }
+                        }
+
                         results.put(ClaimMapping.build(attribute.getName(),
-                                attribute.getName(), null, false), attributeValue);
+                                attribute.getName(), null, false), attributesValue);
                     }
                 }
             }
