@@ -59,7 +59,7 @@ import org.opensaml.saml2.core.impl.LogoutRequestBuilder;
 import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
 import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
-import org.opensaml.saml2.core.impl.SessionIndexBuilder;import org.opensaml.saml2.core.impl.*;
+import org.opensaml.saml2.core.impl.SessionIndexBuilder;
 import org.opensaml.saml2.encryption.Decrypter;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
