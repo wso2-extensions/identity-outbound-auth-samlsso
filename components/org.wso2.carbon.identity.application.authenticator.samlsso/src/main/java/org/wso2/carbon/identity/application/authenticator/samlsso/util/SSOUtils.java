@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.opensaml.common.impl.SAMLObjectContentReference;
+import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
 import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilder;
@@ -52,6 +53,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,22 +79,13 @@ public class SSOUtils {
 
     public static String createID() {
 
-        byte[] bytes = new byte[20]; // 160 bit
-
-        new Random().nextBytes(bytes);
-
-        char[] charMapping = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'};
-
-        char[] chars = new char[40];
-
-        for (int i = 0; i < bytes.length; i++) {
-            int left = (bytes[i] >> 4) & 0x0f;
-            int right = bytes[i] & 0x0f;
-            chars[i * 2] = charMapping[left];
-            chars[i * 2 + 1] = charMapping[right];
+        try {
+            SecureRandomIdentifierGenerator generator = new SecureRandomIdentifierGenerator();
+            return generator.generateIdentifier();
+        } catch (NoSuchAlgorithmException e) {
+            log.warn("Error while building Secure Random ID");
         }
-
-        return String.valueOf(chars);
+        return null;
     }
 
     /**
