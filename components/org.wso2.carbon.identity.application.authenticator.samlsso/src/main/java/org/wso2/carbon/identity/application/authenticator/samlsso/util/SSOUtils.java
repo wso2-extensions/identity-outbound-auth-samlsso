@@ -83,7 +83,8 @@ public class SSOUtils {
             SecureRandomIdentifierGenerator generator = new SecureRandomIdentifierGenerator();
             return generator.generateIdentifier();
         } catch (NoSuchAlgorithmException e) {
-            log.warn("Error while building Secure Random ID");
+            log.error("Error while building Secure Random ID", e);
+            //TODO : throw exception and break the flow
         }
         return null;
     }
