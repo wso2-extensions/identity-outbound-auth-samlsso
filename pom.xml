@@ -40,6 +40,16 @@
         <tag>HEAD</tag>
     </scm>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wso2.orbit.org.opensaml</groupId>
+                <artifactId>opensaml</artifactId>
+                <version>${opensaml2.wso2.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <repositories>
         <repository>
             <id>wso2-nexus</id>
@@ -119,6 +129,14 @@
         <module>components/org.wso2.carbon.identity.authenticator.saml2.sso.stub</module>
         <module>features/org.wso2.carbon.identity.application.authenticator.samlsso.server.feature</module>
     </modules>
+
+    <properties>
+        <opensaml.version>2.6.4</opensaml.version>
+        <opensaml2.wso2.version>2.6.4.wso2v2</opensaml2.wso2.version>
+        <opensaml2.wso2.osgi.version.range>[2.6.0,3.0.0)</opensaml2.wso2.osgi.version.range>
+        <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
+        <wss4j.xml.security.imp.pkg.version.range>[1.4.2.patched,2.0.0)</wss4j.xml.security.imp.pkg.version.range>
+    </properties>
 
 </project>
 
