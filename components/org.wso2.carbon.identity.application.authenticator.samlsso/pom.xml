@@ -58,6 +58,7 @@
         <dependency>
             <groupId>org.wso2.carbon.identity</groupId>
             <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
+            <version>5.5.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.wso2.orbit.org.opensaml</groupId>
@@ -112,7 +113,7 @@
 
                             org.w3c.dom.*,
 
-                            org.wso2.carbon.identity.application.authentication.framework.*; version="${carbon.identity.package.import.version.range}",
+                            org.wso2.carbon.identity.application.authentication.framework.*; version="5.5.0-SNAPSHOT",
                             org.wso2.carbon.identity.application.common.model; version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.application.common.util; version="${carbon.identity.package.import.version.range}",
 

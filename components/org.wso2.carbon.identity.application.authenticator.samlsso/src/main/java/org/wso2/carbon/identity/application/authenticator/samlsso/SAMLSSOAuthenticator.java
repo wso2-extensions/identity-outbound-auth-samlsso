@@ -21,15 +21,11 @@ package org.wso2.carbon.identity.application.authenticator.samlsso;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.owasp.encoder.Encode;
-import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
-import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorStateInfo;
-import org.wso2.carbon.identity.application.authentication.framework.FederatedApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
-import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
-import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
-import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.application.authentication.framework.processor.authenticator
+        .AbstractApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.processor.authenticator
+        .FederatedApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManager;
@@ -40,6 +36,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
+import javax.mail.AuthenticationFailedException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -49,7 +46,8 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements FederatedApplicationAuthenticator {
+public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements
+                                                                           FederatedApplicationAuthenticator {
 
     private static final long serialVersionUID = -8097512332218044859L;
     public static final String AS_REQUEST = "AS_REQUEST";
@@ -57,6 +55,10 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
 
     @Override
+    public boolean canHandle(AuthenticationContext authenticationContext) {
+        return super.canHandle(authenticationContext);
+    }
+
     public boolean canHandle(HttpServletRequest request) {
 
         if (log.isTraceEnabled()) {
