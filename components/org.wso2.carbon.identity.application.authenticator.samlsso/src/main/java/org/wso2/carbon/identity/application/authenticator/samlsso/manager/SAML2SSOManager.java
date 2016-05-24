@@ -29,9 +29,8 @@ public interface SAML2SSOManager {
 
     public void init(String tenantDomain, Map<String, String> properties, IdentityProvider idp) throws SAMLSSOException;
 
-    public String buildRequest(HttpServletRequest request, boolean isLogout, boolean isPassive,
-                               String loginPage, AuthenticationContext context)
+    public String buildRequest(String loginPage, AuthenticationContext context)
             throws SAMLSSOException;
 
-    public void processResponse(HttpServletRequest request) throws SAMLSSOException;
+    public void processResponse(AuthenticationContext authenticationContext) throws SAMLSSOException;
 }

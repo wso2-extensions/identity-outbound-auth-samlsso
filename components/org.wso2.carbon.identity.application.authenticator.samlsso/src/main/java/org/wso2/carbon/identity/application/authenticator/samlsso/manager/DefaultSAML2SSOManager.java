@@ -44,7 +44,6 @@ import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.LogoutRequest;
-import org.opensaml.saml2.core.LogoutResponse;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.NameIDPolicy;
 import org.opensaml.saml2.core.NameIDType;
@@ -81,11 +80,15 @@ import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.wso2.carbon.base.MultitenantConstants;
-import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
-import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
+import org.wso2.carbon.identity.application.authentication.framework.IdentityRequest;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
-import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.authentication.framework.context.SequenceContext;
+import org.wso2.carbon.identity.application.authentication.framework.model.FederatedUser;
+import org.wso2.carbon.identity.application.authentication.framework.model.User;
+import org.wso2.carbon.identity.application.authentication.framework.model.UserClaim;
+import org.wso2.carbon.identity.application.authentication.framework.processor.request.ClientAuthenticationRequest;
+import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLFederatedRequest;
+import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.CarbonEntityResolver;
@@ -113,6 +116,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -168,11 +172,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @param request SAML 2 request
      * @return redirectionUrl
      */
-    @Override
-    public String buildRequest(HttpServletRequest request, boolean isLogout, boolean isPassive,
+
+    public String _buildRequest(HttpServletRequest request, boolean isLogout, boolean isPassive,
                                String loginPage, AuthenticationContext context)
             throws SAMLSSOException {
-
+/*
         doBootstrap();
         String contextIdentifier = context.getContextIdentifier();
         RequestAbstractType requestMessage;
@@ -242,18 +246,88 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             idpUrl = loginPage.concat("?").concat(httpQueryString.toString());
         }
         return idpUrl;
+
+        */
+        return null ;
+    }
+
+
+    @Override
+    public String buildRequest(String loginPage, AuthenticationContext authenticationContext)
+            throws SAMLSSOException {
+
+        doBootstrap();
+        ClientAuthenticationRequest clientAuthenticationRequest = (ClientAuthenticationRequest)authenticationContext.getIdentityRequest();
+
+        AuthnRequest authnRequest =  (AuthnRequest)authenticationContext.getParameter(SAMLSSOConstants.SAML_REQUEST_OBJECT);
+
+        RequestAbstractType requestMessage;
+       /* String samlRequest = request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ) ;
+        if (samlRequest == null) {
+            String queryParam = context.getQueryParams();
+            if (queryParam != null) {
+                String[] params = queryParam.split("&");
+                for (String param : params) {
+                    String[] values = param.split("=");
+                    if (values.length == 2 && SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ.equals(values[0])) {
+                        request.setAttribute(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ, values[1]);
+                        break;
+                    }
+                }
+            }
+        }
+*/
+        requestMessage = buildAuthnRequest(authenticationContext, loginPage);
+
+        String idpUrl = null;
+        boolean isSignAuth2SAMLUsingSuperTenant = false;
+
+        String encodedRequestMessage = encodeRequestMessage(requestMessage);
+        StringBuilder httpQueryString = new StringBuilder("SAMLRequest=" + encodedRequestMessage);
+
+        try {
+            httpQueryString.append("&RelayState=" + URLEncoder.encode(clientAuthenticationRequest.getRequestDataKey(), "UTF-8").trim());
+        } catch (UnsupportedEncodingException e) {
+            throw new SAMLSSOException("Error occurred while url encoding RelayState", e);
+        }
+
+        if (SSOUtils.isAuthnRequestSigned(properties)) {
+            String signatureAlgoProp = properties
+                    .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
+            if (StringUtils.isEmpty(signatureAlgoProp)) {
+                signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
+            }
+            String signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms()
+                    .get(signatureAlgoProp);
+
+            /*Map<String, String> parameterMap = FileBasedConfigurationBuilder.getInstance()
+                    .getAuthenticatorBean(SSOConstants.AUTHENTICATOR_NAME).getParameterMap();
+            if (parameterMap.size() > 0) {
+                isSignAuth2SAMLUsingSuperTenant = Boolean.parseBoolean(parameterMap.
+                        get(SIGN_AUTH2_SAML_USING_SUPER_TENANT));
+            }*/
+            if (isSignAuth2SAMLUsingSuperTenant) {
+                SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
+                                                       new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null));
+            } else {
+                SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
+                                                       new X509CredentialImpl(clientAuthenticationRequest.getTenantDomain(), null));
+            }
+        }
+        if (loginPage.indexOf("?") > -1) {
+            idpUrl = loginPage.concat("&").concat(httpQueryString.toString());
+        } else {
+            idpUrl = loginPage.concat("?").concat(httpQueryString.toString());
+        }
+        return idpUrl;
     }
 
 
     /**
-     * @param request
-     * @param isLogout
-     * @param isPassive
-     * @param loginPage
      * @return return encoded SAML Auth request
      * @throws SAMLSSOException
      */
-    public String buildPostRequest(HttpServletRequest request, boolean isLogout,
+    /*public String buildPostRequest(HttpServletRequest request, boolean isLogout,
                                    boolean isPassive, String loginPage, AuthenticationContext context) throws SAMLSSOException {
 
         doBootstrap();
@@ -307,27 +381,31 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 
         return SSOUtils.encode(SSOUtils.marshall(requestMessage));
-    }
+    }*/
 
     @Override
-    public void processResponse(HttpServletRequest request) throws SAMLSSOException {
+    public void processResponse(AuthenticationContext authenticationContext) throws SAMLSSOException {
 
         doBootstrap();
-        String decodedResponse = new String(Base64.decode(request.getParameter(
-                SSOConstants.HTTP_POST_PARAM_SAML2_RESP)));
+
+        SAMLFederatedRequest samlFederatedRequest = (SAMLFederatedRequest)authenticationContext.getIdentityRequest();
+        String samlResponse = samlFederatedRequest.getSamlResponse();
+        String decodedResponse = new String(Base64.decode(samlResponse));
         XMLObject samlObject = unmarshall(decodedResponse);
-        if (samlObject instanceof LogoutResponse) {
+        /*if (samlObject instanceof LogoutResponse) {
             //This is a SAML response for a single logout request from the SP
             doSLO(request);
         } else {
             processSSOResponse(request);
-        }
+        }*/
+        Response samlResponseObject = (Response)samlObject ;
+        processSSOResponse(authenticationContext, samlResponseObject);
     }
-    
+/*
     protected AuthnRequest getAuthnRequest(AuthenticationContext context) throws SAMLSSOException {
 
-        AuthnRequest authnRequest = null;
-        AuthenticationRequest authenticationRequest = context.getAuthenticationRequest();
+        AuthnRequest authnRequest =  (AuthnRequest)context.getParameter(SAMLSSOConstants.SAML_REQUEST_OBJECT);
+        IdentityRequest identityRequest = context.getIdentityRequest();
         String[] samlRequestParams = authenticationRequest
                 .getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ);
         String samlRequest = null;
@@ -345,7 +423,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
         return authnRequest;
     }
-
+*/
     protected Extensions getSAMLExtensions(HttpServletRequest request) {
 
         try {
@@ -398,11 +476,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * This method handles the logout requests from the IdP
      * Any request for the defined logout URL is handled here
      *
-     * @param request
+     * @param
      * @throws javax.servlet.ServletException
      * @throws IOException
      */
-    public void doSLO(HttpServletRequest request) throws SAMLSSOException {
+    /*public void doSLO(AuthenticationContext authenticationContext) throws SAMLSSOException {
 
         doBootstrap();
         XMLObject samlObject = null;
@@ -422,12 +500,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } else {
             throw new SAMLSSOException("Invalid Single Logout SAML Request");
         }
-    }
+    }*/
 
-    private void processSSOResponse(HttpServletRequest request) throws SAMLSSOException {
-
-        Response samlResponse = (Response) unmarshall(new String(Base64.decode(request.getParameter(
-                SSOConstants.HTTP_POST_PARAM_SAML2_RESP))));
+    private void processSSOResponse(AuthenticationContext authenticationContext ,Response samlResponse) throws SAMLSSOException {
 
         Assertion assertion = null;
 
@@ -474,7 +549,12 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             throw new SAMLSSOException("SAML Response does not contain the name of the subject");
         }
 
-        request.getSession().setAttribute("username", subject); // get the subject
+        SequenceContext sequenceContext = authenticationContext.getSequenceContext();
+        User user = new FederatedUser();
+        user.setUserIdentifier(subject);
+        sequenceContext.getCurrentStepContext().setUser(user);
+
+        //request.getSession().setAttribute("username", subject); // get the subject
         nameQualifier = assertion.getSubject().getNameID().getNameQualifier();
         spNameQualifier = assertion.getSubject().getNameID().getSPNameQualifier();
 
@@ -483,11 +563,15 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         // validate signature this SP only looking for assertion signature
         validateSignature(samlResponse, assertion);
+        List<UserClaim> claims = getClaims(assertion);
 
-        request.getSession(false).setAttribute("samlssoAttributes", getAssertionStatements(assertion));
+        FederatedUser federatedUser = (FederatedUser)authenticationContext.getSequenceContext().getCurrentStepContext().getUser();
+        federatedUser.setUserClaims(claims);
+
+        //request.getSession(false).setAttribute("samlssoAttributes", getAssertionStatements(assertion));
 
         //For removing the session when the single sign out request made by the SP itself
-        if (SSOUtils.isLogoutEnabled(properties)) {
+        /*if (SSOUtils.isLogoutEnabled(properties)) {
             String sessionId = assertion.getAuthnStatements().get(0).getSessionIndex();
             if (sessionId == null) {
                 throw new SAMLSSOException("Single Logout is enabled but IdP Session ID not found in SAML Assertion");
@@ -495,7 +579,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             request.getSession().setAttribute(SSOConstants.IDP_SESSION, sessionId);
             request.getSession().setAttribute(SSOConstants.LOGOUT_USERNAME, nameQualifier);
             request.getSession().setAttribute(SSOConstants.SP_NAME_QUALIFIER, spNameQualifier);
-        }
+        }*/
 
     }
 
@@ -545,8 +629,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return logoutReq;
     }
 
-    private AuthnRequest buildAuthnRequest(HttpServletRequest request,
-                                           boolean isPassive, String idpUrl, AuthenticationContext context) throws SAMLSSOException {
+    private AuthnRequest buildAuthnRequest(AuthenticationContext context, String idpUrl) throws SAMLSSOException {
 
         IssuerBuilder issuerBuilder = new IssuerBuilder();
         Issuer issuer = issuerBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer", "samlp");
@@ -565,18 +648,20 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         AuthnRequestBuilder authRequestBuilder = new AuthnRequestBuilder();
         AuthnRequest authRequest = authRequestBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:protocol",
                 "AuthnRequest", "samlp");
-        authRequest.setForceAuthn(isForceAuthenticate(context));
-        authRequest.setIsPassive(isPassive);
+        // TODO:Read from context authRequest.setForceAuthn(isForceAuthenticate(context));
+        authRequest.setForceAuthn(false);
+        //TODO:hardcorded value
+        authRequest.setIsPassive(false);
         authRequest.setIssueInstant(issueInstant);
 
-		String includeProtocolBindingProp = properties
+        String includeProtocolBindingProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_PROTOCOL_BINDING);
         if (StringUtils.isEmpty(includeProtocolBindingProp) || Boolean.parseBoolean(includeProtocolBindingProp)) {
             authRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
         }
 
         String acsUrl = null;
-        AuthenticatorConfig authenticatorConfig =
+        /*AuthenticatorConfig authenticatorConfig =
                 FileBasedConfigurationBuilder.getInstance().getAuthenticatorConfigMap()
                         .get(SSOConstants.AUTHENTICATOR_NAME);
         if (authenticatorConfig != null){
@@ -584,10 +669,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             if(StringUtils.isNotBlank(tmpAcsUrl)){
                 acsUrl = tmpAcsUrl;
             }
-        }
+        }*/
 
         if(acsUrl == null) {
-            acsUrl = IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true);
+            //TODO:read server url correclty
+            acsUrl = IdentityUtil.getServerURL("commonauth", true, true);
         }
 
         authRequest.setAssertionConsumerServiceURL(acsUrl);
@@ -621,18 +707,18 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 		
 		//Get the inbound SAMLRequest
-        AuthnRequest inboundAuthnRequest = getAuthnRequest(context);
+        AuthnRequest inboundAuthnRequest = (AuthnRequest)context.getParameter(SAMLSSOConstants.SAML_REQUEST_OBJECT); //getAuthnRequest(context);
         
         RequestedAuthnContext requestedAuthnContext = buildRequestedAuthnContext(inboundAuthnRequest);
         if (requestedAuthnContext != null) {
             authRequest.setRequestedAuthnContext(requestedAuthnContext);
         }
-
+/*
         Extensions extensions = getSAMLExtensions(request);
         if (extensions != null) {
             authRequest.setExtensions(extensions);
         }
-
+*/
         return authRequest;
     }
     
@@ -708,7 +794,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
         return requestedAuthnContext;
     }
-    
+    /*
     private boolean isForceAuthenticate(AuthenticationContext context) {
         
         boolean forceAuthenticate = false;
@@ -721,7 +807,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } 
         return forceAuthenticate;
     }
-
+*/
     private String encodeRequestMessage(RequestAbstractType requestMessage)
             throws SAMLSSOException {
 
@@ -740,7 +826,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             deflaterOutputStream.close();
 
             /* Encoding the compressed message */
-            String encodedRequestMessage = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
+            String encodedRequestMessage = Base64.encodeBytes(byteArrayOutputStream
+                                                                      .toByteArray(), Base64.DONT_BREAK_LINES);
 
             byteArrayOutputStream.write(byteArrayOutputStream.toByteArray());
             byteArrayOutputStream.toString();
@@ -789,6 +876,54 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } catch (IOException e) {
             throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
         }
+
+    }
+
+    private List<UserClaim> getClaims(Assertion assertion){
+            List<UserClaim> userClaims = new ArrayList<>();
+            String multiAttributeSeparator = DEFAULT_MULTI_ATTRIBUTE_SEPARATOR;
+
+            UserRealm realm;
+            try {
+                realm = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantUserRealm
+                        (MultitenantConstants.SUPER_TENANT_ID);
+                UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
+
+                multiAttributeSeparator = userStoreManager.
+                        getRealmConfiguration().getUserStoreProperty(MULTI_ATTRIBUTE_SEPARATOR);
+            } catch (UserStoreException e) {
+                log.warn("Error while reading MultiAttributeSeparator valaue from primary user store ", e);
+            }
+
+            if (assertion != null) {
+
+                List<AttributeStatement> attributeStatementList = assertion.getAttributeStatements();
+
+                if (attributeStatementList != null) {
+                    for (AttributeStatement statement : attributeStatementList) {
+                        List<Attribute> attributesList = statement.getAttributes();
+                        for (Attribute attribute : attributesList) {
+                            List<XMLObject> values = attribute.getAttributeValues();
+                            String attributesValue = null;
+                            if (values != null) {
+                                for (int i = 0; i < values.size(); i++) {
+                                    Element value = attribute.getAttributeValues().get(i).getDOM();
+                                    String attributeValue = value.getTextContent();
+                                    if (StringUtils.isBlank(attributesValue)) {
+                                        attributesValue = attributeValue;
+                                    } else {
+                                        attributesValue = attributesValue + multiAttributeSeparator + attributeValue;
+                                    }
+                                }
+                            }
+
+                            userClaims.add(new UserClaim(attribute.getName(),attributesValue));
+                        }
+                    }
+                }
+            }
+            return userClaims;
+
 
     }
 

@@ -21,7 +21,9 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.HttpIdentityRequestFactory;
+import org.wso2.carbon.identity.application.authentication.framework.processor.authenticator.ApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLFederatedRequestFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -65,6 +67,12 @@ public class SAMLSSOAuthenticatorServiceComponent {
         String postPagePath = null;
         FileInputStream fis = null;
         try {
+
+
+            SAMLFederatedRequestFactory samlFederatedRequestFactory = new SAMLFederatedRequestFactory();
+            ctxt.getBundleContext().registerService(HttpIdentityRequestFactory.class, samlFederatedRequestFactory, null);
+
+
             SAMLSSOAuthenticator samlSSOAuthenticator = new SAMLSSOAuthenticator();
             ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), samlSSOAuthenticator, null);
             postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository"

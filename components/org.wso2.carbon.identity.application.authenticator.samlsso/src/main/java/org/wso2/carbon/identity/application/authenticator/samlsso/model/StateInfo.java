@@ -18,10 +18,9 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.model;
 
-import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorStateInfo;
 
-public class StateInfo extends AuthenticatorStateInfo {
-
+public class StateInfo  {
+//extends AuthenticatorStateInfo
     private String sessionIndex;
     private String subject;
     private String nameQualifier;

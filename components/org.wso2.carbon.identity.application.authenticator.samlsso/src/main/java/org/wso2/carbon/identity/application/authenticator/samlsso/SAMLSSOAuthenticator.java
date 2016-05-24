@@ -20,30 +20,32 @@ package org.wso2.carbon.identity.application.authenticator.samlsso;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.owasp.encoder.Encode;
+import org.wso2.carbon.identity.application.authentication.framework.FrameworkLoginResponse;
+import org.wso2.carbon.identity.application.authentication.framework.IdentityRequest;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.context.SequenceContext;
 import org.wso2.carbon.identity.application.authentication.framework.processor.authenticator
         .AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.processor.authenticator
         .FederatedApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.processor.handler.authentication
+        .AuthenticationHandlerException;
+import org.wso2.carbon.identity.application.authentication.framework.processor.handler.authentication.impl
+        .AuthenticationResponse;
+import org.wso2.carbon.identity.application.authentication.framework.processor.handler.authentication.impl.model
+        .AbstractSequence;
+import org.wso2.carbon.identity.application.authentication.framework.processor.request.LocalAuthenticationRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.SAML2SSOManager;
-import org.wso2.carbon.identity.application.authenticator.samlsso.model.StateInfo;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
-import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
-import org.wso2.carbon.identity.application.common.model.ClaimMapping;
+import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
-import javax.mail.AuthenticationFailedException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements
@@ -55,9 +57,189 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
 
     @Override
-    public boolean canHandle(AuthenticationContext authenticationContext) {
-        return super.canHandle(authenticationContext);
+    protected AuthenticationResponse processRequest(AuthenticationContext authenticationContext)
+            throws AuthenticationHandlerException {
+
+        AbstractSequence sequence = authenticationContext.getSequence();
+        IdentityRequest identityRequest = authenticationContext.getIdentityRequest();
+
+
+        SequenceContext sequenceContext = authenticationContext.getSequenceContext();
+        int step = sequenceContext.getCurrentStep();
+        IdentityProvider federatedIdentityProvider = sequence.getFederatedIdentityProvider(step, getName());
+        FederatedAuthenticatorConfig defaultAuthenticatorConfig =
+                federatedIdentityProvider.getDefaultAuthenticatorConfig();
+        Property[] properties = defaultAuthenticatorConfig.getProperties();
+
+        Map<String, String> authenticatorProperties = convertToMap(properties);
+
+
+        String idpURL = authenticatorProperties
+                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL);
+
+        String ssoUrl = "";
+        boolean isPost = false;
+
+        try {
+            String requestMethod = authenticatorProperties
+                    .get(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD);
+
+            if (requestMethod != null && requestMethod.trim().length() != 0) {
+                if (SSOConstants.POST.equalsIgnoreCase(requestMethod)) {
+                    isPost = true;
+                } else if (SSOConstants.REDIRECT.equalsIgnoreCase(requestMethod)) {
+                    isPost = false;
+                } else if (AS_REQUEST.equalsIgnoreCase(requestMethod)) {
+                    //TODO:isPost = context.getAuthenticationRequest().isPost();
+                }
+            } else {
+                isPost = false;
+            }
+
+            if (isPost) {
+                //TODO:sendPostRequest(request, response, false, false, idpURL, context);
+                //TODO:return;
+
+            } else {
+                SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
+                saml2SSOManager.init(identityRequest.getTenantDomain(), authenticatorProperties,
+                                     federatedIdentityProvider);
+                ssoUrl = saml2SSOManager.buildRequest(idpURL, authenticationContext);
+
+                String domain = identityRequest.getParameter("domain");
+
+                if (domain != null) {
+                    ssoUrl = ssoUrl + "&fidp=" + domain;
+                }
+
+                if (authenticatorProperties != null) {
+                    String queryString = authenticatorProperties
+                            .get("commonAuthQueryParams");
+                    if (queryString != null) {
+                        if (!queryString.startsWith("&")) {
+                            ssoUrl = ssoUrl + "&" + queryString;
+                        } else {
+                            ssoUrl = ssoUrl + queryString;
+                        }
+                    }
+                }
+
+            }
+        } catch (SAMLSSOException e) {
+            throw new AuthenticationHandlerException(e.getMessage(), e);
+        }
+
+        FrameworkLoginResponse.FrameworkLoginResponseBuilder frameworkLoginResponseBuilder = new FrameworkLoginResponse.FrameworkLoginResponseBuilder(authenticationContext);
+        frameworkLoginResponseBuilder.setRedirectURL(ssoUrl);
+
+        return AuthenticationResponse.INCOMPLETE.setIdentityResponseBuilder(frameworkLoginResponseBuilder);
     }
+
+    private Map<String, String> convertToMap(Property[] properties){
+        Map<String, String> propertyMap = new HashMap<>();
+        for (Property property: properties){
+            propertyMap.put(property.getName(), property.getValue());
+        }
+        return propertyMap;
+    }
+
+    @Override
+    protected AuthenticationResponse processResponse(AuthenticationContext authenticationContext)
+            throws AuthenticationHandlerException {
+        AbstractSequence sequence = authenticationContext.getSequence();
+        LocalAuthenticationRequest localAuthenticationRequest = (LocalAuthenticationRequest)authenticationContext.getIdentityRequest();
+        SequenceContext sequenceContext = authenticationContext.getSequenceContext();
+        SequenceContext.StepContext currentStepContext = sequenceContext.getCurrentStepContext();
+        int step = sequenceContext.getCurrentStep();
+        IdentityProvider federatedIdentityProvider = sequence.getFederatedIdentityProvider(step, getName());
+        FederatedAuthenticatorConfig defaultAuthenticatorConfig =
+                federatedIdentityProvider.getDefaultAuthenticatorConfig();
+        Property[] properties = defaultAuthenticatorConfig.getProperties();
+
+        Map<String, String> authenticatorProperties = convertToMap(properties);
+
+        try {
+            SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
+            saml2SSOManager.init(localAuthenticationRequest.getTenantDomain(), authenticatorProperties,
+                                 federatedIdentityProvider);
+
+            saml2SSOManager.processResponse(authenticationContext);
+
+
+
+            /*
+
+
+            String subject = null;
+            String idpSubject = null;
+            String isSubjectInClaimsProp = authenticatorProperties.get(
+                    IdentityApplicationConstants.Authenticator.SAML2SSO.IS_USER_ID_IN_CLAIMS);
+
+
+            if ("true".equalsIgnoreCase(isSubjectInClaimsProp)) {
+                subject = FrameworkUtils.getFederatedSubjectFromClaims(
+                        context.getExternalIdP().getIdentityProvider(), receivedClaims);
+                if (subject == null) {
+                    log.warn("Subject claim could not be found amongst attribute statements. " +
+                             "Defaulting to Name Identifier.");
+                }
+            }
+            idpSubject = (String) request.getSession().getAttribute("username");
+            if (subject == null) {
+                subject = idpSubject;
+            }
+            if (subject == null) {
+                throw new SAMLSSOException("Cannot find federated User Identifier");
+            }
+
+            Object sessionIndexObj = request.getSession(false).getAttribute(SSOConstants.IDP_SESSION);
+            String nameQualifier = (String) request.getSession().getAttribute(SSOConstants.NAME_QUALIFIER);
+            String spNameQualifier = (String) request.getSession().getAttribute(SSOConstants.SP_NAME_QUALIFIER);
+            String sessionIndex = null;
+
+            if (sessionIndexObj != null) {
+                sessionIndex = (String) sessionIndexObj;
+            }
+
+            StateInfo stateInfoDO = new StateInfo();
+            stateInfoDO.setSessionIndex(sessionIndex);
+            stateInfoDO.setSubject(subject);
+            stateInfoDO.setNameQualifier(nameQualifier);
+            stateInfoDO.setSpNameQualifier(spNameQualifier);
+            context.setStateInfo(stateInfoDO);
+
+            AuthenticatedUser authenticatedUser =
+                    AuthenticatedUser.createFederateAuthenticatedUserFromSubjectIdentifier(subject);
+            authenticatedUser.setUserAttributes(receivedClaims);
+            context.setSubject(authenticatedUser);
+
+
+
+
+            */
+        } catch (SAMLSSOException e) {
+            throw new AuthenticationHandlerException(e.getMessage(), e);
+        }
+
+
+
+        return null;
+    }
+
+    @Override
+    protected boolean isInitialRequest(AuthenticationContext authenticationContext)
+            throws SAMLSSOAuthenticationException {
+        if(authenticationContext.getIdentityRequest() instanceof SAMLFederatedRequest){
+            SAMLFederatedRequest samlFederatedRequest = (SAMLFederatedRequest)authenticationContext.getIdentityRequest();
+            if(samlFederatedRequest.getSamlResponse() == null ){
+                throw new SAMLSSOAuthenticationException(SAMLFederatedRequest.SAMLFederatedRequestConstants.SAML_RESPONSE + " parameter value was null");
+            }
+            return true ;
+        }
+        return false;
+    }
+
+/*
 
     public boolean canHandle(HttpServletRequest request) {
 
@@ -72,7 +254,6 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         return false;
     }
 
-    @Override
     protected void initiateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,
                                                  AuthenticationContext context)
             throws AuthenticationFailedException {
@@ -118,7 +299,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         return;
     }
+*/
 
+/*
     private void generateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,
                                                String ssoUrl, Map<String, String> authenticatorProperties)
             throws AuthenticationFailedException {
@@ -146,7 +329,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                     "Error while sending the redirect to federated SAML IdP", e);
         }
     }
+*/
 
+    /*
     @Override
     protected void processAuthenticationResponse(HttpServletRequest request, HttpServletResponse response,
                                                  AuthenticationContext context)
@@ -204,7 +389,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             throw new AuthenticationFailedException(e.getMessage(), e);
         }
     }
+*/
 
+    /*
     @Override
     public String getContextIdentifier(HttpServletRequest request) {
 
@@ -229,6 +416,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         return identifier;
     }
+    */
 
     @Override
     public String getFriendlyName() {
@@ -236,10 +424,31 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
     }
 
     @Override
+    public String getClaimDialectURI() {
+        return null;
+    }
+
+    @Override
+    public List<Property> getConfigurationProperties() {
+        return null;
+    }
+
+    @Override
+    public boolean canHandle(AuthenticationContext authenticationContext) {
+        return false;
+    }
+
+    @Override
+    public String getContextIdentifier(AuthenticationContext authenticationContext) {
+        return null;
+    }
+
+    @Override
     public String getName() {
         return SSOConstants.AUTHENTICATOR_NAME;
     }
 
+    /*
     @Override
     protected void initiateLogoutRequest(HttpServletRequest request,
                                          HttpServletResponse response, AuthenticationContext context)
@@ -321,14 +530,18 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             throw new UnsupportedOperationException();
         }
     }
+*/
 
+    /*
     @Override
     protected void processLogoutResponse(HttpServletRequest request,
                                          HttpServletResponse response, AuthenticationContext context)
             throws LogoutFailedException {
         throw new UnsupportedOperationException();
     }
+*/
 
+    /*
     private void sendPostRequest(HttpServletRequest request, HttpServletResponse response,
                                  boolean isLogout, boolean isPassive,
                                  String loginPage, AuthenticationContext context) throws SAMLSSOException {
@@ -349,11 +562,16 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         String postPageInputs = buildPostPageInputs(encodedRequest, relayState, reqParamMap);
         printPostPage(response, loginPage, postPageInputs);
     }
+    */
+
+
 
     private SAML2SSOManager getSAML2SSOManagerInstance() throws SAMLSSOException {
 
-        String managerClassName = getAuthenticatorConfig().getParameterMap()
-                .get(SSOConstants.ServerConfig.SAML2_SSO_MANAGER);
+        //String managerClassName = getAuthenticatorConfig().getParameterMap()
+                //.get(SSOConstants.ServerConfig.SAML2_SSO_MANAGER);
+
+        String managerClassName = "org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManager" ;
         if (managerClassName != null) {
             try {
                 Class clazz = Class.forName(managerClassName);
@@ -370,6 +588,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         }
     }
 
+/*
     private String buildPostPageInputs(String encodedRequest, String relayState,
                                        Map<String, String> reqParamMap) {
         StringBuilder hiddenInputBuilder = new StringBuilder("");
@@ -390,7 +609,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         return hiddenInputBuilder.toString();
     }
-
+*/
+    /*
     private Map<String, String> getAdditionalRequestParams(HttpServletRequest request,
                                                            AuthenticationContext context) {
         Map<String, String> reqParamMap = new HashMap<String, String>();
@@ -410,7 +630,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         return reqParamMap;
     }
+*/
 
+    /*
     private void printPostPage(HttpServletResponse response, String url, String postPageInputs)
             throws SAMLSSOException {
 
@@ -448,4 +670,6 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             throw new SAMLSSOException("Error while sending POST request", e);
         }
     }
+
+    */
 }
