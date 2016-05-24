@@ -23,7 +23,6 @@ public class SAMLFederatedRequest extends LocalAuthenticationRequest{
 
     public static class SAMLFederatedRequestBuilder extends LocalAuthenticationRequest.LocalAuthenticationRequestBuilder {
         private String samlResponse ;
-        private String samlRequest ;
 
         public SAMLFederatedRequestBuilder(HttpServletRequest request,
                                            HttpServletResponse response) {
@@ -38,14 +37,11 @@ public class SAMLFederatedRequest extends LocalAuthenticationRequest{
             this.samlResponse = samlResponse;
             return this;
         }
-
-        public String getSamlResponse() {
-            return samlResponse;
-        }
     }
 
     public static class SAMLFederatedRequestConstants extends LocalAuthenticationRequest.LocalAuthenticationRequestConstants {
         public static final String SAML_RESPONSE = "SAMLResponse";
+        public static final String RELAY_STATE = "RelayState";
     }
 
 }

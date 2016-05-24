@@ -25,7 +25,7 @@ public class SAMLFederatedRequestFactory extends HttpIdentityRequestFactory{
         SAMLFederatedRequest.SAMLFederatedRequestBuilder samlFederatedRequestBuilder = (SAMLFederatedRequest.SAMLFederatedRequestBuilder)builder ;
 
         samlFederatedRequestBuilder.setSAMLResponse(request.getParameter(SAMLFederatedRequest.SAMLFederatedRequestConstants.SAML_RESPONSE));
-
+        samlFederatedRequestBuilder.setRequestDataKey(request.getParameter(SAMLFederatedRequest.SAMLFederatedRequestConstants.RELAY_STATE));
         return builder ;
     }
 
