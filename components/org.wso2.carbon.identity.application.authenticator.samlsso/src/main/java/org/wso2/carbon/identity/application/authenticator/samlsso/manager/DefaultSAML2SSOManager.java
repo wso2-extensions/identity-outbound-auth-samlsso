@@ -60,6 +60,7 @@ import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
 import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
 import org.opensaml.saml2.core.impl.SessionIndexBuilder;
 import org.opensaml.saml2.encryption.Decrypter;
+import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.encryption.EncryptedKey;
@@ -894,6 +895,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                         "not found in SAML Response element.");
             } else {
                 try {
+                    SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
+                    signatureProfileValidator.validate(response.getSignature());
+
                     X509Credential credential =
                             new X509CredentialImpl(tenantDomain, identityProvider.getCertificate());
                     SignatureValidator validator = new SignatureValidator(credential);
@@ -916,6 +920,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                         "not found in SAML Assertion element.");
             } else {
                 try {
+                    SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
+                    signatureProfileValidator.validate(assertion.getSignature());
+
                     X509Credential credential =
                             new X509CredentialImpl(tenantDomain, identityProvider.getCertificate());
                     SignatureValidator validator = new SignatureValidator(credential);
