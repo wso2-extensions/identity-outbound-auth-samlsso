@@ -150,6 +150,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                                                  AuthenticationContext context)
             throws AuthenticationFailedException {
 
+        String subject = null;
         try {
             SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
             saml2SSOManager.init(context.getTenantDomain(), context.getAuthenticatorProperties(),
@@ -158,7 +159,6 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             Map<ClaimMapping, String> receivedClaims = (Map<ClaimMapping, String>) request
                     .getSession(false).getAttribute("samlssoAttributes");
 
-            String subject = null;
             String idpSubject = null;
             String isSubjectInClaimsProp = context.getAuthenticatorProperties().get(
                     IdentityApplicationConstants.Authenticator.SAML2SSO.IS_USER_ID_IN_CLAIMS);
@@ -199,7 +199,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             authenticatedUser.setUserAttributes(receivedClaims);
             context.setSubject(authenticatedUser);
         } catch (SAMLSSOException e) {
-            throw new AuthenticationFailedException(e.getMessage(), e);
+            throw new AuthenticationFailedException(e.getMessage(), AuthenticatedUser
+                    .createFederateAuthenticatedUserFromSubjectIdentifier(subject), e);
         }
     }
 
