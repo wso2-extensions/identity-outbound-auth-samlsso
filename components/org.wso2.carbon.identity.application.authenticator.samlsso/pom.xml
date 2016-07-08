@@ -116,23 +116,23 @@
 
                             org.w3c.dom.*,
 
-                            org.wso2.carbon.identity.application.authentication.framework.*; version="${carbon.identity.package.import.version.range}",
-                            org.wso2.carbon.identity.application.common.model; version="${carbon.identity.package.import.version.range}",
-                            org.wso2.carbon.identity.application.common.util; version="${carbon.identity.package.import.version.range}",
+                            org.wso2.carbon.identity.application.authentication.framework.*; version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.application.common.model; version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.application.common.util; version="${carbon.identity.framework.imp.pkg.version.range}",
 
-                            org.wso2.carbon.core.util; version="${carbon.kernel.package.import.version.range}",
-                            org.wso2.carbon.ui; version="${carbon.kernel.package.import.version.range}",
+                            org.wso2.carbon.core.util; version="${carbon.kernel.imp.pkg.version.range}",
+                            org.wso2.carbon.ui; version="${carbon.kernel.imp.pkg.version.range}",
                             org.wso2.carbon.user.api; version="${carbon.user.api.imp.pkg.version.range}",
-                            org.wso2.carbon.user.core.service; version="${carbon.kernel.package.import.version.range}",
-                            org.wso2.carbon.user.core.tenant; version="${carbon.kernel.package.import.version.range}",
-                            org.wso2.carbon.utils; version="${carbon.kernel.package.import.version.range}",
+                            org.wso2.carbon.user.core.service; version="${carbon.kernel.imp.pkg.version.range}",
+                            org.wso2.carbon.user.core.tenant; version="${carbon.kernel.imp.pkg.version.range}",
+                            org.wso2.carbon.utils; version="${carbon.kernel.imp.pkg.version.range}",
 
                             org.xml.sax
                         </Import-Package>
                         <Export-Package>
                             !org.wso2.carbon.identity.application.authenticator.samlsso.internal,
                             org.wso2.carbon.identity.application.authenticator.samlsso.*;
-                            version="${carbon.identity.package.export.version}"
+                            version="${identity.application.auth.samlsso.exp.pkg.version}"
                         </Export-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
