@@ -37,7 +37,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.1</version>
                 <executions>
                     <execution>
                         <id>source-code-generation</id>
@@ -88,7 +87,7 @@
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
                             org.wso2.carbon.identity.authenticator.saml2.sso.stub.*;
-                            version="${carbon.identity.package.export.version}"
+                            version="${identity.outbound.auth.samlsso.exp.pkg.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>
