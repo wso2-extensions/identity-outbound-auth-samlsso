@@ -415,7 +415,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         try {
             String postPage = SAMLSSOAuthenticatorServiceComponent.getPostPage();
-
+            response.setContentType("text/html; charset=UTF-8");
             if (postPage != null) {
                 String pageWithURL = postPage.replace("$url", Encode.forHtmlAttribute(url));
                 String finalPage = pageWithURL.replace("<!--$params-->", postPageInputs);
