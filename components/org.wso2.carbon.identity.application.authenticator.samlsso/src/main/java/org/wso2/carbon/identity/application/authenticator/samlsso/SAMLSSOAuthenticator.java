@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.owasp.encoder.Encode;
@@ -172,10 +173,10 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             }
             idpSubject = (String) request.getSession().getAttribute("username");
             if (subject == null) {
+                if (idpSubject == null) {
+                    throw new SAMLSSOException("Cannot find federated User Identifier");
+                }
                 subject = idpSubject;
-            }
-            if (subject == null) {
-                throw new SAMLSSOException("Cannot find federated User Identifier");
             }
 
             Object sessionIndexObj = request.getSession(false).getAttribute(SSOConstants.IDP_SESSION);
@@ -199,8 +200,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             authenticatedUser.setUserAttributes(receivedClaims);
             context.setSubject(authenticatedUser);
         } catch (SAMLSSOException e) {
-            throw new AuthenticationFailedException(e.getMessage(), AuthenticatedUser
-                    .createFederateAuthenticatedUserFromSubjectIdentifier(subject), e);
+            // whenever the code reaches here the subject identifier will be null. Therefore we can't pass
+            // AuthenticatedUser object with the exception.
+            throw new AuthenticationFailedException(e.getMessage(), e);
         }
     }
 

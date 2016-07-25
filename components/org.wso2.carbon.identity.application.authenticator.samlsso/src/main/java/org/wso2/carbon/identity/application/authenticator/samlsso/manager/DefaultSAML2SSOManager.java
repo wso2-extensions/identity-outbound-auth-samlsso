@@ -75,11 +75,13 @@ import org.opensaml.xml.security.keyinfo.KeyInfoCredentialResolver;
 import org.opensaml.xml.security.keyinfo.StaticKeyInfoCredentialResolver;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.opensaml.xml.signature.SignatureValidator;
+import org.opensaml.xml.signature.impl.SignatureImpl;
 import org.opensaml.xml.util.Base64;
 import org.opensaml.xml.util.XMLHelper;
 import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
@@ -117,6 +119,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+
+import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
@@ -433,6 +437,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             List<EncryptedAssertion> encryptedAssertions = samlResponse.getEncryptedAssertions();
             EncryptedAssertion encryptedAssertion = null;
             if (CollectionUtils.isNotEmpty(encryptedAssertions)) {
+                // check for multiple encrypted assertions
+                if (encryptedAssertions.size() != 1) {
+                    log.error("Multiple Encrypted Assertions found in the SAML response.");
+                    throw new SAMLSSOException("SAML Response contains multiple encrypted assertions");
+                }
                 encryptedAssertion = encryptedAssertions.get(0);
                 try {
                     assertion = getDecryptedAssertion(encryptedAssertion);
@@ -443,6 +452,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } else {
             List<Assertion> assertions = samlResponse.getAssertions();
             if (CollectionUtils.isNotEmpty(assertions)) {
+                // check for multiple assertions. We do not support multiple assertions.
+                if (assertions.size() != 1) {
+                    log.error("Multiple Assertions found in the SAML response.");
+                    throw new SAMLSSOException("SAML Response contains multiple assertions.");
+                }
                 assertion = assertions.get(0);
             }
         }
@@ -460,6 +474,15 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             throw new SAMLSSOException("SAML Assertion not found in the Response");
         }
 
+        // validate the assertion validity period
+        validateAssertionValidityPeriod(assertion);
+
+        // validate audience restriction
+        validateAudienceRestriction(assertion);
+
+        // validate signature this SP only looking for assertion signature
+        validateSignature(samlResponse, assertion);
+
         // Get the subject name from the Response Object and forward it to login_action.jsp
         String subject = null;
         String nameQualifier = null;
@@ -475,12 +498,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         request.getSession().setAttribute("username", subject); // get the subject
         nameQualifier = assertion.getSubject().getNameID().getNameQualifier();
         spNameQualifier = assertion.getSubject().getNameID().getSPNameQualifier();
-
-        // validate audience restriction
-        validateAudienceRestriction(assertion);
-
-        // validate signature this SP only looking for assertion signature
-        validateSignature(samlResponse, assertion);
 
         request.getSession(false).setAttribute("samlssoAttributes", getAssertionStatements(assertion));
 
@@ -761,6 +778,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     private XMLObject unmarshall(String samlString) throws SAMLSSOException {
 
+        XMLObject response;
         try {
             DocumentBuilderFactory documentBuilderFactory = IdentityUtil.getSecuredDocumentBuilderFactory();
             DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -769,7 +787,14 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             Element element = document.getDocumentElement();
             UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
-            return unmarshaller.unmarshall(element);
+            response = unmarshaller.unmarshall(element);
+            // Check for duplicate samlp:Response
+            NodeList list = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
+            if (list.getLength() > 0) {
+                log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
+                throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+            }
+            return response;
         } catch (ParserConfigurationException e) {
             throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
         } catch (UnmarshallingException e) {
@@ -884,53 +909,80 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         if (SSOUtils.isAuthnResponseSigned(properties)) {
 
-            if (identityProvider.getCertificate() == null
-                    || identityProvider.getCertificate().isEmpty()) {
-                throw new SAMLSSOException(
-                        "SAMLResponse signing is enabled, but IdP doesn't have a certificate");
-            }
-
-            if (response.getSignature() == null) {
+            XMLObject signature = response.getSignature();
+            if (signature == null) {
                 throw new SAMLSSOException("SAMLResponse signing is enabled, but signature element " +
                         "not found in SAML Response element.");
             } else {
-                try {
-                    SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
-                    signatureProfileValidator.validate(response.getSignature());
-
-                    X509Credential credential =
-                            new X509CredentialImpl(tenantDomain, identityProvider.getCertificate());
-                    SignatureValidator validator = new SignatureValidator(credential);
-                    validator.validate(response.getSignature());
-                } catch (ValidationException e) {
-                    throw new SAMLSSOException("Signature validation failed for SAML Response", e);
-                }
+                validateSignature(signature);
             }
         }
         if (SSOUtils.isAssertionSigningEnabled(properties)) {
 
-            if (identityProvider.getCertificate() == null
-                    || identityProvider.getCertificate().isEmpty()) {
-                throw new SAMLSSOException(
-                        "SAMLAssertion signing is enabled, but IdP doesn't have a certificate");
-            }
-
+            XMLObject signature = assertion.getSignature();
             if (assertion.getSignature() == null) {
                 throw new SAMLSSOException("SAMLAssertion signing is enabled, but signature element " +
                         "not found in SAML Assertion element.");
             } else {
-                try {
-                    SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
-                    signatureProfileValidator.validate(assertion.getSignature());
-
-                    X509Credential credential =
-                            new X509CredentialImpl(tenantDomain, identityProvider.getCertificate());
-                    SignatureValidator validator = new SignatureValidator(credential);
-                    validator.validate(assertion.getSignature());
-                } catch (ValidationException e) {
-                    throw new SAMLSSOException("Signature validation failed for SAML Assertion", e);
-                }
+               validateSignature(signature);
             }
+        }
+    }
+
+
+    /**
+     * Validates the XML Signature element
+     *
+     * @param signature XML Signature element
+     * @throws SAMLSSOException
+     */
+    private void validateSignature(XMLObject signature) throws SAMLSSOException {
+        SignatureImpl signImpl = (SignatureImpl) signature;
+        try {
+            SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
+            signatureProfileValidator.validate(signImpl);
+        } catch (ValidationException ex) {
+            String logMsg = "Signature do not confirm to SAML signature profile. Possible XML Signature  " +
+                    "Wrapping Attack!";
+            AUDIT_LOG.warn(logMsg);
+            throw new SAMLSSOException(logMsg, ex);
+        }
+
+        if (identityProvider.getCertificate() == null || identityProvider.getCertificate().isEmpty()) {
+            throw new SAMLSSOException("Signature validation is enabled, but IdP doesn't have a certificate");
+        }
+
+        try{
+            X509Credential credential = new X509CredentialImpl(tenantDomain, identityProvider.getCertificate());
+            SignatureValidator validator = new SignatureValidator(credential);
+            validator.validate(signImpl);
+        } catch (ValidationException e) {
+            throw new SAMLSSOException("Signature validation failed for SAML Response", e);
+        }
+    }
+
+    /**
+     * Validates the 'Not Before' and 'Not On Or After' conditions of the SAML Assertion
+     *
+     * @param assertion SAML Assertion element
+     * @throws SAMLSSOException
+     */
+    private void validateAssertionValidityPeriod(Assertion assertion) throws SAMLSSOException{
+
+        DateTime validFrom = assertion.getConditions().getNotBefore();
+        DateTime validTill = assertion.getConditions().getNotOnOrAfter();
+
+        if (validFrom != null && validFrom.isAfterNow()) {
+            throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not Before'");
+        }
+
+        if (validTill != null && validTill.isBeforeNow()) {
+            throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not On Or After'");
+        }
+
+        if (validFrom != null && validTill != null && validFrom.isAfter(validTill)) {
+            throw new SAMLSSOException("SAML Assertion Condition 'Not Before' must be less than the value of 'Not On " +
+                    "Or After'");
         }
     }
 
