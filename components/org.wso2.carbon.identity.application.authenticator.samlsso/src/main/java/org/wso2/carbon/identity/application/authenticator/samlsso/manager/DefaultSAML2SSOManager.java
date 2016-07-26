@@ -102,11 +102,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.xml.sax.SAXException;
 
-import javax.crypto.SecretKey;
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -119,6 +114,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+import javax.crypto.SecretKey;
+import javax.servlet.http.HttpServletRequest;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
@@ -320,9 +320,10 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         XMLObject samlObject = unmarshall(decodedResponse);
         if (samlObject instanceof LogoutResponse) {
             //This is a SAML response for a single logout request from the SP
+            // TODO need to change the API of this method to prevent unmarshalling twice.
             doSLO(request);
         } else {
-            processSSOResponse(request);
+            processSSOResponse(request, (Response) samlObject);
         }
     }
     
@@ -401,8 +402,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * Any request for the defined logout URL is handled here
      *
      * @param request
-     * @throws javax.servlet.ServletException
-     * @throws IOException
      */
     public void doSLO(HttpServletRequest request) throws SAMLSSOException {
 
@@ -426,10 +425,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }
 
-    private void processSSOResponse(HttpServletRequest request) throws SAMLSSOException {
-
-        Response samlResponse = (Response) unmarshall(new String(Base64.decode(request.getParameter(
-                SSOConstants.HTTP_POST_PARAM_SAML2_RESP))));
+    private void processSSOResponse(HttpServletRequest request, Response samlResponse) throws SAMLSSOException {
 
         Assertion assertion = null;
 
@@ -437,11 +433,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             List<EncryptedAssertion> encryptedAssertions = samlResponse.getEncryptedAssertions();
             EncryptedAssertion encryptedAssertion = null;
             if (CollectionUtils.isNotEmpty(encryptedAssertions)) {
-                // check for multiple encrypted assertions
-                if (encryptedAssertions.size() != 1) {
-                    log.error("Multiple Encrypted Assertions found in the SAML response.");
-                    throw new SAMLSSOException("SAML Response contains multiple encrypted assertions");
-                }
                 encryptedAssertion = encryptedAssertions.get(0);
                 try {
                     assertion = getDecryptedAssertion(encryptedAssertion);
@@ -452,11 +443,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } else {
             List<Assertion> assertions = samlResponse.getAssertions();
             if (CollectionUtils.isNotEmpty(assertions)) {
-                // check for multiple assertions. We do not support multiple assertions.
-                if (assertions.size() != 1) {
-                    log.error("Multiple Assertions found in the SAML response.");
-                    throw new SAMLSSOException("SAML Response contains multiple assertions.");
-                }
                 assertion = assertions.get(0);
             }
         }
@@ -767,11 +753,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
             return URLEncoder.encode(encodedRequestMessage, "UTF-8").trim();
 
-        } catch (MarshallingException e) {
-            throw new SAMLSSOException("Error occurred while encoding SAML request", e);
-        } catch (UnsupportedEncodingException e) {
-            throw new SAMLSSOException("Error occurred while encoding SAML request", e);
-        } catch (IOException e) {
+        } catch (MarshallingException | IOException e) {
             throw new SAMLSSOException("Error occurred while encoding SAML request", e);
         }
     }
@@ -788,20 +770,23 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
             response = unmarshaller.unmarshall(element);
-            // Check for duplicate samlp:Response
+
+            // Check for duplicate samlp:Response. This is done to thwart possible XSW attacks
             NodeList list = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
             if (list.getLength() > 0) {
                 log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
                 throw new SAMLSSOException("Error occurred while processing SAML2 response.");
             }
+
+            // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
+            NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
+            if (assertionList.getLength() > 1) {
+                log.error("Invalid schema for the SAML2 response. Multiple Assertion elements found.");
+                throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+            }
+
             return response;
-        } catch (ParserConfigurationException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
-        } catch (UnmarshallingException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
-        } catch (SAXException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
-        } catch (IOException e) {
+        } catch (ParserConfigurationException | UnmarshallingException | SAXException | IOException e) {
             throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
         }
 
