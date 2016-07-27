@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.owasp.encoder.Encode;
@@ -159,7 +160,6 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             Map<ClaimMapping, String> receivedClaims = (Map<ClaimMapping, String>) request
                     .getSession(false).getAttribute("samlssoAttributes");
 
-            String idpSubject = null;
             String isSubjectInClaimsProp = context.getAuthenticatorProperties().get(
                     IdentityApplicationConstants.Authenticator.SAML2SSO.IS_USER_ID_IN_CLAIMS);
             if ("true".equalsIgnoreCase(isSubjectInClaimsProp)) {
@@ -170,11 +170,12 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                             "Defaulting to Name Identifier.");
                 }
             }
-            idpSubject = (String) request.getSession().getAttribute("username");
+
             if (subject == null) {
-                subject = idpSubject;
+                subject = (String) request.getSession().getAttribute("username");
             }
-            if (subject == null) {
+
+            if (StringUtils.isBlank(subject)) {
                 throw new SAMLSSOException("Cannot find federated User Identifier");
             }
 
@@ -199,8 +200,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             authenticatedUser.setUserAttributes(receivedClaims);
             context.setSubject(authenticatedUser);
         } catch (SAMLSSOException e) {
-            throw new AuthenticationFailedException(e.getMessage(), AuthenticatedUser
-                    .createFederateAuthenticatedUserFromSubjectIdentifier(subject), e);
+            // whenever the code reaches here the subject identifier will be null. Therefore we can't pass
+            // AuthenticatedUser object with the exception.
+            throw new AuthenticationFailedException(e.getMessage(), e);
         }
     }
 
