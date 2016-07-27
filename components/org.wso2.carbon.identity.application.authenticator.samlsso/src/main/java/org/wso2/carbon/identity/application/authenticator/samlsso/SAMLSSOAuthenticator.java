@@ -160,7 +160,6 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             Map<ClaimMapping, String> receivedClaims = (Map<ClaimMapping, String>) request
                     .getSession(false).getAttribute("samlssoAttributes");
 
-            String idpSubject = null;
             String isSubjectInClaimsProp = context.getAuthenticatorProperties().get(
                     IdentityApplicationConstants.Authenticator.SAML2SSO.IS_USER_ID_IN_CLAIMS);
             if ("true".equalsIgnoreCase(isSubjectInClaimsProp)) {
@@ -171,12 +170,13 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                             "Defaulting to Name Identifier.");
                 }
             }
-            idpSubject = (String) request.getSession().getAttribute("username");
+
             if (subject == null) {
-                if (idpSubject == null) {
-                    throw new SAMLSSOException("Cannot find federated User Identifier");
-                }
-                subject = idpSubject;
+                subject = (String) request.getSession().getAttribute("username");
+            }
+
+            if (StringUtils.isBlank(subject)) {
+                throw new SAMLSSOException("Cannot find federated User Identifier");
             }
 
             Object sessionIndexObj = request.getSession(false).getAttribute(SSOConstants.IDP_SESSION);

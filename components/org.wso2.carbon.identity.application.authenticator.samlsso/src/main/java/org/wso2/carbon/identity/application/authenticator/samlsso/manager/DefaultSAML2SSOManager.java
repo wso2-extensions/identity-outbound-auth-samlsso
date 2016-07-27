@@ -771,9 +771,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
             response = unmarshaller.unmarshall(element);
 
-            // Check for duplicate samlp:Response. This is done to thwart possible XSW attacks
-            NodeList list = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
-            if (list.getLength() > 0) {
+            // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
+            NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
+            if (responseList.getLength() > 0) {
                 log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
                 throw new SAMLSSOException("Error occurred while processing SAML2 response.");
             }
