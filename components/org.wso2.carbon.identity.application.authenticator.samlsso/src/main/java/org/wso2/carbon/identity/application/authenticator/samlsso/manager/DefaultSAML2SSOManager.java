@@ -186,9 +186,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 for (String param : params) {
                     String[] values = param.split("=");
                     if (values.length == 2 && SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ.equals(values[0])) {
-                            request.setAttribute(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ, values[1]);
-                            break;
-                        }
+                        request.setAttribute(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ, values[1]);
+                        break;
+                    }
                 }
             }
         }
@@ -216,7 +216,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 
         if (SSOUtils.isAuthnRequestSigned(properties)) {
-			String signatureAlgoProp = properties
+            String signatureAlgoProp = properties
                     .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
             if (StringUtils.isEmpty(signatureAlgoProp)) {
                 signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
@@ -231,13 +231,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                         get(SIGN_AUTH2_SAML_USING_SUPER_TENANT));
             }
             if (isSignAuth2SAMLUsingSuperTenant) {
-				SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
-                    new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null));
+                SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
+                        new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null));
             } else {
                 SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
-                    new X509CredentialImpl(context.getTenantDomain(), null));
+                        new X509CredentialImpl(context.getTenantDomain(), null));
             }
-        }	
+        }
         if (loginPage.indexOf("?") > -1) {
             idpUrl = loginPage.concat("&").concat(httpQueryString.toString());
         } else {
@@ -266,7 +266,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String signatureAlgo = null;
         String digestAlgo = null;
         boolean includeCert = false;
-        
+
         // get Signature Algorithm
         signatureAlgoProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
@@ -274,7 +274,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
         }
         signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms().get(signatureAlgoProp);
-        
+
         // get Digest Algorithm
         digestAlgoProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
@@ -282,7 +282,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             digestAlgoProp = IdentityApplicationConstants.XML.DigestAlgorithm.SHA1;
         }
         digestAlgo = IdentityApplicationManagementUtil.getXMLDigestAlgorithms().get(digestAlgoProp);
-        
+
         includeCertProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_CERT);
         if (StringUtils.isEmpty(includeCertProp) || Boolean.parseBoolean(includeCertProp)) {
@@ -325,10 +325,10 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } else if (samlObject instanceof Response) {
             processSSOResponse(request, (Response) samlObject);
         } else {
-            log.error("Unable to process unknown SAML object type.");
+            throw new SAMLSSOException("Unable to process unknown SAML object type.");
         }
     }
-    
+
     protected AuthnRequest getAuthnRequest(AuthenticationContext context) throws SAMLSSOException {
 
         AuthnRequest authnRequest = null;
@@ -385,9 +385,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         return null;
     }
-    
+
     protected Extensions getSAMLExtensions(AuthnRequest inboundAuthnRequest) {
-        
+
         Extensions extensions = null;
         Extensions oldExtensions = inboundAuthnRequest.getExtensions();
         if (oldExtensions != null) {
@@ -572,7 +572,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         authRequest.setIsPassive(isPassive);
         authRequest.setIssueInstant(issueInstant);
 
-		String includeProtocolBindingProp = properties
+        String includeProtocolBindingProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_PROTOCOL_BINDING);
         if (StringUtils.isEmpty(includeProtocolBindingProp) || Boolean.parseBoolean(includeProtocolBindingProp)) {
             authRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
@@ -582,14 +582,14 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         AuthenticatorConfig authenticatorConfig =
                 FileBasedConfigurationBuilder.getInstance().getAuthenticatorConfigMap()
                         .get(SSOConstants.AUTHENTICATOR_NAME);
-        if (authenticatorConfig != null){
+        if (authenticatorConfig != null) {
             String tmpAcsUrl = authenticatorConfig.getParameterMap().get(SSOConstants.ServerConfig.SAML_SSO_ACS_URL);
-            if(StringUtils.isNotBlank(tmpAcsUrl)){
+            if (StringUtils.isNotBlank(tmpAcsUrl)) {
                 acsUrl = tmpAcsUrl;
             }
         }
 
-        if(acsUrl == null) {
+        if (acsUrl == null) {
             acsUrl = IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true);
         }
 
@@ -599,10 +599,10 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         authRequest.setVersion(SAMLVersion.VERSION_20);
         authRequest.setDestination(idpUrl);
 
-		String attributeConsumingServiceIndexProp = properties
+        String attributeConsumingServiceIndexProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.ATTRIBUTE_CONSUMING_SERVICE_INDEX);
         if (StringUtils.isNotEmpty(attributeConsumingServiceIndexProp)) {
-            try {	
+            try {
                 authRequest.setAttributeConsumingServiceIndex(Integer
                         .valueOf(attributeConsumingServiceIndexProp));
             } catch (NumberFormatException e) {
@@ -611,7 +611,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                                 + attributeConsumingServiceIndexProp, e);
             }
         }
-        
+
         String includeNameIDPolicyProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
         if (StringUtils.isEmpty(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
@@ -622,10 +622,10 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             nameIdPolicy.setAllowCreate(true);
             authRequest.setNameIDPolicy(nameIdPolicy);
         }
-		
-		//Get the inbound SAMLRequest
+
+        //Get the inbound SAMLRequest
         AuthnRequest inboundAuthnRequest = getAuthnRequest(context);
-        
+
         RequestedAuthnContext requestedAuthnContext = buildRequestedAuthnContext(inboundAuthnRequest);
         if (requestedAuthnContext != null) {
             authRequest.setRequestedAuthnContext(requestedAuthnContext);
@@ -638,16 +638,16 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         return authRequest;
     }
-    
+
     private RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws SAMLSSOException {
         
         /* AuthnContext */
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = null;
         RequestedAuthnContext requestedAuthnContext = null;
-        
+
         String includeAuthnContext = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_AUTHN_CONTEXT);
-        
+
         if (StringUtils.isNotEmpty(includeAuthnContext) && "as_request".equalsIgnoreCase(includeAuthnContext)) {
             if (inboundAuthnRequest != null) {
                 RequestedAuthnContext incomingRequestedAuthnContext = inboundAuthnRequest.getRequestedAuthnContext();
@@ -664,8 +664,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
             AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
                     .buildObject(SAMLConstants.SAML20_NS,
-                                 AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
-                                 SAMLConstants.SAML20_PREFIX);
+                            AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
+                            SAMLConstants.SAML20_PREFIX);
 
             String authnContextClass = properties
                     .get(IdentityApplicationConstants.Authenticator.SAML2SSO.AUTHENTICATION_CONTEXT_CLASS);
@@ -673,16 +673,16 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             if (StringUtils.isNotEmpty(authnContextClass)) {
                 String samlAuthnContextURN = IdentityApplicationManagementUtil
                         .getSAMLAuthnContextClasses().get(authnContextClass);
-                if(!StringUtils.isBlank(samlAuthnContextURN)){
+                if (!StringUtils.isBlank(samlAuthnContextURN)) {
                     //There was one matched URN for give authnContextClass.
                     authnContextClassRef.setAuthnContextClassRef(samlAuthnContextURN);
-                }else{
+                } else {
                     //There are no any matched URN for given authnContextClass, so added authnContextClass name to the
                     // AuthnContextClassRef.
                     authnContextClassRef.setAuthnContextClassRef(authnContextClass);
                 }
 
-            }  else {
+            } else {
                 authnContextClassRef.setAuthnContextClassRef(AuthnContext.PPT_AUTHN_CTX);
             }
 
@@ -711,9 +711,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
         return requestedAuthnContext;
     }
-    
+
     private boolean isForceAuthenticate(AuthenticationContext context) {
-        
+
         boolean forceAuthenticate = false;
         String forceAuthenticateProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.FORCE_AUTHENTICATION);
@@ -721,7 +721,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             forceAuthenticate = true;
         } else if ("as_request".equalsIgnoreCase(forceAuthenticateProp)) {
             forceAuthenticate = context.isForceAuthenticate();
-        } 
+        }
         return forceAuthenticate;
     }
 
@@ -911,7 +911,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 throw new SAMLSSOException("SAMLAssertion signing is enabled, but signature element " +
                         "not found in SAML Assertion element.");
             } else {
-               validateSignature(signature);
+                validateSignature(signature);
             }
         }
     }
@@ -939,7 +939,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             throw new SAMLSSOException("Signature validation is enabled, but IdP doesn't have a certificate");
         }
 
-        try{
+        try {
             X509Credential credential = new X509CredentialImpl(tenantDomain, identityProvider.getCertificate());
             SignatureValidator validator = new SignatureValidator(credential);
             validator.validate(signImpl);
@@ -954,7 +954,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @param assertion SAML Assertion element
      * @throws SAMLSSOException
      */
-    private void validateAssertionValidityPeriod(Assertion assertion) throws SAMLSSOException{
+    private void validateAssertionValidityPeriod(Assertion assertion) throws SAMLSSOException {
 
         DateTime validFrom = assertion.getConditions().getNotBefore();
         DateTime validTill = assertion.getConditions().getNotOnOrAfter();
