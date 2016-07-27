@@ -322,8 +322,10 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             //This is a SAML response for a single logout request from the SP
             // TODO need to change the API of this method to prevent unmarshalling twice.
             doSLO(request);
-        } else {
+        } else if (samlObject instanceof Response) {
             processSSOResponse(request, (Response) samlObject);
+        } else {
+            log.error("Unable to process unknown SAML object type.");
         }
     }
     
