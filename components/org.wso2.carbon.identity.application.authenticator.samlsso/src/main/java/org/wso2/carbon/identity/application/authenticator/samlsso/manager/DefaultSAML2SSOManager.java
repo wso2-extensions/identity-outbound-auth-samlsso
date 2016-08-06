@@ -22,7 +22,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.xerces.impl.Constants;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
@@ -124,9 +123,6 @@ import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
-    private static final String SECURITY_MANAGER_PROPERTY = Constants.XERCES_PROPERTY_PREFIX +
-            Constants.SECURITY_MANAGER_PROPERTY;
-    private static final int ENTITY_EXPANSION_LIMIT = 0;
     private static final String SIGN_AUTH2_SAML_USING_SUPER_TENANT = "SignAuth2SAMLUsingSuperTenant";
     private static Log log = LogFactory.getLog(DefaultSAML2SSOManager.class);
     private static boolean bootStrapped = false;
@@ -956,20 +952,23 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      */
     private void validateAssertionValidityPeriod(Assertion assertion) throws SAMLSSOException {
 
-        DateTime validFrom = assertion.getConditions().getNotBefore();
-        DateTime validTill = assertion.getConditions().getNotOnOrAfter();
+        if (assertion.getConditions() != null) {
+            DateTime validFrom = assertion.getConditions().getNotBefore();
+            DateTime validTill = assertion.getConditions().getNotOnOrAfter();
+            int timeStampSkewInSeconds = IdentityUtil.getClockSkewInSeconds();
 
-        if (validFrom != null && validFrom.isAfterNow()) {
-            throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not Before'");
-        }
+            if (validFrom != null && validFrom.minusSeconds(timeStampSkewInSeconds).isAfterNow()) {
+                throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not Before'");
+            }
 
-        if (validTill != null && validTill.isBeforeNow()) {
-            throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not On Or After'");
-        }
+            if (validTill != null && validTill.plusSeconds(timeStampSkewInSeconds).isBeforeNow()) {
+                throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not On Or After'");
+            }
 
-        if (validFrom != null && validTill != null && validFrom.isAfter(validTill)) {
-            throw new SAMLSSOException("SAML Assertion Condition 'Not Before' must be less than the value of 'Not On " +
-                    "Or After'");
+            if (validFrom != null && validTill != null && validFrom.isAfter(validTill)) {
+                throw new SAMLSSOException(
+                        "SAML Assertion Condition 'Not Before' must be less than the value of 'Not On Or After'");
+            }
         }
     }
 
