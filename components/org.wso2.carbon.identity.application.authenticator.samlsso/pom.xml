@@ -117,6 +117,7 @@
 
                             org.w3c.dom.*,
 
+                            org.wso2.carbon.identity.core.util; version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.application.authentication.framework.*; version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.application.common.model; version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.application.common.util; version="${carbon.identity.framework.imp.pkg.version.range}",
