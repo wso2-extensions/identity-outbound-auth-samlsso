@@ -81,6 +81,7 @@ import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
@@ -101,6 +102,11 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.xml.sax.SAXException;
 
+import javax.crypto.SecretKey;
+import javax.servlet.http.HttpServletRequest;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -113,17 +119,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-import javax.crypto.SecretKey;
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     private static final String SIGN_AUTH2_SAML_USING_SUPER_TENANT = "SignAuth2SAMLUsingSuperTenant";
+    private static final String NAME_ID_TYPE = "NameIDType";
     private static Log log = LogFactory.getLog(DefaultSAML2SSOManager.class);
     private static boolean bootStrapped = false;
     private static String DEFAULT_MULTI_ATTRIBUTE_SEPARATOR = ",";
@@ -611,10 +611,18 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String includeNameIDPolicyProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
         if (StringUtils.isEmpty(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
+            String nameIDType = properties.get(NAME_ID_TYPE);
             NameIDPolicyBuilder nameIdPolicyBuilder = new NameIDPolicyBuilder();
             NameIDPolicy nameIdPolicy = nameIdPolicyBuilder.buildObject();
-            nameIdPolicy.setFormat(NameIDType.UNSPECIFIED);
-            //nameIdPolicy.setSPNameQualifier("Issuer");
+            if (StringUtils.isNotBlank(nameIDType)) {
+                nameIdPolicy.setFormat(nameIDType);
+            } else {
+                nameIdPolicy.setFormat(NameIDType.UNSPECIFIED);
+            }
+            if (spEntityId != null && !spEntityId.isEmpty()) {
+                nameIdPolicy.setSPNameQualifier(spEntityId);
+            }
+            //nameIdPolicy.setSPNameQualifier(issuer);
             nameIdPolicy.setAllowCreate(true);
             authRequest.setNameIDPolicy(nameIdPolicy);
         }
