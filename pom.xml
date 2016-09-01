@@ -43,7 +43,6 @@
 
     <modules>
         <module>components/org.wso2.carbon.identity.application.authenticator.samlsso</module>
-        <module>components/org.wso2.carbon.identity.authenticator.saml2.sso.stub</module>
         <module>features/org.wso2.carbon.identity.application.authenticator.samlsso.server.feature</module>
     </modules>
 
