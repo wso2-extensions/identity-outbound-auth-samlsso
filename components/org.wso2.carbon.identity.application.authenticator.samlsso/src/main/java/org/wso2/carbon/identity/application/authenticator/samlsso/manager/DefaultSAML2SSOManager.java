@@ -211,7 +211,14 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             throw new SAMLSSOException("Error occurred while url encoding RelayState", e);
         }
 
-        if (SSOUtils.isAuthnRequestSigned(properties)) {
+        boolean isRequestSigned;
+        if (!isLogout) {
+            isRequestSigned = SSOUtils.isAuthnRequestSigned(properties);
+        } else {
+            isRequestSigned = SSOUtils.isLogoutRequestSigned(properties);
+        }
+
+        if (isRequestSigned) {
             String signatureAlgoProp = properties
                     .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
             if (StringUtils.isEmpty(signatureAlgoProp)) {
