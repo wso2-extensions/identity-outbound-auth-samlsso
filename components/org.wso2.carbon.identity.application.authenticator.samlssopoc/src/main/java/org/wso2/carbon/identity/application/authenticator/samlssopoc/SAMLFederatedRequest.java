@@ -1,6 +1,7 @@
 package org.wso2.carbon.identity.application.authenticator.samlssopoc;
 
 
+import org.wso2.carbon.identity.framework.FrameworkRuntimeException;
 import org.wso2.carbon.identity.framework.authentication.processor.request.LocalAuthenticationRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +36,11 @@ public class SAMLFederatedRequest extends LocalAuthenticationRequest{
         public LocalAuthenticationRequestBuilder setSAMLResponse(String samlResponse) {
             this.samlResponse = samlResponse;
             return this;
+        }
+
+        @Override
+        public LocalAuthenticationRequest build() throws FrameworkRuntimeException {
+            return new SAMLFederatedRequest(this);
         }
     }
 

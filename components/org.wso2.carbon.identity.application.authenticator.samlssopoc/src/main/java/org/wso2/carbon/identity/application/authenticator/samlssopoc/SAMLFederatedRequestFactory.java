@@ -8,7 +8,7 @@ import org.wso2.carbon.identity.framework.IdentityRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class SAMLFederatedRequestFactory extends HttpIdentityRequestFactory{
+public class SAMLFederatedRequestFactory <T extends SAMLFederatedRequest.SAMLFederatedRequestBuilder> extends HttpIdentityRequestFactory<T>{
     @Override
     public boolean canHandle(HttpServletRequest request, HttpServletResponse response) {
         String samlResponse = request.getParameter(SAMLFederatedRequest.SAMLFederatedRequestConstants.SAML_RESPONSE);
@@ -19,15 +19,25 @@ public class SAMLFederatedRequestFactory extends HttpIdentityRequestFactory{
     }
 
     @Override
-    public IdentityRequest.IdentityRequestBuilder create(IdentityRequest.IdentityRequestBuilder builder, HttpServletRequest request, HttpServletResponse response)
+    public void create(T builder, HttpServletRequest request, HttpServletResponse response)
             throws FrameworkClientException {
 
         super.create(builder, request, response);
+
         SAMLFederatedRequest.SAMLFederatedRequestBuilder samlFederatedRequestBuilder = (SAMLFederatedRequest.SAMLFederatedRequestBuilder)builder ;
 
         samlFederatedRequestBuilder.setSAMLResponse(request.getParameter(SAMLFederatedRequest.SAMLFederatedRequestConstants.SAML_RESPONSE));
         samlFederatedRequestBuilder.setRequestDataKey(request.getParameter(SAMLFederatedRequest.SAMLFederatedRequestConstants.RELAY_STATE));
-        return builder ;
+    }
+
+    @Override
+    public IdentityRequest.IdentityRequestBuilder create(HttpServletRequest request, HttpServletResponse response)
+            throws FrameworkClientException {
+
+        SAMLFederatedRequest.SAMLFederatedRequestBuilder samlFederatedRequestBuilder = new SAMLFederatedRequest.SAMLFederatedRequestBuilder(request, response);
+        create((T)samlFederatedRequestBuilder, request, response);
+
+        return samlFederatedRequestBuilder ;
     }
 
     @Override

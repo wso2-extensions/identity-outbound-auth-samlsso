@@ -672,7 +672,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         if(acsUrl == null) {
             //TODO:read server url correclty
-            acsUrl = IdentityUtil.getServerURL("commonauth", true, true);
+            acsUrl = IdentityUtil.getServerURL("identitynew/authentication", true, true);
         }
 
         authRequest.setAssertionConsumerServiceURL(acsUrl);

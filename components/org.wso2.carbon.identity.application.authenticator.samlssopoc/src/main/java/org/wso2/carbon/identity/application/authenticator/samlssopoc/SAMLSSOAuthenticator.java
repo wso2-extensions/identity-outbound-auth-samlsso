@@ -38,6 +38,8 @@ import org.wso2.carbon.identity.framework.authentication.processor.handler.authe
         .AuthenticationHandlerException;
 import org.wso2.carbon.identity.framework.authentication.processor.handler.authentication.impl.AuthenticationResponse;
 import org.wso2.carbon.identity.framework.authentication.processor.handler.authentication.impl.model.AbstractSequence;
+import org.wso2.carbon.identity.framework.authentication.processor.request.AuthenticationRequest;
+import org.wso2.carbon.identity.framework.authentication.processor.request.FrameworkLoginRequest;
 import org.wso2.carbon.identity.framework.authentication.processor.request.LocalAuthenticationRequest;
 
 import java.util.HashMap;
@@ -57,12 +59,13 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             throws AuthenticationHandlerException {
 
         AbstractSequence sequence = authenticationContext.getSequence();
-        IdentityRequest identityRequest = authenticationContext.getIdentityRequest();
+        AuthenticationRequest authenticationRequest = (AuthenticationRequest)authenticationContext.getIdentityRequest();
 
 
         SequenceContext sequenceContext = authenticationContext.getSequenceContext();
         int step = sequenceContext.getCurrentStep();
-        IdentityProvider federatedIdentityProvider = sequence.getFederatedIdentityProvider(step, getName());
+        IdentityProvider federatedIdentityProvider = sequence.getFederatedIdentityProvider(step, authenticationContext
+                .getSequenceContext().getCurrentStepContext().getIdentityProviderName());
         FederatedAuthenticatorConfig defaultAuthenticatorConfig =
                 federatedIdentityProvider.getDefaultAuthenticatorConfig();
         Property[] properties = defaultAuthenticatorConfig.getProperties();
@@ -98,11 +101,11 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
             } else {
                 SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
-                saml2SSOManager.init(identityRequest.getTenantDomain(), authenticatorProperties,
+                saml2SSOManager.init(authenticationRequest.getTenantDomain(), authenticatorProperties,
                                      federatedIdentityProvider);
                 ssoUrl = saml2SSOManager.buildRequest(idpURL, authenticationContext);
 
-                String domain = identityRequest.getParameter("domain");
+                String domain = authenticationRequest.getParameter("domain");
 
                 if (domain != null) {
                     ssoUrl = ssoUrl + "&fidp=" + domain;
@@ -147,7 +150,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         SequenceContext sequenceContext = authenticationContext.getSequenceContext();
         SequenceContext.StepContext currentStepContext = sequenceContext.getCurrentStepContext();
         int step = sequenceContext.getCurrentStep();
-        IdentityProvider federatedIdentityProvider = sequence.getFederatedIdentityProvider(step, getName());
+        IdentityProvider federatedIdentityProvider = sequence.getFederatedIdentityProvider(step, authenticationContext
+                .getSequenceContext().getCurrentStepContext().getIdentityProviderName());
         FederatedAuthenticatorConfig defaultAuthenticatorConfig =
                 federatedIdentityProvider.getDefaultAuthenticatorConfig();
         Property[] properties = defaultAuthenticatorConfig.getProperties();
@@ -219,7 +223,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
 
 
-        return null;
+        return AuthenticationResponse.AUTHENTICATED;
     }
 
     @Override
@@ -230,9 +234,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             if(samlFederatedRequest.getSamlResponse() == null ){
                 throw new SAMLSSOAuthenticationException(SAMLFederatedRequest.SAMLFederatedRequestConstants.SAML_RESPONSE + " parameter value was null");
             }
-            return true ;
+            return false ;
         }
-        return false;
+        return true;
     }
 
 /*
