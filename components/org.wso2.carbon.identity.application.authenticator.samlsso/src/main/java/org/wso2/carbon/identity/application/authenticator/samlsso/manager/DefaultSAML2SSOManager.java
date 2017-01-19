@@ -531,7 +531,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         logoutReq.setIssuer(issuer);
 
         NameID nameId = new NameIDBuilder().buildObject();
-        nameId.setFormat(NameIDType.UNSPECIFIED);
+        String includeNameIDPolicyProp = properties
+                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
+        if (StringUtils.isEmpty(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
+            nameId.setFormat(NameIDType.ENTITY);
+        }
         nameId.setValue(user);
         nameId.setNameQualifier(nameQualifier);
         nameId.setSPNameQualifier(spNameQualifier);
