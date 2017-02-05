@@ -81,7 +81,6 @@ import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
@@ -102,11 +101,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.xml.sax.SAXException;
 
-import javax.crypto.SecretKey;
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -119,6 +113,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+import javax.crypto.SecretKey;
+import javax.servlet.http.HttpServletRequest;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
@@ -622,14 +623,21 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String includeNameIDPolicyProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
         if (StringUtils.isEmpty(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
-            String nameIDType = properties.get(NAME_ID_TYPE);
             NameIDPolicyBuilder nameIdPolicyBuilder = new NameIDPolicyBuilder();
             NameIDPolicy nameIdPolicy = nameIdPolicyBuilder.buildObject();
-            if (StringUtils.isNotBlank(nameIDType)) {
-                nameIdPolicy.setFormat(nameIDType);
-            } else {
-                nameIdPolicy.setFormat(NameIDType.UNSPECIFIED);
+
+            String nameIDType = properties.get(NAME_ID_TYPE);
+            if (StringUtils.isBlank(nameIDType)) {
+                // NameID format was not set from the UI. Check the application-authentication.xml configs
+                if (authenticatorConfig != null) {
+                    nameIDType = authenticatorConfig.getParameterMap().get(NAME_ID_TYPE);
+                    if (StringUtils.isBlank(nameIDType)) {
+                        // No NameID format set. Let's go with the default NameID format
+                        nameIDType = NameIDType.UNSPECIFIED;
+                    }
+                }
             }
+            nameIdPolicy.setFormat(nameIDType);
             if (spEntityId != null && !spEntityId.isEmpty()) {
                 nameIdPolicy.setSPNameQualifier(spEntityId);
             }
