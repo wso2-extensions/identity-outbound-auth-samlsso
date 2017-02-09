@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,20 +16,20 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlssopoc.exception;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso.util;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import javax.servlet.ServletException;
+import java.io.IOException;
 
-/**
- * This class is used to denote exceptions thrown from the SAML2 SSO Authenticator module
- */
-public class SAMLSSOException extends ServletException {
+public class CarbonEntityResolver implements EntityResolver {
 
-    public SAMLSSOException(String message) {
-        super(message);
+    @Override
+    public InputSource resolveEntity(String publicId, String systemId) throws SAXException,
+            IOException {
+        throw new SAXException("SAML request contains invalid elements. Possible XML External Entity (XXE) attack.");
     }
 
-    public SAMLSSOException(String message, Throwable cause) {
-        super(message, cause);
-    }
+
 }

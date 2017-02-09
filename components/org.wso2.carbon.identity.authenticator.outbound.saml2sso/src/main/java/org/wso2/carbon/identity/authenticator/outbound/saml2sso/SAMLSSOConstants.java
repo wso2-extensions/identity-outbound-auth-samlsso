@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -15,20 +15,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.identity.application.authenticator.samlssopoc.util;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso;
 
-public class CarbonEntityResolver implements EntityResolver {
-
-    @Override
-    public InputSource resolveEntity(String publicId, String systemId) throws SAXException,
-            IOException {
-        throw new SAXException("SAML request contains invalid elements. Possible XML External Entity (XXE) attack.");
-    }
-
-
+public class SAMLSSOConstants {
+    public static final String INBOUND_SAML2SSO_REQUEST = "InboundSAML2SSORequest" ;
 }

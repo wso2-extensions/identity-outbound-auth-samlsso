@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlssopoc.manager;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -80,13 +80,13 @@ import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.wso2.carbon.base.MultitenantConstants;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.SAMLFederatedRequest;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.SAMLSSOConstants;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.internal.SAMLSSOAuthenticatorServiceComponent;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.util.CarbonEntityResolver;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.util.SSOConstants;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.util.SSOUtils;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.SAMLFederatedRequest;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.SAMLSSOConstants;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOFederatedAuthenticatorException;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal.SAMLSSOAuthenticatorServiceComponent;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.CarbonEntityResolver;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SSOConstants;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
@@ -157,7 +157,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     @Override
     public void init(String tenantDomain, Map<String, String> properties, IdentityProvider idp)
-            throws SAMLSSOException {
+            throws SAML2SSOFederatedAuthenticatorException {
 
         this.tenantDomain = tenantDomain;
         this.identityProvider = idp;
@@ -174,7 +174,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     public String _buildRequest(HttpServletRequest request, boolean isLogout, boolean isPassive,
                                String loginPage, AuthenticationContext context)
-            throws SAMLSSOException {
+            throws SAML2SSOFederatedAuthenticatorException {
 /*
         doBootstrap();
         String contextIdentifier = context.getContextIdentifier();
@@ -253,12 +253,12 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     @Override
     public String buildRequest(String loginPage, AuthenticationContext authenticationContext)
-            throws SAMLSSOException {
+            throws SAML2SSOFederatedAuthenticatorException {
 
         doBootstrap();
         ClientAuthenticationRequest clientAuthenticationRequest = (ClientAuthenticationRequest)authenticationContext.getIdentityRequest();
 
-        AuthnRequest authnRequest =  (AuthnRequest)authenticationContext.getParameter(SAMLSSOConstants.SAML_REQUEST_OBJECT);
+        AuthnRequest authnRequest =  (AuthnRequest)authenticationContext.getParameter(SAMLSSOConstants.INBOUND_SAML2SSO_REQUEST);
 
         RequestAbstractType requestMessage;
        /* String samlRequest = request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ) ;
@@ -287,7 +287,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         try {
             httpQueryString.append("&RelayState=" + URLEncoder.encode(clientAuthenticationRequest.getRequestDataKey(), "UTF-8").trim());
         } catch (UnsupportedEncodingException e) {
-            throw new SAMLSSOException("Error occurred while url encoding RelayState", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error occurred while url encoding RelayState", e);
         }
 
         if (SSOUtils.isAuthnRequestSigned(properties)) {
@@ -324,7 +324,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     /**
      * @return return encoded SAML Auth request
-     * @throws SAMLSSOException
+     * @throws SAML2SSOFederatedAuthenticatorException
      */
     /*public String buildPostRequest(HttpServletRequest request, boolean isLogout,
                                    boolean isPassive, String loginPage, AuthenticationContext context) throws SAMLSSOException {
@@ -383,7 +383,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }*/
 
     @Override
-    public void processResponse(AuthenticationContext authenticationContext) throws SAMLSSOException {
+    public void processResponse(AuthenticationContext authenticationContext) throws
+                                                                             SAML2SSOFederatedAuthenticatorException {
 
         doBootstrap();
 
@@ -501,7 +502,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }*/
 
-    private void processSSOResponse(AuthenticationContext authenticationContext ,Response samlResponse) throws SAMLSSOException {
+    private void processSSOResponse(AuthenticationContext authenticationContext ,Response samlResponse) throws
+                                                                                                        SAML2SSOFederatedAuthenticatorException {
 
         Assertion assertion = null;
 
@@ -513,7 +515,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 try {
                     assertion = getDecryptedAssertion(encryptedAssertion);
                 } catch (Exception e) {
-                    throw new SAMLSSOException("Unable to decrypt the SAML Assertion", e);
+                    throw new SAML2SSOFederatedAuthenticatorException("Unable to decrypt the SAML Assertion", e);
                 }
             }
         } else {
@@ -533,7 +535,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                             SSOConstants.StatusCodes.NO_PASSIVE)) {
                 return;
             }
-            throw new SAMLSSOException("SAML Assertion not found in the Response");
+            throw new SAML2SSOFederatedAuthenticatorException("SAML Assertion not found in the Response");
         }
 
         // Get the subject name from the Response Object and forward it to login_action.jsp
@@ -545,7 +547,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 
         if (subject == null) {
-            throw new SAMLSSOException("SAML Response does not contain the name of the subject");
+            throw new SAML2SSOFederatedAuthenticatorException("SAML Response does not contain the name of the subject");
         }
 
         SequenceContext sequenceContext = authenticationContext.getSequenceContext();
@@ -583,7 +585,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 
     private LogoutRequest buildLogoutRequest(String user, String sessionIndexStr, String idpUrl, String nameQualifier, String spNameQualifier)
-            throws SAMLSSOException {
+            throws SAML2SSOFederatedAuthenticatorException {
 
         LogoutRequest logoutReq = new LogoutRequestBuilder().buildObject();
 
@@ -628,7 +630,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return logoutReq;
     }
 
-    private AuthnRequest buildAuthnRequest(AuthenticationContext context, String idpUrl) throws SAMLSSOException {
+    private AuthnRequest buildAuthnRequest(AuthenticationContext context, String idpUrl) throws
+                                                                                         SAML2SSOFederatedAuthenticatorException {
 
         IssuerBuilder issuerBuilder = new IssuerBuilder();
         Issuer issuer = issuerBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer", "samlp");
@@ -706,7 +709,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 		
 		//Get the inbound SAMLRequest
-        AuthnRequest inboundAuthnRequest = (AuthnRequest)context.getParameter(SAMLSSOConstants.SAML_REQUEST_OBJECT); //getAuthnRequest(context);
+        AuthnRequest inboundAuthnRequest = (AuthnRequest)context.getParameter(SAMLSSOConstants.INBOUND_SAML2SSO_REQUEST); //getAuthnRequest(context);
         
         RequestedAuthnContext requestedAuthnContext = buildRequestedAuthnContext(inboundAuthnRequest);
         if (requestedAuthnContext != null) {
@@ -721,7 +724,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return authRequest;
     }
     
-    private RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws SAMLSSOException {
+    private RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws
+                                                                                               SAML2SSOFederatedAuthenticatorException {
         
         /* AuthnContext */
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = null;
@@ -808,7 +812,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 */
     private String encodeRequestMessage(RequestAbstractType requestMessage)
-            throws SAMLSSOException {
+            throws SAML2SSOFederatedAuthenticatorException {
 
         Marshaller marshaller = Configuration.getMarshallerFactory().getMarshaller(requestMessage);
         Element authDOM = null;
@@ -839,15 +843,15 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             return URLEncoder.encode(encodedRequestMessage, "UTF-8").trim();
 
         } catch (MarshallingException e) {
-            throw new SAMLSSOException("Error occurred while encoding SAML request", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error occurred while encoding SAML request", e);
         } catch (UnsupportedEncodingException e) {
-            throw new SAMLSSOException("Error occurred while encoding SAML request", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error occurred while encoding SAML request", e);
         } catch (IOException e) {
-            throw new SAMLSSOException("Error occurred while encoding SAML request", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error occurred while encoding SAML request", e);
         }
     }
 
-    private XMLObject unmarshall(String samlString) throws SAMLSSOException {
+    private XMLObject unmarshall(String samlString) throws SAML2SSOFederatedAuthenticatorException {
 
         try {
             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -867,13 +871,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
             return unmarshaller.unmarshall(element);
         } catch (ParserConfigurationException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error in unmarshalling SAML Request from the encoded String", e);
         } catch (UnmarshallingException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error in unmarshalling SAML Request from the encoded String", e);
         } catch (SAXException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error in unmarshalling SAML Request from the encoded String", e);
         } catch (IOException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
+            throw new SAML2SSOFederatedAuthenticatorException("Error in unmarshalling SAML Request from the encoded String", e);
         }
 
     }
@@ -983,7 +987,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @param assertion SAML2 Assertion
      * @return validity
      */
-    private void validateAudienceRestriction(Assertion assertion) throws SAMLSSOException {
+    private void validateAudienceRestriction(Assertion assertion) throws SAML2SSOFederatedAuthenticatorException {
 
         if (assertion != null) {
             Conditions conditions = assertion.getConditions();
@@ -1001,17 +1005,17 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                                 }
                             }
                             if (!audienceFound) {
-                                throw new SAMLSSOException("SAML Assertion Audience Restriction validation failed");
+                                throw new SAML2SSOFederatedAuthenticatorException("SAML Assertion Audience Restriction validation failed");
                             }
                         } else {
-                            throw new SAMLSSOException("SAML Response's AudienceRestriction doesn't contain Audiences");
+                            throw new SAML2SSOFederatedAuthenticatorException("SAML Response's AudienceRestriction doesn't contain Audiences");
                         }
                     }
                 } else {
-                    throw new SAMLSSOException("SAML Response doesn't contain AudienceRestrictions");
+                    throw new SAML2SSOFederatedAuthenticatorException("SAML Response doesn't contain AudienceRestrictions");
                 }
             } else {
-                throw new SAMLSSOException("SAML Response doesn't contain Conditions");
+                throw new SAML2SSOFederatedAuthenticatorException("SAML Response doesn't contain Conditions");
             }
         }
     }
@@ -1024,19 +1028,19 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @return true, if signature is valid.
      */
     private void validateSignature(Response response, Assertion assertion) throws
-            SAMLSSOException {
+                                                                           SAML2SSOFederatedAuthenticatorException {
 
         if (SSOUtils.isAuthnResponseSigned(properties)) {
 
             if (identityProvider.getCertificate() == null
                     || identityProvider.getCertificate().isEmpty()) {
-                throw new SAMLSSOException(
+                throw new SAML2SSOFederatedAuthenticatorException(
                         "SAMLResponse signing is enabled, but IdP doesn't have a certificate");
             }
 
             if (response.getSignature() == null) {
-                throw new SAMLSSOException("SAMLResponse signing is enabled, but signature element " +
-                        "not found in SAML Response element.");
+                throw new SAML2SSOFederatedAuthenticatorException("SAMLResponse signing is enabled, but signature element " +
+                                                                  "not found in SAML Response element.");
             } else {
                 try {
                     X509Credential credential =
@@ -1044,7 +1048,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                     SignatureValidator validator = new SignatureValidator(credential);
                     validator.validate(response.getSignature());
                 } catch (ValidationException e) {
-                    throw new SAMLSSOException("Signature validation failed for SAML Response", e);
+                    throw new SAML2SSOFederatedAuthenticatorException("Signature validation failed for SAML Response", e);
                 }
             }
         }
@@ -1052,13 +1056,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
             if (identityProvider.getCertificate() == null
                     || identityProvider.getCertificate().isEmpty()) {
-                throw new SAMLSSOException(
+                throw new SAML2SSOFederatedAuthenticatorException(
                         "SAMLAssertion signing is enabled, but IdP doesn't have a certificate");
             }
 
             if (assertion.getSignature() == null) {
-                throw new SAMLSSOException("SAMLAssertion signing is enabled, but signature element " +
-                        "not found in SAML Assertion element.");
+                throw new SAML2SSOFederatedAuthenticatorException("SAMLAssertion signing is enabled, but signature element " +
+                                                                  "not found in SAML Assertion element.");
             } else {
                 try {
                     X509Credential credential =
@@ -1066,7 +1070,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                     SignatureValidator validator = new SignatureValidator(credential);
                     validator.validate(assertion.getSignature());
                 } catch (ValidationException e) {
-                    throw new SAMLSSOException("Signature validation failed for SAML Assertion", e);
+                    throw new SAML2SSOFederatedAuthenticatorException("Signature validation failed for SAML Assertion", e);
                 }
             }
         }

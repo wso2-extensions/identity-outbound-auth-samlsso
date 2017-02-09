@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,14 +16,13 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlssopoc;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.manager.DefaultSAML2SSOManager;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.manager.SAML2SSOManager;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.util.SSOConstants;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOFederatedAuthenticatorException;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.manager.DefaultSAML2SSOManager;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SSOConstants;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -124,7 +123,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 }
 
             }
-        } catch (SAMLSSOException e) {
+        } catch (SAML2SSOFederatedAuthenticatorException e) {
             throw new AuthenticationHandlerException(e.getMessage(), e);
         }
 
@@ -217,7 +216,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
 
             */
-        } catch (SAMLSSOException e) {
+        } catch (SAML2SSOFederatedAuthenticatorException e) {
             throw new AuthenticationHandlerException(e.getMessage(), e);
         }
 
@@ -374,12 +373,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 sessionIndex = (String) sessionIndexObj;
             }
 
-            StateInfo stateInfoDO = new StateInfo();
-            stateInfoDO.setSessionIndex(sessionIndex);
-            stateInfoDO.setSubject(subject);
-            stateInfoDO.setNameQualifier(nameQualifier);
-            stateInfoDO.setSpNameQualifier(spNameQualifier);
-            context.setStateInfo(stateInfoDO);
+// need to maintain sessionIndex, subject, name qualifier and SpNameQualifier for federated logout
+
 
             AuthenticatedUser authenticatedUser =
                     AuthenticatedUser.createFederateAuthenticatedUserFromSubjectIdentifier(subject);
@@ -566,7 +561,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
 
 
-    private SAML2SSOManager getSAML2SSOManagerInstance() throws SAMLSSOException {
+    private SAML2SSOManager getSAML2SSOManagerInstance() throws SAML2SSOFederatedAuthenticatorException {
 
         //String managerClassName = getAuthenticatorConfig().getParameterMap()
                 //.get(SSOConstants.ServerConfig.SAML2_SSO_MANAGER);
@@ -577,11 +572,11 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 Class clazz = Class.forName(managerClassName);
                 return (SAML2SSOManager) clazz.newInstance();
             } catch (ClassNotFoundException e) {
-                throw new SAMLSSOException(e.getMessage(), e);
+                throw new SAML2SSOFederatedAuthenticatorException(e.getMessage(), e);
             } catch (InstantiationException e) {
-                throw new SAMLSSOException(e.getMessage(), e);
+                throw new SAML2SSOFederatedAuthenticatorException(e.getMessage(), e);
             } catch (IllegalAccessException e) {
-                throw new SAMLSSOException(e.getMessage(), e);
+                throw new SAML2SSOFederatedAuthenticatorException(e.getMessage(), e);
             }
         } else {
             return new DefaultSAML2SSOManager();

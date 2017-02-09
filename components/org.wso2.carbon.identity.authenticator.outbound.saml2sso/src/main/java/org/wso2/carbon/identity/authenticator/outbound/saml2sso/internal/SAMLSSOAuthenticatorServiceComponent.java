@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,13 +16,13 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlssopoc.internal;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.SAMLFederatedRequestFactory;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.SAMLSSOAuthenticator;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.SAMLFederatedRequestFactory;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
 import org.wso2.carbon.identity.framework.HttpIdentityRequestFactory;
 import org.wso2.carbon.identity.framework.authentication.processor.authenticator.ApplicationAuthenticator;

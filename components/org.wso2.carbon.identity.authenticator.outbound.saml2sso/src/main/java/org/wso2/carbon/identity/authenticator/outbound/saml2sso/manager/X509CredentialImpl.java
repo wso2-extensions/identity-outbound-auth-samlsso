@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlssopoc.manager;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.opensaml.xml.security.credential.Credential;
@@ -25,8 +25,8 @@ import org.opensaml.xml.security.credential.UsageType;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.core.util.KeyStoreManager;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlssopoc.internal.SAMLSSOAuthenticatorServiceComponent;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOFederatedAuthenticatorException;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 
@@ -58,9 +58,9 @@ public class X509CredentialImpl implements X509Credential {
      *
      * @param tenantDomain tenant domain
      * @param idpCert      certificate of the IDP
-     * @throws SAMLSSOException
+     * @throws SAML2SSOFederatedAuthenticatorException
      */
-    public X509CredentialImpl(String tenantDomain, String idpCert) throws SAMLSSOException {
+    public X509CredentialImpl(String tenantDomain, String idpCert) throws SAML2SSOFederatedAuthenticatorException {
 
         X509Certificate cert;
 
@@ -73,7 +73,7 @@ public class X509CredentialImpl implements X509Credential {
                 cert = (X509Certificate) IdentityApplicationManagementUtil
                         .decodeCertificate(idpCert);
             } catch (CertificateException e) {
-                throw new SAMLSSOException(
+                throw new SAML2SSOFederatedAuthenticatorException(
                         "Error retrieving the certificate for alias " + idpCert, e);
             }
         } else {
@@ -83,7 +83,7 @@ public class X509CredentialImpl implements X509Credential {
                 tenantId = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantManager()
                         .getTenantId(tenantDomain);
             } catch (UserStoreException e) {
-                throw new SAMLSSOException(
+                throw new SAML2SSOFederatedAuthenticatorException(
                         "Exception occurred while retrieving Tenant ID from tenant domain " +
                                 tenantDomain, e);
             }
@@ -110,13 +110,13 @@ public class X509CredentialImpl implements X509Credential {
 
                 }
             } catch (Exception e) {
-                throw new SAMLSSOException(
+                throw new SAML2SSOFederatedAuthenticatorException(
                         "Error retrieving private key and the certificate for tenant " +
                                 tenantDomain, e);
             }
 
             if (key == null) {
-                throw new SAMLSSOException(
+                throw new SAML2SSOFederatedAuthenticatorException(
                         "Cannot find the private key for tenant " + tenantDomain);
             }
 
@@ -124,7 +124,7 @@ public class X509CredentialImpl implements X509Credential {
         }
 
         if (cert == null) {
-            throw new SAMLSSOException("Cannot find the certificate.");
+            throw new SAML2SSOFederatedAuthenticatorException("Cannot find the certificate.");
         }
 
         entityCertificate = cert;
