@@ -179,7 +179,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         builder.setSamlRequest(buildAuthnRequest(saml2SSOUrl, isForce, isPassive, context));
         builder.setRelayState(context.getInitialAuthenticationRequest().getRequestDataKey());
         builder.setAuthnRequestSigned(isAuthnRequestSigned(getIdentityProviderConfig(context)));
-        builder.setIdPCredential(getIdPCredential(getIdentityProviderConfig(context)));
+        builder.setIdPCredential(Utils.getServerCredentials());
         builder.setSigAlg(getSignatureAlgorithm(getIdentityProviderConfig(context)));
         builder.setDigestAlg(getDigestAlgorithm(getIdentityProviderConfig(context)));
         return builder;
@@ -197,7 +197,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         builder.setSamlRequest(buildAuthnRequest(saml2SSOUrl, isForce, isPassive, context));
         builder.setRelayState(context.getInitialAuthenticationRequest().getRequestDataKey());
         builder.setAuthnRequestSigned(isAuthnRequestSigned(getIdentityProviderConfig(context)));
-        builder.setIdPCredential(getIdPCredential(getIdentityProviderConfig(context)));
+        builder.setIdPCredential(Utils.getServerCredentials());
         builder.setSigAlg(getSignatureAlgorithm(getIdentityProviderConfig(context)));
         return builder;
     }
@@ -353,7 +353,6 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
                 validateAudienceRestriction(assertion, context);
 
-                // validate signature this SP only looking for assertion signature
                 validateSignature(assertion, response, getIdentityProviderConfig(context));
 
                 processAttributeStatements(assertion, context);
@@ -453,35 +452,34 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                                                                                     SAML2SSOAuthenticatorException,
                                                                                     AuthenticationHandlerException {
 
-        X509Certificate idPCredential = null;
-        if (idPCredential == null) {
-            throw new SAML2SSOAuthenticatorException("Identity Provider doesn't have a certificate.");
-        }
         if (assertion.getSignature() == null) {
             throw new SAML2SSOAuthenticatorException("Signature element not found in Assertion.");
         } else {
             try {
-                X509Credential credential = new X509CredentialImpl(idPCredential);
+                Credential credential = getIdPCredential(identityProviderConfig);
+                if (credential == null) {
+                    throw new SAML2SSOAuthenticatorException("Identity Provider doesn't have a certificate.");
+                }
                 SignatureValidator validator = new SignatureValidator(credential);
                 validator.validate(assertion.getSignature());
+                if (isAuthnResponseSigned(identityProviderConfig)) {
+                    if (response.getSignature() == null) {
+                        throw new SAML2SSOAuthenticatorException("SAMLResponse signing is enabled, but signature element " +
+                                                                 "not found in Response element.");
+                    } else {
+                        try {
+                            validator = new SignatureValidator(credential);
+                            validator.validate(response.getSignature());
+                        } catch (ValidationException e) {
+                            throw new SAML2SSOAuthenticatorException("Signature validation failed for Response", e);
+                        }
+                    }
+                }
             } catch (ValidationException e) {
                 throw new SAML2SSOAuthenticatorException("Signature validation failed for Assertion.", e);
             }
         }
-        if (isAuthnResponseSigned(identityProviderConfig)) {
-            if (response.getSignature() == null) {
-                throw new SAML2SSOAuthenticatorException("SAMLResponse signing is enabled, but signature element " +
-                                                         "not found in Response element.");
-            } else {
-                try {
-                    X509Credential credential = new X509CredentialImpl(idPCredential);
-                    SignatureValidator validator = new SignatureValidator(credential);
-                    validator.validate(response.getSignature());
-                } catch (ValidationException e) {
-                    throw new SAML2SSOAuthenticatorException("Signature validation failed for Response", e);
-                }
-            }
-        }
+
     }
 
     protected void processSubject(Assertion assertion, AuthenticationContext context) throws

@@ -121,9 +121,9 @@ public class Utils {
         if (x509Credential.getEntityCertificate() == null) {
             throw new SAML2SSOAuthenticatorException("Entity Certificate cannot be null.");
         }
-
-        // default signature algo is RSA_SHA1
-        // default digest algo is SHA1
+        if (x509Credential.getPrivateKey() == null) {
+            throw new SAML2SSOAuthenticatorException("Private Key cannot be null.");
+        }
 
         Signature signature = (Signature) buildXMLObject(Signature.DEFAULT_ELEMENT_NAME);
         signature.setSigningCredential(x509Credential);
@@ -171,7 +171,20 @@ public class Utils {
     }
 
     public static void addSignatureToHTTPQueryString(StringBuilder httpQueryString, String signatureAlgorithmURI,
-                                                     X509Credential credential) throws SAML2SSOAuthenticatorException {
+                                                     X509Credential x509Credential) throws SAML2SSOAuthenticatorException {
+
+        if (httpQueryString != null) {
+            throw new IllegalArgumentException("Request cannot be null.");
+        }
+        if (x509Credential == null) {
+            throw new IllegalArgumentException("X509Credential cannot be null.");
+        }
+        if (x509Credential.getEntityCertificate() == null) {
+            throw new SAML2SSOAuthenticatorException("Entity Certificate cannot be null.");
+        }
+        if (x509Credential.getPrivateKey() == null) {
+            throw new SAML2SSOAuthenticatorException("Private Key cannot be null.");
+        }
 
         try {
 		    if (httpQueryString.charAt(httpQueryString.length() - 1) != '&') {
@@ -180,7 +193,7 @@ public class Utils {
             httpQueryString.append("SigAlg=");
             httpQueryString.append(URLEncoder.encode(signatureAlgorithmURI, StandardCharsets.UTF_8.name()).trim());
 
-            byte[] rawSignature = SigningUtil.signWithURI(credential, signatureAlgorithmURI,
+            byte[] rawSignature = SigningUtil.signWithURI(x509Credential, signatureAlgorithmURI,
                     httpQueryString.toString().getBytes(StandardCharsets.UTF_8.name()));
 
             String base64Signature = Base64.encodeBytes(rawSignature, Base64.DONT_BREAK_LINES);
