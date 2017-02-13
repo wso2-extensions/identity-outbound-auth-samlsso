@@ -18,13 +18,24 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception;
 
-public class SAML2SSOFederatedAuthenticatorException extends IdentityException {
+import org.wso2.carbon.identity.gateway.api.FrameworkRuntimeException;
 
-    public SAML2SSOFederatedAuthenticatorException(String message) {
+public class SAML2SSOAuthenticatorRuntimeException extends FrameworkRuntimeException {
+
+    public SAML2SSOAuthenticatorRuntimeException(String message) {
         super(message);
     }
 
-    public SAML2SSOFederatedAuthenticatorException(String message, Throwable cause) {
-        super(message, cause);
+    public SAML2SSOAuthenticatorRuntimeException(String errorCode, String message) {
+        super(errorCode, message);
     }
+
+    public SAML2SSOAuthenticatorRuntimeException(String errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
+    }
+
+    public SAML2SSOAuthenticatorRuntimeException(String errorCode, Throwable cause) {
+        super(errorCode, cause);
+    }
+
 }

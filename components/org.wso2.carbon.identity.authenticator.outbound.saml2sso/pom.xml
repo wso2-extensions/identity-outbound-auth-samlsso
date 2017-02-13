@@ -31,12 +31,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wso2.carbon.identity.commons</groupId>
-            <artifactId>org.wso2.carbon.identity.base</artifactId>
+            <groupId>org.opensaml</groupId>
+            <artifactId>xmltooling</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.commons</groupId>
-            <artifactId>org.wso2.carbon.identity.util</artifactId>
+            <artifactId>org.wso2.carbon.identity.commons</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.gateway</groupId>
@@ -45,10 +49,6 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.gateway</groupId>
             <artifactId>org.wso2.carbon.identity.gateway</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.orbit.org.opensaml</groupId>
-            <artifactId>opensaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
@@ -85,7 +85,7 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Private-Package>
-                            org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal,
+                            org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal
                         </Private-Package>
                         <Import-Package>
                             javax.crypto,
@@ -94,8 +94,8 @@
                             org.apache.commons.codec.binary; version="${commons-codec.wso2.osgi.version.range}",
                             org.apache.commons.logging; version="${commons-logging.osgi.version.range}",
                             org.apache.xerces.util; resolution:=optional,
-                            org.apache.xml.security; version="${wss4j.xml.security.imp.pkg.version.range}",
-                            org.apache.xml.security.utils; version="${wss4j.xml.security.imp.pkg.version.range}",
+                            org.apache.xml.security; version="${xmltooling.pkg.import.version.range}",
+                            org.apache.xml.security.utils; version="${xmltooling.pkg.import.version.range}",
                             org.joda.time; version="${opensaml2.wso2.osgi.version.range}",
                             org.opensaml.*; version="${opensaml2.wso2.osgi.version.range}",
                             org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
@@ -105,10 +105,21 @@
                         </Import-Package>
                         <Export-Package>
                             !org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal,
+                            org.wso2.carbon.identity.authenticator.outbound.saml2sso;
+                            version="${saml2sso.pkg.export.version}",
                             org.wso2.carbon.identity.authenticator.outbound.saml2sso.*;
-                            version="${identity.authenticator.outbound.saml2sso.package.export.version}"
+                            version="${saml2sso.pkg.export.version}"
                         </Export-Package>
+                        <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
         </plugins>

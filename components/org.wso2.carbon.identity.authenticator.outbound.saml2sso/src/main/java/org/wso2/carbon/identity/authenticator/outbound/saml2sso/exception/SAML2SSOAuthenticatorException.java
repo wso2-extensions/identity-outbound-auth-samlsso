@@ -16,19 +16,26 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.authenticator.outbound.saml2sso.util;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception;
 
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import org.wso2.carbon.identity.gateway.api.FrameworkServerException;
 
-import java.io.IOException;
+public class SAML2SSOAuthenticatorException extends FrameworkServerException {
 
-public class CarbonEntityResolver implements EntityResolver {
-
-    @Override
-    public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-
-        throw new SAXException("SAML request contains invalid elements. Possible XML External Entity (XXE) attack.");
+    public SAML2SSOAuthenticatorException(String message) {
+        super(message);
     }
+
+    public SAML2SSOAuthenticatorException(String errorCode, String message) {
+        super(errorCode, message);
+    }
+
+    public SAML2SSOAuthenticatorException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public SAML2SSOAuthenticatorException(String errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
+    }
+
 }

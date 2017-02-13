@@ -43,12 +43,7 @@
         <dependencies>
             <dependency>
                 <groupId>org.wso2.carbon.identity.commons</groupId>
-                <artifactId>org.wso2.carbon.identity.base</artifactId>
-                <version>${identity.commons.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.identity.commons</groupId>
-                <artifactId>org.wso2.carbon.identity.util</artifactId>
+                <artifactId>org.wso2.carbon.identity.commons</artifactId>
                 <version>${identity.commons.version}</version>
             </dependency>
             <dependency>
@@ -62,70 +57,50 @@
                 <version>${identity.gateway.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.orbit.org.opensaml</groupId>
+                <groupId>org.opensaml</groupId>
+                <artifactId>xmltooling</artifactId>
+                <version>${xmltooling.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.opensaml</groupId>
                 <artifactId>opensaml</artifactId>
-                <version>${opensaml2.wso2.version}</version>
+                <version>${opensaml.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.google.guava.wso2</groupId>
-                <artifactId>guava</artifactId>
-                <version>${google.guava.wso2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <scope>test</scope>
-                <version>${junit.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${org.slf4j.verison}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>${commons-logging.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-io.wso2</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${commons-io.wso2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-lang.wso2</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons-lang.wso2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-codec.wso2</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${commons-codec.version}</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>junit</groupId>-->
+                <!--<artifactId>junit</artifactId>-->
+                <!--<scope>test</scope>-->
+                <!--<version>${junit.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>log4j</groupId>-->
+                <!--<artifactId>log4j</artifactId>-->
+                <!--<version>${log4j.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.slf4j</groupId>-->
+                <!--<artifactId>slf4j-log4j12</artifactId>-->
+                <!--<version>${org.slf4j.verison}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>commons-logging</groupId>-->
+                <!--<artifactId>commons-logging</artifactId>-->
+                <!--<version>${commons-logging.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>commons-io.wso2</groupId>-->
+                <!--<artifactId>commons-io</artifactId>-->
+                <!--<version>${commons-io.wso2.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>commons-lang.wso2</groupId>-->
+                <!--<artifactId>commons-lang</artifactId>-->
+                <!--<version>${commons-lang.wso2.version}</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>commons-collections.wso2</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>${commons-collections.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents.wso2</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${httpcore.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${httpcomponents-httpclient.wso2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-httpclient.wso2</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>${commons-httpclient.wso2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
@@ -215,11 +190,15 @@
 
     <properties>
 
-        <identity.commons.version>0.1.13</identity.commons.version>
-        <identity.gateway.version>6-SNAPSHOT</identity.gateway.version>
+        <saml2sso.pkg.export.version>${project.version}</saml2sso.pkg.export.version>
 
-        <opensaml.version>2.6.4</opensaml.version>
-        <opensaml2.wso2.version>2.6.4.wso2v3</opensaml2.wso2.version>
+        <identity.commons.version>0.1.14</identity.commons.version>
+        <identity.gateway.version>1.0.0-SNAPSHOT</identity.gateway.version>
+
+        <xmltooling.version>1.4.4</xmltooling.version>
+        <xmltooling.pkg.import.version.range>[1.4.4,2.0.0)</xmltooling.pkg.import.version.range>
+        <opensaml.version>2.6.6</opensaml.version>
+        <opensaml2.wso2.version>2.6.6.wso2v1</opensaml2.wso2.version>
         <opensaml2.wso2.osgi.version.range>[2.4.0,3.0.0)</opensaml2.wso2.osgi.version.range>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -292,6 +271,8 @@
 
         <maven.buildnumber.plugin.version>1.4</maven.buildnumber.plugin.version>
         <project.scm.id>my-scm-server</project.scm.id>
+        <checkstyle.skip>true</checkstyle.skip>
+        <findbugs.skip>true</findbugs.skip>
     </properties>
 
 
