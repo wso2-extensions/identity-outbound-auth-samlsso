@@ -210,7 +210,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         Issuer issuer = issuerBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer", "samlp");
 
         // Get SP_ENTITY_ID from Harsha's model
-        String spEntityId = null;
+        String spEntityId = "carbonServer";
 
         DateTime issueInstant = new DateTime();
 
@@ -426,7 +426,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                             boolean audienceFound = false;
                             for (Audience audience : audienceRestriction.getAudiences()) {
                                 // Get spEntityId from config
-                                String spEntityId = null;
+                                String spEntityId = "carbonServer";
                                 if (spEntityId.equals(audience.getAudienceURI())) {
                                     audienceFound = true;
                                     break;
