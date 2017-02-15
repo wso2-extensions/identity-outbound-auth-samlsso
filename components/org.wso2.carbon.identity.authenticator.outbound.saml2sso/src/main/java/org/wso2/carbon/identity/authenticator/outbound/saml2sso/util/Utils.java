@@ -336,8 +336,8 @@ public class Utils {
     public static String marshall(XMLObject xmlObject) throws SAML2SSOAuthenticatorException {
         try {
 
-            System.setProperty("javax.xml.parsers.DocumentBuilderFactory",
-                    "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
+//            System.setProperty("javax.xml.parsers.DocumentBuilderFactory",
+//                    "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
 
             MarshallerFactory marshallerFactory = org.opensaml.xml.Configuration.getMarshallerFactory();
             Marshaller marshaller = marshallerFactory.getMarshaller(xmlObject);
