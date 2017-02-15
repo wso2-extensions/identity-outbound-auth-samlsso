@@ -88,6 +88,7 @@ import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import javax.crypto.SecretKey;
@@ -355,7 +356,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
                 validateSignature(assertion, response, getIdentityProviderConfig(context));
 
-                processAttributeStatements(assertion, context);
+                processAttributeStatements(assertion, getIdentityProviderConfig(context), context);
 
             }
         } catch (SAML2SSOAuthenticatorException e) {
@@ -498,9 +499,9 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         context.addParameter("Subject", federatedUser);
     }
 
-    protected void processAttributeStatements(Assertion assertion, AuthenticationContext context) throws
-                                                                                                  SAML2SSOAuthenticatorException,
-                                                                                                  AuthenticationHandlerException {
+    protected void processAttributeStatements(Assertion assertion, IdentityProviderConfig identityProviderConfig,
+                                              AuthenticationContext context) throws SAML2SSOAuthenticatorException,
+                                                                                    AuthenticationHandlerException {
 
         Set<Claim> claims = new HashSet();
         if (assertion != null) {
@@ -526,18 +527,20 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             }
         }
 
+        Set<Claim> mappedRootClaims = getMappedRootClaims(claims, getAttributeProfile(identityProviderConfig),
+                                                  getClaimDialectURI(identityProviderConfig));
         FederatedUser federatedUser = (FederatedUser) context.getParameter("Subject");
-        federatedUser.setUserClaims(claims);
+        federatedUser.setUserClaims(mappedRootClaims);
         if (StringUtils.isNotBlank(getUsernameClaimURI(getIdentityProviderConfig(context)))) {
             boolean isUsernameExists = false;
-            Iterator<Claim> it = claims.iterator();
+            Iterator<Claim> it = mappedRootClaims.iterator();
             while (it.hasNext()) {
                 Claim claim = it.next();
                 if (claim.getClaimUri().equals(getUsernameClaimURI(getIdentityProviderConfig(context)))) {
                     isUsernameExists = true;
-                    claims.remove(claim);
+                    mappedRootClaims.remove(claim);
                     String value = claim.getValue();
-                    FederatedUser federatedUser2 = new FederatedUser(value, claims);
+                    FederatedUser federatedUser2 = new FederatedUser(value, mappedRootClaims);
                     context.getSequenceContext().getCurrentStepContext().setUser(federatedUser2);
                 }
             }
@@ -703,6 +706,14 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             }
         }
         return properties;
+    }
+
+    protected Optional<String> getClaimDialectURI(IdentityProviderConfig identityProviderConfig) {
+        return Optional.of(identityProviderConfig.getIdpMetaData().getClaimConfig().getDialectUri());
+    }
+
+    protected Optional<String> getAttributeProfile(IdentityProviderConfig identityProviderConfig) {
+        return Optional.of(identityProviderConfig.getIdpMetaData().getClaimConfig().getProfile());
     }
 
 }
