@@ -19,44 +19,57 @@
     <parent>
         <groupId>org.wso2.carbon.identity.authenticator.outbound.saml2sso</groupId>
         <artifactId>identity-auth-outbound-saml2sso</artifactId>
-        <version>6-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <version>6-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>org.wso2.carbon.identity.authenticator.outbound.saml2sso</artifactId>
     <packaging>bundle</packaging>
     <name>WSO2 Carbon - SAML2SSO Outbound Authenticator Component</name>
+    <url>http://wso2.com</url>
 
     <dependencies>
         <dependency>
-            <groupId>org.opensaml</groupId>
-            <artifactId>xmltooling</artifactId>
+            <groupId>org.wso2.orbit.commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.opensaml</groupId>
-            <artifactId>opensaml</artifactId>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.identity.commons</groupId>
-            <artifactId>org.wso2.carbon.identity.commons</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.gateway</groupId>
-            <artifactId>org.wso2.carbon.identity.gateway.api</artifactId>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.gateway</groupId>
             <artifactId>org.wso2.carbon.identity.gateway</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
-            <artifactId>encoder</artifactId>
+            <groupId>commons-lang.wso2</groupId>
+            <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-collections.wso2</groupId>
-            <artifactId>commons-collections</artifactId>
+            <groupId>org.wso2.carbon.identity.commons</groupId>
+            <artifactId>org.wso2.carbon.identity.commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.org.opensaml</groupId>
+            <artifactId>opensaml</artifactId>
+            <version>2.6.4.wso2v3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xml-security</groupId>
+            <artifactId>xmlsec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
         </dependency>
     </dependencies>
 
@@ -65,27 +78,15 @@
         <export.package>
             !org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal,
             org.wso2.carbon.identity.authenticator.outbound.saml2sso;
-            version="${saml2sso.pkg.export.version}",
+            version="${project.version}",
             org.wso2.carbon.identity.authenticator.outbound.saml2sso.*;
-            version="${saml2sso.pkg.export.version}"
+            version="${project.version}"
         </export.package>
         <import.package>
-            javax.crypto,
-            javax.xml.namespace,
-            javax.xml.parsers; version="${javax.xml.parsers.import.pkg.version}",
-            org.apache.commons.codec.binary; version="${commons-codec.wso2.osgi.version.range}",
-            org.apache.commons.logging; version="${commons-logging.osgi.version.range}",
-            org.apache.xerces.util; resolution:=optional,
-            org.apache.xml.security; version="${xmltooling.pkg.import.version.range}",
-            org.apache.xml.security.utils; version="${xmltooling.pkg.import.version.range}",
-            org.joda.time; version="${opensaml2.wso2.osgi.version.range}",
-            org.opensaml.*; version="${opensaml2.wso2.osgi.version.range}",
-            org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
-            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
-            org.w3c.dom.*,
-            org.xml.sax,
-            org.apache.xml.security,
-            org.apache.xml.security.*
+            org.osgi.framework.*;version="[1.8.0, 2.0.0)",
+            org.wso2.carbon.identity.gateway.*; version="${carbon.identity.gateway.import.version.range}",
+            org.apache.xml.security.utils.*,
+            org.apache.xerces.util.*
         </import.package>
         <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>

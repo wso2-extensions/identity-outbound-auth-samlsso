@@ -20,8 +20,6 @@ package org.wso2.carbon.identity.authenticator.outbound.saml2sso.authenticator;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
@@ -59,6 +57,8 @@ import org.opensaml.xml.security.x509.X509Credential;
 import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.util.Base64;
 import org.opensaml.xml.validation.ValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
@@ -82,6 +82,7 @@ import org.wso2.carbon.identity.gateway.processor.handler.authentication.Authent
 import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.AuthenticationResponse;
 import org.wso2.carbon.identity.mgt.claim.Claim;
 
+import javax.crypto.SecretKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -91,15 +92,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import javax.crypto.SecretKey;
 
 /**
  * SAML2 SSO Outbound Authenticator.
  */
 public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator implements
-                                                                            FederatedApplicationAuthenticator {
+        FederatedApplicationAuthenticator {
 
-    private static Log log = LogFactory.getLog(SAML2SSOAuthenticator.class);
+    private static Logger log = LoggerFactory.getLogger(SAML2SSOAuthenticator.class);
 
     @Override
     public String getName() {
@@ -216,7 +216,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
         AuthnRequestBuilder authRequestBuilder = new AuthnRequestBuilder();
         AuthnRequest authRequest = authRequestBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:protocol",
-                                                                  "AuthnRequest", "samlp");
+                "AuthnRequest", "samlp");
         authRequest.setForceAuthn(isForce);
         authRequest.setIsPassive(isPassive);
         authRequest.setIssueInstant(issueInstant);
@@ -281,7 +281,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         if (StringUtils.isNotBlank(includeAuthnContext) && SAML2SSOConstants.AS_REQUEST.equalsIgnoreCase
                 (includeAuthnContext)) {
             AuthnRequest inboundAuthnRequest = (AuthnRequest) context.getParameter(SAML2SSOConstants
-                                                                                           .INBOUND_AUTHN_REQUEST);
+                    .INBOUND_AUTHN_REQUEST);
             if (inboundAuthnRequest != null) {
                 RequestedAuthnContext incomingRequestedAuthnContext = inboundAuthnRequest.getRequestedAuthnContext();
                 if (incomingRequestedAuthnContext != null) {
@@ -297,14 +297,14 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
             AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
                     .buildObject(SAMLConstants.SAML20_NS,
-                                 AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
-                                 SAMLConstants.SAML20_PREFIX);
+                            AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
+                            SAMLConstants.SAML20_PREFIX);
 
             // Get AuthnContextClass from Harsha's model
             String authnContext = null;
             if (StringUtils.isNotBlank(authnContext)) {
                 authnContextClassRef.setAuthnContextClassRef(authnContext);
-            }  else {
+            } else {
                 authnContextClassRef.setAuthnContextClassRef(AuthnContext.PPT_AUTHN_CTX);
             }
 
@@ -368,8 +368,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected Assertion decryptAssertion(Response response, AuthenticationContext context) throws
-                                                                                           SAML2SSOAuthenticatorException,
-                                                                                           AuthenticationHandlerException {
+            SAML2SSOAuthenticatorException,
+            AuthenticationHandlerException {
 
         Assertion assertion = null;
         if (isAssertionEncryptionEnabled(getIdentityProviderConfig(context))) {
@@ -402,10 +402,10 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         }
         if (assertion == null) {
             if (response.getStatus() != null &&
-                response.getStatus().getStatusCode() != null &&
-                response.getStatus().getStatusCode().getValue().equals(StatusCode.RESPONDER_URI) &&
-                response.getStatus().getStatusCode().getStatusCode() != null &&
-                response.getStatus().getStatusCode().getStatusCode().getValue().equals(StatusCode.NO_PASSIVE_URI)) {
+                    response.getStatus().getStatusCode() != null &&
+                    response.getStatus().getStatusCode().getValue().equals(StatusCode.RESPONDER_URI) &&
+                    response.getStatus().getStatusCode().getStatusCode() != null &&
+                    response.getStatus().getStatusCode().getStatusCode().getValue().equals(StatusCode.NO_PASSIVE_URI)) {
                 return null;
             }
             throw new SAML2SSOAuthenticatorException("Cannot find Assertion in SAMLResponse");
@@ -450,8 +450,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     protected void validateSignature(Assertion assertion, Response response,
                                      IdentityProviderConfig identityProviderConfig) throws
-                                                                                    SAML2SSOAuthenticatorException,
-                                                                                    AuthenticationHandlerException {
+            SAML2SSOAuthenticatorException,
+            AuthenticationHandlerException {
 
         if (assertion.getSignature() == null) {
             throw new SAML2SSOAuthenticatorException("Signature element not found in Assertion.");
@@ -466,7 +466,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 if (isAuthnResponseSigned(identityProviderConfig)) {
                     if (response.getSignature() == null) {
                         throw new SAML2SSOAuthenticatorException("SAMLResponse signing is enabled, but signature element " +
-                                                                 "not found in Response element.");
+                                "not found in Response element.");
                     } else {
                         try {
                             validator = new SignatureValidator(credential);
@@ -484,7 +484,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected void processSubject(Assertion assertion, AuthenticationContext context) throws
-                                                                                      SAML2SSOAuthenticatorException {
+            SAML2SSOAuthenticatorException {
 
         String subject = null;
         if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
@@ -501,7 +501,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     protected void processAttributeStatements(Assertion assertion, IdentityProviderConfig identityProviderConfig,
                                               AuthenticationContext context) throws SAML2SSOAuthenticatorException,
-                                                                                    AuthenticationHandlerException {
+            AuthenticationHandlerException {
 
         Set<Claim> claims = new HashSet();
         if (assertion != null) {
@@ -517,7 +517,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                                 String attributeValue = value.getTextContent();
                                 if (StringUtils.isNotBlank(attributeValue)) {
                                     claims.add(new Claim(getClaimDialectURI(), attribute.getName(),
-                                                             attributeValue));
+                                            attributeValue));
                                 }
                             }
                         }
@@ -528,7 +528,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         }
 
         Set<Claim> mappedRootClaims = getMappedRootClaims(claims, getAttributeProfile(identityProviderConfig),
-                                                  getClaimDialectURI(identityProviderConfig));
+                getClaimDialectURI(identityProviderConfig));
         FederatedUser federatedUser = (FederatedUser) context.getParameter("Subject");
         federatedUser.setUserClaims(mappedRootClaims);
         if (StringUtils.isNotBlank(getUsernameClaimURI(getIdentityProviderConfig(context)))) {
@@ -554,8 +554,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             throws AuthenticationHandlerException {
 
         return context.getSequence().getIdentityProvider(context.getSequenceContext().getCurrentStep(),
-                                                         context.getSequenceContext().getCurrentStepContext()
-                                                                 .getIdentityProviderName())
+                context.getSequenceContext().getCurrentStepContext()
+                        .getIdentityProviderName())
                 .getIdentityProviderConfig();
     }
 
@@ -563,7 +563,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
 
         String requestBinding = (String) getAuthenticatorConfigProperties(identityProviderConfig).get(SAML2SSOConstants
-                                                                                              .REQUEST_BINDING);
+                .REQUEST_BINDING);
         boolean isPost = true;
         if (SAML2SSOConstants.GET.equals(requestBinding)) {
             isPost = false;
@@ -579,7 +579,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     public boolean isForce(IdentityProviderConfig identityProviderConfig, AuthenticationContext context) {
 
         String force = (String) getAuthenticatorConfigProperties(identityProviderConfig).get(SAML2SSOConstants
-                                                                                                              .FORCE);
+                .FORCE);
         boolean isForce = true;
         if (!Boolean.parseBoolean(force)) {
             isForce = false;
@@ -597,7 +597,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     public boolean isPassive(IdentityProviderConfig identityProviderConfig, AuthenticationContext context) {
 
         String passive = (String) getAuthenticatorConfigProperties(identityProviderConfig).get(SAML2SSOConstants
-                                                                                                     .PASSIVE);
+                .PASSIVE);
         boolean isPassive = true;
         if (!Boolean.parseBoolean(passive)) {
             isPassive = false;
@@ -700,7 +700,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         Properties properties = new Properties();
         List<AuthenticatorConfig> configs = identityProviderConfig.getAuthenticationConfig()
                 .getAuthenticatorConfigs();
-        for (AuthenticatorConfig config:configs) {
+        for (AuthenticatorConfig config : configs) {
             if (getName().equals(config.getName())) {
                 properties = config.getProperties();
             }

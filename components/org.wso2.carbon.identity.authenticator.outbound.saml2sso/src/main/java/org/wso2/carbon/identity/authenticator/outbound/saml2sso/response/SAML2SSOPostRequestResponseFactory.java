@@ -19,9 +19,9 @@
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.response;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.owasp.encoder.Encode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Utils;
@@ -33,7 +33,7 @@ import org.wso2.carbon.identity.gateway.api.response.IdentityResponse;
 
 public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFactory {
 
-    private static Log log = LogFactory.getLog(SAML2SSOPostRequestResponseFactory.class);
+    private static Logger log = LoggerFactory.getLogger(SAML2SSOPostRequestResponseFactory.class);
 
     @Override
     public String getName() {

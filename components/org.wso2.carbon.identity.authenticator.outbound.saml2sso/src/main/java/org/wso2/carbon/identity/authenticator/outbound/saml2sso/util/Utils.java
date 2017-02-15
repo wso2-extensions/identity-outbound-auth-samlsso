@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.util;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.xerces.impl.Constants;
 import org.apache.xerces.util.SecurityManager;
 import org.apache.xml.security.c14n.Canonicalizer;
@@ -45,6 +43,8 @@ import org.opensaml.xml.signature.Signer;
 import org.opensaml.xml.signature.X509Data;
 import org.opensaml.xml.util.Base64;
 import org.opensaml.xml.util.XMLHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
@@ -55,6 +55,11 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2S
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -72,23 +77,18 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 public class Utils {
 
     private static final String SECURITY_MANAGER_PROPERTY = Constants.XERCES_PROPERTY_PREFIX +
-                                                            Constants.SECURITY_MANAGER_PROPERTY;
+            Constants.SECURITY_MANAGER_PROPERTY;
     private static final int ENTITY_EXPANSION_LIMIT = 0;
 
     private Utils() {
 
     }
 
-    private static Log log = LogFactory.getLog(Utils.class);
+    private static Logger log = LoggerFactory.getLogger(Utils.class);
 
     /**
      * Generates a unique Id for Authentication Requests.
@@ -106,9 +106,9 @@ public class Utils {
     }
 
     public static void setSignature(RequestAbstractType request, String signatureAlgorithm,
-            String digestAlgorithm, boolean includeCert, X509Credential x509Credential)
+                                    String digestAlgorithm, boolean includeCert, X509Credential x509Credential)
             throws SAML2SSOAuthenticatorException {
-        
+
         if (request == null) {
             throw new IllegalArgumentException("Request cannot be null.");
         }
@@ -140,7 +140,7 @@ public class Utils {
                 value = Base64.encodeBytes(x509Credential.getEntityCertificate().getEncoded());
             } catch (CertificateEncodingException e) {
                 throw new SAML2SSOAuthenticatorException("Error while encoding the certificate to include in the " +
-                                                         "signature", e);
+                        "signature", e);
             }
             cert.setValue(value);
             data.getX509Certificates().add(cert);
@@ -150,8 +150,8 @@ public class Utils {
 
         request.setSignature(signature);
         ((SAMLObjectContentReference) signature.getContentReferences().get(0))
-              .setDigestAlgorithm(digestAlgorithm);
-        
+                .setDigestAlgorithm(digestAlgorithm);
+
         List<Signature> signatureList = new ArrayList<Signature>();
         signatureList.add(signature);
 
@@ -187,7 +187,7 @@ public class Utils {
         }
 
         try {
-		    if (httpQueryString.charAt(httpQueryString.length() - 1) != '&') {
+            if (httpQueryString.charAt(httpQueryString.length() - 1) != '&') {
                 httpQueryString.append('&');
             }
             httpQueryString.append("SigAlg=");
@@ -209,7 +209,7 @@ public class Utils {
             throw new SAML2SSOAuthenticatorException("Unable to sign query string", e);
         } catch (UnsupportedEncodingException e) {
             throw new SAML2SSOAuthenticatorException("Unsupported encoding algorithm. UTF-8 encoding is required to " +
-                                                     "be supported by all JVMs", e);
+                    "be supported by all JVMs", e);
         }
     }
 
@@ -241,7 +241,7 @@ public class Utils {
 
             /* Encoding the compressed message */
             String encodedRequestMessage = Base64.encodeBytes(byteArrayOutputStream
-                                                                      .toByteArray(), Base64.DONT_BREAK_LINES);
+                    .toByteArray(), Base64.DONT_BREAK_LINES);
 
             byteArrayOutputStream.write(byteArrayOutputStream.toByteArray());
             byteArrayOutputStream.toString();
@@ -337,7 +337,7 @@ public class Utils {
         try {
 
             System.setProperty("javax.xml.parsers.DocumentBuilderFactory",
-                               "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
+                    "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
 
             MarshallerFactory marshallerFactory = org.opensaml.xml.Configuration.getMarshallerFactory();
             Marshaller marshaller = marshallerFactory.getMarshaller(xmlObject);
