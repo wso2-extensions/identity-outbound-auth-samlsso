@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.authenticator.outbound.saml2sso.response;
 
 import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.xml.security.x509.X509Credential;
-import org.wso2.carbon.identity.gateway.api.IdentityResponse;
+import org.wso2.carbon.identity.gateway.api.response.IdentityResponse;
 
 // can we extend this from SAML2SSORedirectRequestResponse ?
 public class SAML2SSOPostRequestResponse extends IdentityResponse {

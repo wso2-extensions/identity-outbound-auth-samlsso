@@ -26,10 +26,10 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2S
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Utils;
 import org.wso2.carbon.identity.common.base.Constants;
-import org.wso2.carbon.identity.gateway.api.FrameworkServerException;
-import org.wso2.carbon.identity.gateway.api.HttpIdentityResponse;
-import org.wso2.carbon.identity.gateway.api.HttpIdentityResponseFactory;
-import org.wso2.carbon.identity.gateway.api.IdentityResponse;
+import org.wso2.carbon.identity.gateway.api.exception.FrameworkServerException;
+import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponse;
+import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponseFactory;
+import org.wso2.carbon.identity.gateway.api.response.IdentityResponse;
 
 public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFactory {
 
