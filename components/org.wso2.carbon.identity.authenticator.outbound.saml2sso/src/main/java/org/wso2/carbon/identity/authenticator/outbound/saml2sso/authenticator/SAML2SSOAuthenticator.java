@@ -82,7 +82,6 @@ import org.wso2.carbon.identity.gateway.processor.handler.authentication.Authent
 import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.AuthenticationResponse;
 import org.wso2.carbon.identity.mgt.claim.Claim;
 
-import javax.crypto.SecretKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -92,6 +91,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import javax.crypto.SecretKey;
 
 /**
  * SAML2 SSO Outbound Authenticator.
@@ -178,7 +178,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         String saml2SSOUrl = getSAML2SSOUrl(getIdentityProviderConfig(context));
         builder.setSaml2SSOUrl(saml2SSOUrl);
         builder.setSamlRequest(buildAuthnRequest(saml2SSOUrl, isForce, isPassive, context));
-        builder.setRelayState(context.getInitialAuthenticationRequest().getRequestDataKey());
+        builder.setRelayState(context.getInitialAuthenticationRequest().getRequestKey());
         builder.setAuthnRequestSigned(isAuthnRequestSigned(getIdentityProviderConfig(context)));
         builder.setIdPCredential(Utils.getServerCredentials());
         builder.setSigAlg(getSignatureAlgorithm(getIdentityProviderConfig(context)));
@@ -196,7 +196,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         String saml2SSOUrl = getSAML2SSOUrl(getIdentityProviderConfig(context));
         builder.setSaml2SSOUrl(saml2SSOUrl);
         builder.setSamlRequest(buildAuthnRequest(saml2SSOUrl, isForce, isPassive, context));
-        builder.setRelayState(context.getInitialAuthenticationRequest().getRequestDataKey());
+        builder.setRelayState(context.getInitialAuthenticationRequest().getRequestKey());
         builder.setAuthnRequestSigned(isAuthnRequestSigned(getIdentityProviderConfig(context)));
         builder.setIdPCredential(Utils.getServerCredentials());
         builder.setSigAlg(getSignatureAlgorithm(getIdentityProviderConfig(context)));

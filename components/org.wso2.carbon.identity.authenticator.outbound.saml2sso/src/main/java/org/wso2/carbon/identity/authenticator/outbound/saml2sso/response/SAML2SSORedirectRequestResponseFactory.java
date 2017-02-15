@@ -56,9 +56,7 @@ public class SAML2SSORedirectRequestResponseFactory extends HttpIdentityResponse
     }
 
     @Override
-    public HttpIdentityResponse.HttpIdentityResponseBuilder create(
-            HttpIdentityResponse.HttpIdentityResponseBuilder builder,
-            IdentityResponse identityResponse) {
+    public void create(HttpIdentityResponse.HttpIdentityResponseBuilder builder, IdentityResponse identityResponse) {
 
         SAML2SSORedirectRequestResponse samlResponse = (SAML2SSORedirectRequestResponse) identityResponse;
 
@@ -92,6 +90,5 @@ public class SAML2SSORedirectRequestResponseFactory extends HttpIdentityResponse
 
         builder.setStatusCode(302);
         builder.setRedirectURL(saml2SSOUrl);
-        return builder;
     }
 }

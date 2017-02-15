@@ -57,9 +57,7 @@ public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFact
     }
 
     @Override
-    public HttpIdentityResponse.HttpIdentityResponseBuilder create(
-            HttpIdentityResponse.HttpIdentityResponseBuilder builder,
-            IdentityResponse identityResponse) {
+    public void create(HttpIdentityResponse.HttpIdentityResponseBuilder builder, IdentityResponse identityResponse) {
 
         SAML2SSOPostRequestResponse saml2Response = (SAML2SSOPostRequestResponse) identityResponse;
         builder.setStatusCode(200);
@@ -78,7 +76,6 @@ public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFact
         }
         String body = buildPostPage(saml2Response.getSaml2SSOUrl(), authnRequest, saml2Response.getRelayState());
         builder.setBody(body);
-        return builder;
     }
 
     protected void signSAMLResponse(SAML2SSOPostRequestResponse response) throws SAML2SSOAuthenticatorException {
