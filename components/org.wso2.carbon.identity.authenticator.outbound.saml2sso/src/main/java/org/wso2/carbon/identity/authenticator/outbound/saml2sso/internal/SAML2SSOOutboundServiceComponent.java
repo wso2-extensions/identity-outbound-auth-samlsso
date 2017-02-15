@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.common.util.IdentityUtilService;
 import org.wso2.carbon.identity.gateway.api.request.HttpIdentityRequestFactory;
 import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponseFactory;
 import org.wso2.carbon.identity.gateway.processor.authenticator.AbstractApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.processor.authenticator.ApplicationAuthenticator;
 
 @Component(
         name = "outbound.saml2sso.dscomponent",
@@ -56,7 +57,7 @@ public class SAML2SSOOutboundServiceComponent {
         try {
             doBootstrap();
             SAML2SSOAuthenticatorDataHolder.getInstance().setCredential(Utils.getServerCredentials());
-            bundleContext.registerService(AbstractApplicationAuthenticator.class.getName(),
+            bundleContext.registerService(ApplicationAuthenticator.class.getName(),
                                           new SAML2SSOAuthenticator(), null);
             bundleContext.registerService(AbstractApplicationAuthenticator.class,
                                           new SAML2SSOAuthenticator(), null);
