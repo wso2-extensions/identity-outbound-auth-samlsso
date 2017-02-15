@@ -60,68 +60,34 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-scr-plugin</artifactId>
-                <version>1.7.2</version>
-                <executions>
-                    <execution>
-                        <id>generate-scr-scrdescriptor</id>
-                        <goals>
-                            <goal>scr</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.4.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Private-Package>
-                            org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal
-                        </Private-Package>
-                        <!--Import-Package>
-                            javax.crypto,
-                            javax.xml.namespace,
-                            javax.xml.parsers; version="${javax.xml.parsers.import.pkg.version}",
-                            org.apache.commons.codec.binary; version="${commons-codec.wso2.osgi.version.range}",
-                            org.apache.commons.logging; version="${commons-logging.osgi.version.range}",
-                            org.apache.xerces.util; resolution:=optional,
-                            org.apache.xml.security; version="${xmltooling.pkg.import.version.range}",
-                            org.apache.xml.security.utils; version="${xmltooling.pkg.import.version.range}",
-                            org.joda.time; version="${opensaml2.wso2.osgi.version.range}",
-                            org.opensaml.*; version="${opensaml2.wso2.osgi.version.range}",
-                            org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
-                            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
-                            org.w3c.dom.*,
-                            org.xml.sax
-                        </Import-Package-->
-                        <Export-Package>
-                            !org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal,
-                            org.wso2.carbon.identity.authenticator.outbound.saml2sso;
-                            version="${saml2sso.pkg.export.version}",
-                            org.wso2.carbon.identity.authenticator.outbound.saml2sso.*;
-                            version="${saml2sso.pkg.export.version}"
-                        </Export-Package>
-                        <DynamicImport-Package>*</DynamicImport-Package>
-                    </instructions>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <properties>
+        <private.package>org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal</private.package>
+        <export.package>
+            !org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal,
+            org.wso2.carbon.identity.authenticator.outbound.saml2sso;
+            version="${saml2sso.pkg.export.version}",
+            org.wso2.carbon.identity.authenticator.outbound.saml2sso.*;
+            version="${saml2sso.pkg.export.version}"
+        </export.package>
+        <import.package>
+            javax.crypto,
+            javax.xml.namespace,
+            javax.xml.parsers; version="${javax.xml.parsers.import.pkg.version}",
+            org.apache.commons.codec.binary; version="${commons-codec.wso2.osgi.version.range}",
+            org.apache.commons.logging; version="${commons-logging.osgi.version.range}",
+            org.apache.xerces.util; resolution:=optional,
+            org.apache.xml.security; version="${xmltooling.pkg.import.version.range}",
+            org.apache.xml.security.utils; version="${xmltooling.pkg.import.version.range}",
+            org.joda.time; version="${opensaml2.wso2.osgi.version.range}",
+            org.opensaml.*; version="${opensaml2.wso2.osgi.version.range}",
+            org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
+            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
+            org.w3c.dom.*,
+            org.xml.sax
+        </import.package>
+        <checkstyle.skip>true</checkstyle.skip>
+        <findbugs.skip>true</findbugs.skip>
+        <dynamic.import.package>*</dynamic.import.package>
+        <carbon.identity.gateway.import.version.range>[1.0.0, 2.0.0)</carbon.identity.gateway.import.version.range>
+    </properties>
 </project>
