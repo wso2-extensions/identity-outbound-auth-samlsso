@@ -83,7 +83,9 @@
             org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
             org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
             org.w3c.dom.*,
-            org.xml.sax
+            org.xml.sax,
+            org.apache.xml.security,
+            org.apache.xml.security.*
         </import.package>
         <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>
