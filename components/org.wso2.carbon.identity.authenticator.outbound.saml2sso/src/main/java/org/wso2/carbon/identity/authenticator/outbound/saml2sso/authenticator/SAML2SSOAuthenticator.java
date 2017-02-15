@@ -225,13 +225,14 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         authRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
 
         String acsUrl = null;
-        try {
-            acsUrl = SAML2SSOAuthenticatorDataHolder.getInstance().getIdentityUtilService().getURLUtils()
-                    .getServerURL("", true, true);
-        } catch (IdentityException e) {
-            // fix IdentityUtilService.getURLUtils() to throw runtime exception or not throw exceptions are all
-            throw new SAML2SSOAuthenticatorRuntimeException("Error while getting URLUtils.", e);
-        }
+//        try {
+//            acsUrl = SAML2SSOAuthenticatorDataHolder.getInstance().getIdentityUtilService().getURLUtils()
+//                    .getServerURL("", true, true);
+            acsUrl = "https://localhost:9292/gateway";
+//        } catch (IdentityException e) {
+//            // fix IdentityUtilService.getURLUtils() to throw runtime exception or not throw exceptions are all
+//            throw new SAML2SSOAuthenticatorRuntimeException("Error while getting URLUtils.", e);
+//        }
 
         authRequest.setAssertionConsumerServiceURL(acsUrl);
         authRequest.setIssuer(issuer);

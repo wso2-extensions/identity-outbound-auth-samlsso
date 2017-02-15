@@ -115,29 +115,22 @@ public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFact
 
         } else {
 
-            /*
-            Need to convert this for MSS4J
-
-            out.println("<html>");
-            out.println("<body>");
-            out.println("<p>You are now redirected to " + Encode.forHtml(saml2SSOUrl));
-            out.println(" If the redirection fails, please click the post button.</p>");
-            out.println("<form method='post' action='" + Encode.forHtmlAttribute(saml2SSOUrl) + "'>");
-            out.println("<p>");
-
-            out.println("<input type='hidden' name='SAMLRequest' value='" + samlRequest + "'>");
-            out.println("<input type='hidden' name='RelayState' value='" + relayState + "'>");
-
-
-            out.println("<button type='submit'>POST</button>");
-            out.println("</p>");
-            out.println("</form>");
-            out.println("<script type='text/javascript'>");
-            out.println("document.forms[0].submit();");
-            out.println("</script>");
-            out.println("</body>");
-            out.println("</html>");
-            */
+            postPage = "<html>\n" +
+                       "\t<body>\n" +
+                       "        \t<p>You are now redirected to $url \n" +
+                       "        \tIf the redirection fails, please click the post button.</p>\n" +
+                       "\n" +
+                       "        \t<form method='post' action='$url'>\n" +
+                       "       \t\t\t<p>\n" +
+                       "                    <!--$params-->\n" +
+                       "        \t\t\t<button type='submit'>POST</button>\n" +
+                       "       \t\t\t</p>\n" +
+                       "       \t\t</form>\n" +
+                       "       \t\t<script type='text/javascript'>\n" +
+                       "        \t\tdocument.forms[0].submit();\n" +
+                       "        \t</script>\n" +
+                       "        </body>\n" +
+                       "</html>";
         }
         return postPage;
     }
