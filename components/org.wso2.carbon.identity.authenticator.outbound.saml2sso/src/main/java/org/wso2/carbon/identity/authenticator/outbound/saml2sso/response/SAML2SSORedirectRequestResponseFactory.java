@@ -91,4 +91,8 @@ public class SAML2SSORedirectRequestResponseFactory extends HttpIdentityResponse
         builder.setStatusCode(302);
         builder.setRedirectURL(saml2SSOUrl);
     }
+
+    public int getPriority() {
+        return 300;
+    }
 }

@@ -55,4 +55,8 @@ public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSR
         builder.setBody(exception.getMessage());
         return builder;
     }
+
+    public int getPriority() {
+        return 300;
+    }
 }

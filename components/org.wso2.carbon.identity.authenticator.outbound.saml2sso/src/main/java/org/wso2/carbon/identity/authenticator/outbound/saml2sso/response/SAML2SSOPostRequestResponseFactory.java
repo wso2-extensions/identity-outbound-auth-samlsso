@@ -141,4 +141,8 @@ public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFact
         }
         return postPage;
     }
+
+    public int getPriority() {
+        return 400;
+    }
 }
