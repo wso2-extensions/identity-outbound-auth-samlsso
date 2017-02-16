@@ -211,6 +211,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
         // Get SP_ENTITY_ID from Harsha's model
         String spEntityId = "carbonServer";
+        issuer.setValue(spEntityId);
 
         DateTime issueInstant = new DateTime();
 
