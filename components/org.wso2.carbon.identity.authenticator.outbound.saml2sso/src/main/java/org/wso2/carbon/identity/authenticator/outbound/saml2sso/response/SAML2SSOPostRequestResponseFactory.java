@@ -96,41 +96,35 @@ public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFact
 
     protected String buildPostPage(String saml2SSOUrl, String samlRequest, String relayState) {
 
-        String postPage = null;
         // be able to read post page from config
-        if (postPage != null) {
+        String postPage = postPage = "<html>\n" +
+                                     "\t<body>\n" +
+                                     "        \t<p>You are now redirected to $url \n" +
+                                     "        \tIf the redirection fails, please click the post button.</p>\n" +
+                                     "\n" +
+                                     "        \t<form method='post' action='$url'>\n" +
+                                     "       \t\t\t<p>\n" +
+                                     "                    <!--$params-->\n" +
+                                     "        \t\t\t<button type='submit'>POST</button>\n" +
+                                     "       \t\t\t</p>\n" +
+                                     "       \t\t</form>\n" +
+                                     "       \t\t<script type='text/javascript'>\n" +
+                                     "        \t\tdocument.forms[0].submit();\n" +
+                                     "        \t</script>\n" +
+                                     "        </body>\n" +
+                                     "</html>";
 
-            postPage = postPage.replace("$url", Encode.forHtmlAttribute(saml2SSOUrl));
-            StringBuilder hiddenInputBuilder = new StringBuilder("");
-            hiddenInputBuilder.append("<input type='hidden' name='SAMLRequest' value='")
-                    .append(samlRequest).append("'>");
-            if (relayState != null) {
-                hiddenInputBuilder.append("<input type='hidden' name='RelayState' value='")
-                        .append(relayState).append("'>");
-            }
-            postPage = postPage.replace("<!--$params-->", hiddenInputBuilder.toString());
-            if (log.isDebugEnabled()) {
-                log.debug("SAML2 SSO Authenticator HTTP-POST page: " + postPage);
-            }
-
-        } else {
-
-            postPage = "<html>\n" +
-                       "\t<body>\n" +
-                       "        \t<p>You are now redirected to $url \n" +
-                       "        \tIf the redirection fails, please click the post button.</p>\n" +
-                       "\n" +
-                       "        \t<form method='post' action='$url'>\n" +
-                       "       \t\t\t<p>\n" +
-                       "                    <!--$params-->\n" +
-                       "        \t\t\t<button type='submit'>POST</button>\n" +
-                       "       \t\t\t</p>\n" +
-                       "       \t\t</form>\n" +
-                       "       \t\t<script type='text/javascript'>\n" +
-                       "        \t\tdocument.forms[0].submit();\n" +
-                       "        \t</script>\n" +
-                       "        </body>\n" +
-                       "</html>";
+        postPage = postPage.replace("$url", Encode.forHtmlAttribute(saml2SSOUrl));
+        StringBuilder hiddenInputBuilder = new StringBuilder("");
+        hiddenInputBuilder.append("<input type='hidden' name='SAMLRequest' value='")
+                .append(samlRequest).append("'>");
+        if (relayState != null) {
+            hiddenInputBuilder.append("<input type='hidden' name='RelayState' value='")
+                    .append(relayState).append("'>");
+        }
+        postPage = postPage.replace("<!--$params-->", hiddenInputBuilder.toString());
+        if (log.isDebugEnabled()) {
+            log.debug("SAML2 SSO Authenticator HTTP-POST page: " + postPage);
         }
         return postPage;
     }
