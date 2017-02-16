@@ -357,6 +357,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
                 validateSignature(assertion, response, getIdentityProviderConfig(context));
 
+                processSubject(assertion, context);
+
                 processAttributeStatements(assertion, getIdentityProviderConfig(context), context);
 
             }
