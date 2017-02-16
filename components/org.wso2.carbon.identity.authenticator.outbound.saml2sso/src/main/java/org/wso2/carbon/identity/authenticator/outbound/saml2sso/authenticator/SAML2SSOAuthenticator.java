@@ -82,8 +82,10 @@ import org.wso2.carbon.identity.gateway.processor.handler.authentication.Authent
 import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.AuthenticationResponse;
 import org.wso2.carbon.identity.mgt.claim.Claim;
 
+import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -664,18 +666,37 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             if ("primary".equals(key)) {
                 Certificate certificate = null;
                 try {
-                    certificate = SAML2SSOAuthenticatorDataHolder.getInstance().getIdentityUtilService()
-                            .getKeyStoreUtils().decodeCertificate(value);
+                    certificate = decodeCertificate(value);
                     credential = new X509CredentialImpl((X509Certificate) certificate);
                     return credential;
                 } catch (CertificateException e) {
                     log.error("Error while decoding certificate: " + value + ".", e);
-                } catch (IdentityException e) {
-                    log.error("Error while getting KeyStoreUtils.", e);
                 }
             }
         }
         return credential;
+    }
+
+    /**
+     * Decode X509 certificate.
+     *
+     * @param encodedCert Base64 encoded certificate
+     * @return Decoded <code>Certificate</code>
+     * @throws java.security.cert.CertificateException Error when decoding certificate
+     */
+    public Certificate decodeCertificate(String encodedCert) throws CertificateException {
+
+        if (encodedCert != null) {
+            byte[] bytes = Base64.decode(encodedCert);
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) factory
+                    .generateCertificate(new ByteArrayInputStream(bytes));
+            return cert;
+        } else {
+            String errorMsg = "Invalid encoded certificate: \'NULL\'";
+            log.debug(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
     }
 
     public String getSignatureAlgorithm(IdentityProviderConfig identityProviderConfig) {
