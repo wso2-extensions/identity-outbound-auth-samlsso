@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SAML2SSOCon
 import org.wso2.carbon.identity.gateway.api.exception.FrameworkClientException;
 import org.wso2.carbon.identity.gateway.api.request.HttpIdentityRequestFactory;
 import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponse;
+import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.util.Utility;
 import org.wso2.msf4j.Request;
 
 public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSRequest.SAML2ACSRequestBuilder> {
@@ -30,7 +31,7 @@ public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSR
     @Override
     public boolean canHandle(Request request) {
 
-        String saml2SSOResponse = (String) request.getProperty(SAML2SSOConstants.SAML_RESPONSE);
+        String saml2SSOResponse = Utility.getParameter(request, SAML2SSOConstants.SAML_RESPONSE);
         if (StringUtils.isNotBlank(saml2SSOResponse)) {
             return true;
         }
@@ -45,8 +46,8 @@ public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSR
 
     public void create(SAML2ACSRequest.SAML2ACSRequestBuilder builder, Request request) throws FrameworkClientException {
         super.create(builder, request);
-        builder.setSAML2SSOResponse((String) request.getProperty(SAML2SSOConstants.SAML_RESPONSE));
-        builder.setRequestDataKey((String) request.getProperty(SAML2SSOConstants.RELAY_STATE));
+        builder.setSAML2SSOResponse(Utility.getParameter(request, SAML2SSOConstants.SAML_RESPONSE));
+        builder.setRequestDataKey(Utility.getParameter(request, SAML2SSOConstants.RELAY_STATE));
     }
 
     public HttpIdentityResponse.HttpIdentityResponseBuilder handleException(FrameworkClientException exception) {
