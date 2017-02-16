@@ -34,7 +34,7 @@ public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSR
         if (StringUtils.isNotBlank(saml2SSOResponse)) {
             return true;
         }
-        return false ;
+        return false;
     }
 
     public SAML2ACSRequest.SAML2ACSRequestBuilder create(Request request) throws FrameworkClientException {
@@ -57,6 +57,6 @@ public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSR
     }
 
     public int getPriority() {
-        return 300;
+        return 35;
     }
 }
