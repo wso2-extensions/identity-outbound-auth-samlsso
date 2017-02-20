@@ -77,6 +77,7 @@ import org.wso2.carbon.identity.gateway.processor.authenticator.AbstractApplicat
 import org.wso2.carbon.identity.gateway.processor.authenticator.FederatedApplicationAuthenticator;
 import org.wso2.carbon.identity.gateway.processor.handler.authentication.AuthenticationHandlerException;
 import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.AuthenticationResponse;
+import org.wso2.carbon.identity.gateway.service.GatewayClaimResolverService;
 import org.wso2.carbon.identity.mgt.claim.Claim;
 
 import java.io.ByteArrayInputStream;
@@ -519,8 +520,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                                 Element value = attribute.getAttributeValues().get(i).getDOM();
                                 String attributeValue = value.getTextContent();
                                 if (StringUtils.isNotBlank(attributeValue)) {
-                                    claims.add(new Claim(getClaimDialectURI(), attribute.getName(),
-                                            attributeValue));
+                                    claims.add(new Claim(getClaimDialectURI(identityProviderConfig).get(), attribute
+                                            .getName(),attributeValue));
                                 }
                             }
                         }
@@ -530,27 +531,33 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             }
         }
 
-//        Set<Claim> mappedRootClaims = getMappedRootClaims(claims, getAttributeProfile(identityProviderConfig),
-//                getClaimDialectURI(identityProviderConfig));
-        FederatedUser federatedUser = (FederatedUser) context.getParameter("Subject");
-//        federatedUser.setUserClaims(mappedRootClaims);
-//        if (StringUtils.isNotBlank(getUsernameClaimURI(getIdentityProviderConfig(context)))) {
-//            boolean isUsernameExists = false;
-//            Iterator<Claim> it = mappedRootClaims.iterator();
-//            while (it.hasNext()) {
-//                Claim claim = it.next();
-//                if (claim.getClaimUri().equals(getUsernameClaimURI(getIdentityProviderConfig(context)))) {
-//                    isUsernameExists = true;
-//                    mappedRootClaims.remove(claim);
-//                    String value = claim.getValue();
-//                    FederatedUser federatedUser2 = new FederatedUser(value, mappedRootClaims);
-                    context.getSequenceContext().getCurrentStepContext().setUser(federatedUser);
-//                }
-//            }
-//            if (!isUsernameExists) {
-//                throw new SAML2SSOAuthenticatorException("Cannot find username claim.");
-//            }
-//        }
+        Optional<String> attributeProfile = getAttributeProfile(identityProviderConfig);
+        String claimDialectURI = getClaimDialectURI(identityProviderConfig).get();
+        GatewayClaimResolverService gatewayClaimResolverService = GatewayClaimResolverService.getInstance();
+        Set<Claim> mappedRootClaims = gatewayClaimResolverService.transformToNativeDialect(claims, claimDialectURI,
+                                                                                           attributeProfile);
+
+        if (StringUtils.isNotBlank(getUsernameClaimURI(getIdentityProviderConfig(context)))) {
+            boolean isUsernameExists = false;
+            Iterator<Claim> it = mappedRootClaims.iterator();
+            while (it.hasNext()) {
+                Claim claim = it.next();
+                if (claim.getClaimUri().equals(getUsernameClaimURI(getIdentityProviderConfig(context)))) {
+                    isUsernameExists = true;
+                    mappedRootClaims.remove(claim);
+                    String value = claim.getValue();
+                    FederatedUser tmpFederatedUser = new FederatedUser(value, mappedRootClaims);
+                    context.getSequenceContext().getCurrentStepContext().setUser(tmpFederatedUser);
+                }
+            }
+            if (!isUsernameExists) {
+                throw new SAML2SSOAuthenticatorException("Cannot find username claim.");
+            }
+        }else{
+            FederatedUser federatedUser = (FederatedUser) context.getParameter("Subject");
+            federatedUser.setUserClaims(mappedRootClaims);
+            context.getSequenceContext().getCurrentStepContext().setUser(federatedUser);
+        }
     }
 
     public IdentityProviderConfig getIdentityProviderConfig(AuthenticationContext context)
@@ -735,7 +742,11 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected Optional<String> getAttributeProfile(IdentityProviderConfig identityProviderConfig) {
-        return Optional.of(identityProviderConfig.getIdpMetaData().getClaimConfig().getProfile());
+        String profile = identityProviderConfig.getIdpMetaData().getClaimConfig().getProfile();
+        if(profile != null){
+            return Optional.of(profile);
+        }
+        return Optional.empty();
     }
 
 }

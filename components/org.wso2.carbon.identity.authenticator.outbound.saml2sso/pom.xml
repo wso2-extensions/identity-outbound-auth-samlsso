@@ -71,6 +71,14 @@
             <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
             <artifactId>encoder</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.mgt</groupId>
+            <artifactId>org.wso2.carbon.identity.mgt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.mgt</groupId>
+            <artifactId>org.wso2.carbon.identity.claim</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>
@@ -89,7 +97,8 @@
             org.apache.xerces.util.*,
             org.wso2.carbon.identity.common.*;version="[0.1.0, 2.0.0)",
             org.apache.commons.collections.*,
-
+            org.wso2.carbon.identity.claim.*; version="${carbon.identity.mgt.import.version.range}",
+            org.wso2.carbon.identity.mgt.*; version="${carbon.identity.mgt.import.version.range}"
         </import.package>
         <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>
