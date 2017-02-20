@@ -64,12 +64,12 @@
             <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
-            <groupId>xml-security</groupId>
-            <artifactId>xmlsec</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
             <artifactId>encoder</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ws.security.wso2</groupId>
+            <artifactId>wss4j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.mgt</groupId>
