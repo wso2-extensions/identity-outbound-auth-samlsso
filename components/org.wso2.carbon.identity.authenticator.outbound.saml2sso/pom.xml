@@ -71,6 +71,14 @@
             <groupId>org.apache.ws.security.wso2</groupId>
             <artifactId>wss4j</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.mgt</groupId>
+            <artifactId>org.wso2.carbon.identity.mgt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.mgt</groupId>
+            <artifactId>org.wso2.carbon.identity.claim</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>
@@ -87,9 +95,11 @@
             org.wso2.carbon.identity.gateway.*; version="${carbon.identity.gateway.import.version.range}",
             org.apache.xml.security.utils.*,
             org.apache.xerces.util.*,
+            org.opensaml.saml2.*,
             org.wso2.carbon.identity.common.*;version="[0.1.0, 2.0.0)",
             org.apache.commons.collections.*,
-            org.apache.commons.ssl.*,
+            org.wso2.carbon.identity.claim.*; version="${carbon.identity.mgt.import.version.range}",
+            org.wso2.carbon.identity.mgt.*; version="${carbon.identity.mgt.import.version.range}"
         </import.package>
         <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>
