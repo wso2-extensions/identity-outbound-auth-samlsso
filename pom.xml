@@ -129,6 +129,7 @@
 
     <modules>
         <module>components/org.wso2.carbon.identity.authenticator.outbound.saml2sso</module>
+        <module>features/org.wso2.carbon.identity.application.authenticator.samlsso.server.feature</module>
     </modules>
 
     <properties>
