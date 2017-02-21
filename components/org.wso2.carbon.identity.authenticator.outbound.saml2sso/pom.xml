@@ -89,7 +89,7 @@
             org.apache.xerces.util.*,
             org.wso2.carbon.identity.common.*;version="[0.1.0, 2.0.0)",
             org.apache.commons.collections.*,
-
+            org.apache.commons.ssl.*,
         </import.package>
         <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>
