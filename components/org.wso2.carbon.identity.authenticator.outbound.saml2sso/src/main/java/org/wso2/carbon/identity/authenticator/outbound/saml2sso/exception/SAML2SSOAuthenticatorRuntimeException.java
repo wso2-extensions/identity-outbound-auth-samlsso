@@ -18,9 +18,9 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception;
 
-import org.wso2.carbon.identity.gateway.api.exception.FrameworkRuntimeException;
+import org.wso2.carbon.identity.gateway.api.exception.GatewayRuntimeException;
 
-public class SAML2SSOAuthenticatorRuntimeException extends FrameworkRuntimeException {
+public class SAML2SSOAuthenticatorRuntimeException extends GatewayRuntimeException {
 
     public SAML2SSOAuthenticatorRuntimeException(String message) {
         super(message);

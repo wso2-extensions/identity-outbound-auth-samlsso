@@ -20,13 +20,16 @@ package org.wso2.carbon.identity.authenticator.outbound.saml2sso.request;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SAML2SSOConstants;
-import org.wso2.carbon.identity.gateway.api.exception.FrameworkClientException;
-import org.wso2.carbon.identity.gateway.api.request.HttpIdentityRequestFactory;
-import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponse;
+import org.wso2.carbon.identity.gateway.api.exception.GatewayClientException;
+import org.wso2.carbon.identity.gateway.api.request.GatewayRequestBuilderFactory;
+import org.wso2.carbon.identity.gateway.api.response.HttpGatewayResponse;
 import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.util.Utility;
 import org.wso2.msf4j.Request;
 
-public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSRequest.SAML2ACSRequestBuilder> {
+import javax.ws.rs.core.Response;
+
+public class SAML2ACSRequestBuilderFactory
+        extends GatewayRequestBuilderFactory<SAML2ACSRequest.SAML2ACSRequestBuilder> {
 
     @Override
     public boolean canHandle(Request request) {
@@ -38,23 +41,20 @@ public class SAML2ACSRequestFactory extends HttpIdentityRequestFactory<SAML2ACSR
         return false;
     }
 
-    public SAML2ACSRequest.SAML2ACSRequestBuilder create(Request request) throws FrameworkClientException {
+    public SAML2ACSRequest.SAML2ACSRequestBuilder create(Request request) throws GatewayClientException {
         SAML2ACSRequest.SAML2ACSRequestBuilder builder = new SAML2ACSRequest.SAML2ACSRequestBuilder();
         this.create(builder, request);
         return builder;
     }
 
-    public void create(SAML2ACSRequest.SAML2ACSRequestBuilder builder, Request request) throws FrameworkClientException {
+    public void create(SAML2ACSRequest.SAML2ACSRequestBuilder builder, Request request) throws GatewayClientException {
         super.create(builder, request);
         builder.setSAML2SSOResponse(Utility.getParameter(request, SAML2SSOConstants.SAML_RESPONSE));
         builder.setRequestDataKey(Utility.getParameter(request, SAML2SSOConstants.RELAY_STATE));
     }
 
-    public HttpIdentityResponse.HttpIdentityResponseBuilder handleException(FrameworkClientException exception) {
-        HttpIdentityResponse.HttpIdentityResponseBuilder builder = new HttpIdentityResponse.HttpIdentityResponseBuilder();
-        builder.setStatusCode(400);
-        builder.setBody(exception.getMessage());
-        return builder;
+    public Response.ResponseBuilder handleException(GatewayClientException exception) {
+        return super.handleException(exception);
     }
 
     public int getPriority() {

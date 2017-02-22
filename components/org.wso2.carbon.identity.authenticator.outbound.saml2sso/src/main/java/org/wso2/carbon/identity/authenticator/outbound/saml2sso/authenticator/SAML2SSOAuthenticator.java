@@ -67,7 +67,7 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SS
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SAML2SSOConstants;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Utils;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.X509CredentialImpl;
-import org.wso2.carbon.identity.gateway.api.response.IdentityResponse;
+import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 import org.wso2.carbon.identity.gateway.common.model.idp.AuthenticatorConfig;
 import org.wso2.carbon.identity.gateway.common.model.idp.IDPCertificate;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
@@ -150,7 +150,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         boolean isPassive = isPassive(getIdentityProviderConfig(context), context);
 
         AuthenticationResponse authenticationResponse = AuthenticationResponse.INCOMPLETE;
-        IdentityResponse.IdentityResponseBuilder builder;
+        GatewayResponse.GatewayResponseBuilder builder;
         if (isPost) {
             try {
                 builder = buildSAML2SSOPostRequest(isForce, isPassive, context);
@@ -164,7 +164,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 throw new AuthenticationHandlerException("Error occurred while building SAML2SSORedirectRequest", e);
             }
         }
-        authenticationResponse.setIdentityResponseBuilder(builder);
+        authenticationResponse.setGatewayResponseBuilder(builder);
         return authenticationResponse;
     }
 

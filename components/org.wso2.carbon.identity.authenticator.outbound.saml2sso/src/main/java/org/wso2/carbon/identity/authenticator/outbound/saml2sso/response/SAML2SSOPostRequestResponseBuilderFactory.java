@@ -26,40 +26,42 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2S
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Utils;
 import org.wso2.carbon.identity.common.base.Constants;
-import org.wso2.carbon.identity.gateway.api.exception.FrameworkServerException;
-import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponse;
-import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponseFactory;
-import org.wso2.carbon.identity.gateway.api.response.IdentityResponse;
+import org.wso2.carbon.identity.gateway.api.exception.GatewayServerException;
+import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
+import org.wso2.carbon.identity.gateway.api.response.GatewayResponseBuilderFactory;
+import org.wso2.carbon.identity.gateway.api.response.HttpGatewayResponse;
 
-public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFactory {
+import javax.ws.rs.core.Response;
 
-    private static Logger log = LoggerFactory.getLogger(SAML2SSOPostRequestResponseFactory.class);
+public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBuilderFactory {
+
+    private static Logger log = LoggerFactory.getLogger(SAML2SSOPostRequestResponseBuilderFactory.class);
 
     @Override
     public String getName() {
         return this.getName();
     }
 
-    public boolean canHandle(IdentityResponse identityResponse) {
-        return identityResponse instanceof SAML2SSOPostRequestResponse;
+    public boolean canHandle(GatewayResponse gatewayResponse) {
+        return gatewayResponse instanceof SAML2SSOPostRequestResponse;
     }
 
-    public boolean canHandle(FrameworkServerException exception) {
+    public boolean canHandle(GatewayServerException exception) {
         return false;
     }
 
     @Override
-    public HttpIdentityResponse.HttpIdentityResponseBuilder create(IdentityResponse identityResponse) {
-        HttpIdentityResponse.HttpIdentityResponseBuilder builder = new HttpIdentityResponse
+    public HttpGatewayResponse.HttpIdentityResponseBuilder create(GatewayResponse gatewayResponse) {
+        HttpGatewayResponse.HttpIdentityResponseBuilder builder = new HttpGatewayResponse
                 .HttpIdentityResponseBuilder();
-        create(builder, identityResponse);
+        create(builder, gatewayResponse);
         return builder;
     }
 
     @Override
-    public void create(HttpIdentityResponse.HttpIdentityResponseBuilder builder, IdentityResponse identityResponse) {
+    public void create(HttpGatewayResponse.HttpIdentityResponseBuilder builder, GatewayResponse gatewayResponse) {
 
-        SAML2SSOPostRequestResponse saml2Response = (SAML2SSOPostRequestResponse) identityResponse;
+        SAML2SSOPostRequestResponse saml2Response = (SAML2SSOPostRequestResponse) gatewayResponse;
         builder.setStatusCode(200);
         try {
             signSAMLResponse(saml2Response);
@@ -76,6 +78,35 @@ public class SAML2SSOPostRequestResponseFactory extends HttpIdentityResponseFact
         }
         String body = buildPostPage(saml2Response.getSaml2SSOUrl(), authnRequest, saml2Response.getRelayState());
         builder.setBody(body);
+    }
+
+    @Override
+    public Response.ResponseBuilder createBuilder(GatewayResponse gatewayResponse) {
+        Response.ResponseBuilder builder = Response.noContent();
+        createBuilder(builder,gatewayResponse);
+        return builder ;
+    }
+
+    @Override
+    public void createBuilder(Response.ResponseBuilder builder, GatewayResponse gatewayResponse) {
+
+        SAML2SSOPostRequestResponse saml2Response = (SAML2SSOPostRequestResponse) gatewayResponse;
+        builder.status(200);
+        try {
+            signSAMLResponse(saml2Response);
+        } catch (SAML2SSOAuthenticatorException e) {
+            // merge exception handling changes in inbound framework to gateway
+            throw new SAML2SSOAuthenticatorRuntimeException("Error while signing AuthnRequest.", e);
+        }
+        String authnRequest = null;
+        try {
+            authnRequest = Utils.encodeForPost((Utils.marshall(saml2Response.getSamlRequest())));
+        } catch (SAML2SSOAuthenticatorException e) {
+            // merge exception handling changes in inbound framework to gateway
+            throw new SAML2SSOAuthenticatorRuntimeException("Error while marshalling and encoding AuthnRequest.", e);
+        }
+        String body = buildPostPage(saml2Response.getSaml2SSOUrl(), authnRequest, saml2Response.getRelayState());
+        builder.entity(body);
     }
 
     protected void signSAMLResponse(SAML2SSOPostRequestResponse response) throws SAML2SSOAuthenticatorException {

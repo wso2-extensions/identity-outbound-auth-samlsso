@@ -31,14 +31,14 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.authenticator.SAML2SSOAuthenticator;
-import org.wso2.carbon.identity.authenticator.outbound.saml2sso.request.SAML2ACSRequestFactory;
-import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSOPostRequestResponseFactory;
-import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponseFactory;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.request.SAML2ACSRequestBuilderFactory;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSOPostRequestResponseBuilderFactory;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponseBuilderFactory;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Utils;
 import org.wso2.carbon.identity.common.base.exception.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.util.IdentityUtilService;
-import org.wso2.carbon.identity.gateway.api.request.HttpIdentityRequestFactory;
-import org.wso2.carbon.identity.gateway.api.response.HttpIdentityResponseFactory;
+import org.wso2.carbon.identity.gateway.api.request.GatewayRequestBuilderFactory;
+import org.wso2.carbon.identity.gateway.api.response.GatewayResponseBuilderFactory;
 import org.wso2.carbon.identity.gateway.processor.authenticator.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.gateway.processor.authenticator.ApplicationAuthenticator;
 
@@ -61,9 +61,9 @@ public class SAML2SSOOutboundServiceComponent {
                                           new SAML2SSOAuthenticator(), null);
             bundleContext.registerService(AbstractApplicationAuthenticator.class,
                                           new SAML2SSOAuthenticator(), null);
-            bundleContext.registerService(HttpIdentityRequestFactory.class, new SAML2ACSRequestFactory(), null);
-            bundleContext.registerService(HttpIdentityResponseFactory.class, new SAML2SSOPostRequestResponseFactory(), null);
-            bundleContext.registerService(HttpIdentityResponseFactory.class, new SAML2SSORedirectRequestResponseFactory(), null);
+            bundleContext.registerService(GatewayRequestBuilderFactory.class, new SAML2ACSRequestBuilderFactory(), null);
+            bundleContext.registerService(GatewayResponseBuilderFactory.class, new SAML2SSOPostRequestResponseBuilderFactory(), null);
+            bundleContext.registerService(GatewayResponseBuilderFactory.class, new SAML2SSORedirectRequestResponseBuilderFactory(), null);
         } catch (Throwable e) {
             log.error("Error while registering SAML2SSOAuthenticator.", e);
         }

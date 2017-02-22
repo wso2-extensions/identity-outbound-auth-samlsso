@@ -20,9 +20,9 @@ package org.wso2.carbon.identity.authenticator.outbound.saml2sso.response;
 
 import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.xml.security.x509.X509Credential;
-import org.wso2.carbon.identity.gateway.api.response.IdentityResponse;
+import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 
-public class SAML2SSORedirectRequestResponse extends IdentityResponse {
+public class SAML2SSORedirectRequestResponse extends GatewayResponse {
 
     protected String saml2SSOUrl;
     protected RequestAbstractType samlRequest;
@@ -65,7 +65,7 @@ public class SAML2SSORedirectRequestResponse extends IdentityResponse {
         return sigAlg;
     }
 
-    public static class SAML2SSORedirectRequestResponseBuilder extends IdentityResponse.IdentityResponseBuilder {
+    public static class SAML2SSORedirectRequestResponseBuilder extends GatewayResponseBuilder {
 
         protected String saml2SSOUrl;
         protected RequestAbstractType samlRequest;
