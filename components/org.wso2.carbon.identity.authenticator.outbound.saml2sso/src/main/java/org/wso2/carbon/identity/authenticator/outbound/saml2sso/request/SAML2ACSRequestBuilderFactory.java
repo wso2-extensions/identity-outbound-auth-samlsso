@@ -21,8 +21,8 @@ package org.wso2.carbon.identity.authenticator.outbound.saml2sso.request;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SAML2SSOConstants;
 import org.wso2.carbon.identity.gateway.api.exception.GatewayClientException;
+import org.wso2.carbon.identity.gateway.api.exception.GatewayRuntimeException;
 import org.wso2.carbon.identity.gateway.api.request.GatewayRequestBuilderFactory;
-import org.wso2.carbon.identity.gateway.api.response.HttpGatewayResponse;
 import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.util.Utility;
 import org.wso2.msf4j.Request;
 
@@ -32,7 +32,7 @@ public class SAML2ACSRequestBuilderFactory
         extends GatewayRequestBuilderFactory<SAML2ACSRequest.SAML2ACSRequestBuilder> {
 
     @Override
-    public boolean canHandle(Request request) {
+    public boolean canHandle(Request request) throws GatewayClientException {
 
         String saml2SSOResponse = Utility.getParameter(request, SAML2SSOConstants.SAML_RESPONSE);
         if (StringUtils.isNotBlank(saml2SSOResponse)) {

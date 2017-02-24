@@ -29,7 +29,6 @@ import org.wso2.carbon.identity.common.base.Constants;
 import org.wso2.carbon.identity.gateway.api.exception.GatewayServerException;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponseBuilderFactory;
-import org.wso2.carbon.identity.gateway.api.response.HttpGatewayResponse;
 
 import javax.ws.rs.core.Response;
 
@@ -50,35 +49,6 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
         return false;
     }
 
-    @Override
-    public HttpGatewayResponse.HttpIdentityResponseBuilder create(GatewayResponse gatewayResponse) {
-        HttpGatewayResponse.HttpIdentityResponseBuilder builder = new HttpGatewayResponse
-                .HttpIdentityResponseBuilder();
-        create(builder, gatewayResponse);
-        return builder;
-    }
-
-    @Override
-    public void create(HttpGatewayResponse.HttpIdentityResponseBuilder builder, GatewayResponse gatewayResponse) {
-
-        SAML2SSOPostRequestResponse saml2Response = (SAML2SSOPostRequestResponse) gatewayResponse;
-        builder.setStatusCode(200);
-        try {
-            signSAMLResponse(saml2Response);
-        } catch (SAML2SSOAuthenticatorException e) {
-            // merge exception handling changes in inbound framework to gateway
-            throw new SAML2SSOAuthenticatorRuntimeException("Error while signing AuthnRequest.", e);
-        }
-        String authnRequest = null;
-        try {
-            authnRequest = Utils.encodeForPost((Utils.marshall(saml2Response.getSamlRequest())));
-        } catch (SAML2SSOAuthenticatorException e) {
-            // merge exception handling changes in inbound framework to gateway
-            throw new SAML2SSOAuthenticatorRuntimeException("Error while marshalling and encoding AuthnRequest.", e);
-        }
-        String body = buildPostPage(saml2Response.getSaml2SSOUrl(), authnRequest, saml2Response.getRelayState());
-        builder.setBody(body);
-    }
 
     @Override
     public Response.ResponseBuilder createBuilder(GatewayResponse gatewayResponse) {
