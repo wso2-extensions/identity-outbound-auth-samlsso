@@ -91,15 +91,7 @@
             version="${project.version}"
         </export.package>
         <import.package>
-            org.osgi.framework.*;version="[1.8.0, 2.0.0)",
-            org.wso2.carbon.identity.gateway.*; version="${carbon.identity.gateway.import.version.range}",
-            org.apache.xml.security.utils.*,
-            org.apache.xerces.util.*,
-            org.opensaml.saml2.*,
-            org.wso2.carbon.identity.common.*;version="[0.1.0, 2.0.0)",
-            org.apache.commons.collections.*,
-            org.wso2.carbon.identity.claim.*; version="${carbon.identity.mgt.import.version.range}",
-            org.wso2.carbon.identity.mgt.*; version="${carbon.identity.mgt.import.version.range}"
+
         </import.package>
         <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>

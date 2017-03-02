@@ -183,7 +183,7 @@
                                 </bundle>
                                 <bundle>
                                     <symbolicName>xercesImpl</symbolicName>
-                                    <version>${xerces.version}</version>
+                                    <version>${xerces.wso2.version}</version>
                                 </bundle>
                                 <bundle>
                                     <symbolicName>bcprov-jdk15on</symbolicName>

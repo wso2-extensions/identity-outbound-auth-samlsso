@@ -58,9 +58,9 @@ public class SAML2SSOOutboundServiceComponent {
             doBootstrap();
             SAML2SSOAuthenticatorDataHolder.getInstance().setCredential(Utils.getServerCredentials());
             bundleContext.registerService(ApplicationAuthenticator.class.getName(),
-                                          new SAML2SSOAuthenticator(), null);
+                    new SAML2SSOAuthenticator(), null);
             bundleContext.registerService(AbstractApplicationAuthenticator.class,
-                                          new SAML2SSOAuthenticator(), null);
+                    new SAML2SSOAuthenticator(), null);
             bundleContext.registerService(GatewayRequestBuilderFactory.class, new SAML2ACSRequestBuilderFactory(), null);
             bundleContext.registerService(GatewayResponseBuilderFactory.class, new SAML2SSOPostRequestResponseBuilderFactory(), null);
             bundleContext.registerService(GatewayResponseBuilderFactory.class, new SAML2SSORedirectRequestResponseBuilderFactory(), null);
@@ -95,16 +95,10 @@ public class SAML2SSOOutboundServiceComponent {
     }
 
     public static void doBootstrap() {
-
-        Thread thread = Thread.currentThread();
-        ClassLoader loader = thread.getContextClassLoader();
-        thread.setContextClassLoader(new SAML2SSOAuthenticator().getClass().getClassLoader());
         try {
             DefaultBootstrap.bootstrap();
         } catch (ConfigurationException e) {
             throw new IdentityRuntimeException("Error in bootstrapping the OpenSAML2 library", e);
-        } finally {
-            thread.setContextClassLoader(loader);
         }
     }
 }

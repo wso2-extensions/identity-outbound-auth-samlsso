@@ -52,7 +52,22 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.gateway</groupId>
                 <artifactId>org.wso2.carbon.identity.gateway</artifactId>
-                <version>${identity.gateway.version}</version>
+                <version>${carbon.identity.gateway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.gateway</groupId>
+                <artifactId>org.wso2.carbon.identity.gateway.common</artifactId>
+                <version>${carbon.identity.gateway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.gateway</groupId>
+                <artifactId>org.wso2.carbon.identity.gateway.api</artifactId>
+                <version>${carbon.identity.gateway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.gateway</groupId>
+                <artifactId>org.wso2.carbon.identity.gateway.resource</artifactId>
+                <version>${carbon.identity.gateway.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang.wso2</groupId>
@@ -97,7 +112,7 @@
             <dependency>
                 <groupId>org.wso2.orbit.xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
-                <version>${xerces.version}</version>
+                <version>${xerces.wso2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.bouncycastle</groupId>
@@ -109,17 +124,231 @@
                 <artifactId>org.wso2.carbon.identity.authenticator.outbound.saml2sso</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.wso2.carbon.identity.mgt</groupId>
                 <artifactId>org.wso2.carbon.identity.mgt</artifactId>
                 <version>${carbon.identity.mgt.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.wso2.carbon.identity.mgt</groupId>
                 <artifactId>org.wso2.carbon.identity.claim</artifactId>
                 <version>${carbon.identity.mgt.version}</version>
+            </dependency>
+
+            <!-- Dependencies for Testing-->
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>osgi-test-util</artifactId>
+                <version>${carbon.osgi.test.util.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.minidev.wso2</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json.smart.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>${testng.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>org.jacoco.agent</artifactId>
+                <classifier>runtime</classifier>
+                <version>${jacoco.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>org.jacoco.ant</artifactId>
+                <version>${jacoco.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>${javax.inject.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam</artifactId>
+                <version>${pax.exam.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-container-native</artifactId>
+                <version>${pax.exam.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-testng</artifactId>
+                <version>${pax.exam.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-link-mvn</artifactId>
+                <version>${pax.exam.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.url</groupId>
+                <artifactId>pax-url-aether</artifactId>
+                <version>${pax.url.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.spec.ee</groupId>
+                <artifactId>ow2-jta-1.1-spec</artifactId>
+                <version>${ow2.jta.spec.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.logging</groupId>
+                <artifactId>pax-logging-api</artifactId>
+                <version>${pax.logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.logging</groupId>
+                <artifactId>pax-logging-log4j2</artifactId>
+                <version>${pax.logging.log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xerces</groupId>
+                <artifactId>xercesImpl</artifactId>
+                <version>${xerces.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xalan.wso2</groupId>
+                <artifactId>xalan</artifactId>
+                <version>${xalan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>commons-io.wso2</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>commons-pool.wso2</groupId>
+                <artifactId>commons-pool</artifactId>
+                <version>${commons-pool.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.caching</groupId>
+                <artifactId>org.wso2.carbon.caching</artifactId>
+                <version>${org.wso2.carbon.caching.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${org.apache.commons.commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${HikariCP.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${com.h2database.h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.msf4j</groupId>
+                <artifactId>jaxrs-delegates</artifactId>
+                <version>${msf4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.orbit.com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>${disruptor.wso2.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.minidev.wso2</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json.smart.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>asm</artifactId>
+                <version>${net.minidev.asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.lcm</groupId>
+                <artifactId>org.wso2.carbon.lcm.core</artifactId>
+                <version>${org.wso2.carbon.lcm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.lcm</groupId>
+                <artifactId>org.wso2.carbon.lcm.sql</artifactId>
+                <version>${org.wso2.carbon.lcm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.mgt</groupId>
+                <artifactId>in-memory-connectors-test-artifact</artifactId>
+                <version>${carbon.identity.mgt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${json.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec.wso2</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>${rs-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.gateway</groupId>
+                <artifactId>org.wso2.carbon.identity.inbound.sample</artifactId>
+                <version>${carbon.identity.gateway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.msf4j</groupId>
+                <artifactId>msf4j-core</artifactId>
+                <version>${msf4j.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.deployment</groupId>
+                <artifactId>org.wso2.carbon.deployment.engine</artifactId>
+                <version>${carbon.deployment.version}</version>
             </dependency>
 
 
@@ -130,6 +359,7 @@
     <modules>
         <module>components/org.wso2.carbon.identity.authenticator.outbound.saml2sso</module>
         <module>features/org.wso2.carbon.identity.application.authenticator.samlsso.server.feature</module>
+        <module>tests</module>
     </modules>
 
     <properties>
@@ -154,7 +384,7 @@
 
         <commons-collections.version>3.2.2.wso2v1</commons-collections.version>
         <!--Identity Gateway versions -->
-        <carbon.identity.gateway.version>6.0.0</carbon.identity.gateway.version>
+        <carbon.identity.gateway.version>1.0.0-SNAPSHOT</carbon.identity.gateway.version>
         <carbon.identity.gateway.package.import.version.range>[5.0.0, 6.0.0)</carbon.identity.gateway.package.import.version.range>
         <!-- Commons -->
 
@@ -167,8 +397,38 @@
         <opensaml2.wso2.version>2.6.4.wso2v4</opensaml2.wso2.version>
         <joda.wso2.version>2.8.2.wso2v1</joda.wso2.version>
         <wss4j.wso2.version>1.5.11.wso2v16</wss4j.wso2.version>
-        <xerces.version>2.8.1.wso2v3</xerces.version>
+        <xerces.wso2.version>2.8.1.wso2v3</xerces.wso2.version>
+        <xerces.version>2.11.0</xerces.version>
         <bouncycastle.version>1.52.0.wso2v1</bouncycastle.version>
+        <msf4j.core.version>2.1.0</msf4j.core.version>
+        <org.snakeyaml.version>1.16.0.wso2v1</org.snakeyaml.version>
+        <carbon.deployment.version>5.0.0</carbon.deployment.version>
+        <carbon.identity.mgt.version>0.1.22</carbon.identity.mgt.version>
+        <carbon.osgi.test.util.version>5.1.0</carbon.osgi.test.util.version>
+        <json.smart.version>2.1.0.wso2v1</json.smart.version>
+        <testng.version>6.9.4</testng.version>
+        <jacoco.version>0.7.7.201606060606</jacoco.version>
+        <javax.inject.version>1</javax.inject.version>
+        <pax.exam.version>4.6.0</pax.exam.version>
+        <pax.url.version>2.4.7</pax.url.version>
+        <ow2.jta.spec.version>1.0.12</ow2.jta.spec.version>
+        <pax.logging.version>1.8.5</pax.logging.version>
+        <pax.logging.log4j2.version>1.8.4</pax.logging.log4j2.version>
+        <xalan.version>2.7.1.wso2v1</xalan.version>
+        <netty.version>4.0.30.Final</netty.version>
+        <commons-io.version>2.4.0.wso2v1</commons-io.version>
+        <commons-pool.version>1.5.6.wso2v1</commons-pool.version>
+        <org.wso2.carbon.caching.version>1.0.0</org.wso2.carbon.caching.version>
+        <org.apache.commons.commons-lang3.version>3.4</org.apache.commons.commons-lang3.version>
+        <HikariCP.version>2.4.1</HikariCP.version>
+        <com.h2database.h2.version>1.4.191</com.h2database.h2.version>
+        <msf4j.version>2.1.0</msf4j.version>
+        <net.minidev.asm.version>1.0.2</net.minidev.asm.version>
+        <org.wso2.carbon.lcm.version>1.0.0</org.wso2.carbon.lcm.version>
+        <json.version>20160810</json.version>
+        <rs-api.version>2.0</rs-api.version>
+        <disruptor.wso2.version>3.3.2.wso2v2</disruptor.wso2.version>
+        <maven.paxexam.plugin.version>1.2.4</maven.paxexam.plugin.version>
 
 
         <commons-codec.wso2.osgi.version.range>[1.4.0,2.0.0)</commons-codec.wso2.osgi.version.range>
