@@ -57,7 +57,7 @@ public class X509CredentialImpl implements X509Credential {
     }
 
     public X509CredentialImpl(X509Certificate certificate, PrivateKey privateKey) throws
-                                                                                        SAML2SSOAuthenticatorException {
+                                                                                  SAML2SSOAuthenticatorException {
         this.entityCertificate = certificate;
         this.publicKey = certificate.getPublicKey();
         this.privateKey = privateKey;

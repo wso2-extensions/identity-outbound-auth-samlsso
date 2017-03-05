@@ -140,7 +140,7 @@ public class Utils {
                 value = Base64.encodeBytes(x509Credential.getEntityCertificate().getEncoded());
             } catch (CertificateEncodingException e) {
                 throw new SAML2SSOAuthenticatorException("Error while encoding the certificate to include in the " +
-                        "signature", e);
+                                                         "signature", e);
             }
             cert.setValue(value);
             data.getX509Certificates().add(cert);
@@ -171,7 +171,8 @@ public class Utils {
     }
 
     public static void addSignatureToHTTPQueryString(StringBuilder httpQueryString, String signatureAlgorithmURI,
-                                                     X509Credential x509Credential) throws SAML2SSOAuthenticatorException {
+                                                     X509Credential x509Credential) throws
+                                                                                    SAML2SSOAuthenticatorException {
 
         if (httpQueryString != null) {
             throw new IllegalArgumentException("Request cannot be null.");
@@ -209,7 +210,7 @@ public class Utils {
             throw new SAML2SSOAuthenticatorException("Unable to sign query string", e);
         } catch (UnsupportedEncodingException e) {
             throw new SAML2SSOAuthenticatorException("Unsupported encoding algorithm. UTF-8 encoding is required to " +
-                    "be supported by all JVMs", e);
+                                                     "be supported by all JVMs", e);
         }
     }
 

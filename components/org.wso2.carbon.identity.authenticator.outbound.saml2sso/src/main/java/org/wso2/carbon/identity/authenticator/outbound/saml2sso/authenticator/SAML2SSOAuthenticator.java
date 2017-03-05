@@ -372,7 +372,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected Assertion decryptAssertion(Response response, AuthenticationContext context) throws
-            SAML2SSOAuthenticatorException,
+                                                                                           SAML2SSOAuthenticatorException,
             AuthenticationHandlerException {
 
         Assertion assertion = null;
@@ -454,7 +454,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     protected void validateSignature(Assertion assertion, Response response,
                                      IdentityProviderConfig identityProviderConfig) throws
-            SAML2SSOAuthenticatorException,
+                                                                                    SAML2SSOAuthenticatorException,
             AuthenticationHandlerException {
 
         if (assertion.getSignature() == null) {
@@ -470,7 +470,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 if (isAuthnResponseSigned(identityProviderConfig)) {
                     if (response.getSignature() == null) {
                         throw new SAML2SSOAuthenticatorException("SAMLResponse signing is enabled, but signature element " +
-                                "not found in Response element.");
+                                                                 "not found in Response element.");
                     } else {
                         try {
                             validator = new SignatureValidator(credential);
@@ -488,7 +488,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected void processSubject(Assertion assertion, AuthenticationContext context) throws
-            SAML2SSOAuthenticatorException {
+                                                                                      SAML2SSOAuthenticatorException {
 
         String subject = null;
         if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
@@ -504,8 +504,9 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected void processAttributeStatements(Assertion assertion, IdentityProviderConfig identityProviderConfig,
-                                              AuthenticationContext context) throws SAML2SSOAuthenticatorException,
-            AuthenticationHandlerException {
+                                              AuthenticationContext context) throws
+                                                                             SAML2SSOAuthenticatorException,
+                                                                             AuthenticationHandlerException {
 
         Set<Claim> claims = new HashSet();
         if (assertion != null) {
