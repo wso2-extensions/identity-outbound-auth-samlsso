@@ -39,8 +39,8 @@ import org.wso2.carbon.identity.common.base.exception.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.util.IdentityUtilService;
 import org.wso2.carbon.identity.gateway.api.request.GatewayRequestBuilderFactory;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponseBuilderFactory;
-import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.authenticator.AbstractApplicationAuthenticator;
-import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.authenticator.ApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.authentication.authenticator.AbstractApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.authentication.authenticator.ApplicationAuthenticator;
 
 @Component(
         name = "outbound.saml2sso.dscomponent",

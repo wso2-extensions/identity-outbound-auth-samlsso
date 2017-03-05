@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.request;
 
-import org.wso2.carbon.identity.gateway.processor.request.CallbackAuthenticationRequest;
+import org.wso2.carbon.identity.gateway.request.CallbackAuthenticationRequest;
 
 public class SAML2ACSRequest extends CallbackAuthenticationRequest {
 

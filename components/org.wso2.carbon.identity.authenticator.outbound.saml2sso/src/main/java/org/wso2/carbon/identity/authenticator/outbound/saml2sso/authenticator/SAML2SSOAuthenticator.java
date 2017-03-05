@@ -73,10 +73,10 @@ import org.wso2.carbon.identity.gateway.common.model.idp.IDPCertificate;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
 import org.wso2.carbon.identity.gateway.context.AuthenticationContext;
 import org.wso2.carbon.identity.gateway.model.FederatedUser;
-import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.authenticator.AbstractApplicationAuthenticator;
-import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.authenticator.FederatedApplicationAuthenticator;
-import org.wso2.carbon.identity.gateway.processor.handler.authentication.AuthenticationHandlerException;
-import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.AuthenticationResponse;
+import org.wso2.carbon.identity.gateway.authentication.authenticator.AbstractApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.authentication.authenticator.FederatedApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.exception.AuthenticationHandlerException;
+import org.wso2.carbon.identity.gateway.authentication.AuthenticationResponse;
 import org.wso2.carbon.identity.gateway.service.GatewayClaimResolverService;
 import org.wso2.carbon.identity.mgt.claim.Claim;
 
