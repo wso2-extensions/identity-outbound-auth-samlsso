@@ -21,9 +21,8 @@ package org.wso2.carbon.identity.authenticator.outbound.saml2sso.request;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.SAML2SSOConstants;
 import org.wso2.carbon.identity.gateway.api.exception.GatewayClientException;
-import org.wso2.carbon.identity.gateway.api.exception.GatewayRuntimeException;
 import org.wso2.carbon.identity.gateway.api.request.GatewayRequestBuilderFactory;
-import org.wso2.carbon.identity.gateway.processor.handler.authentication.impl.util.Utility;
+import org.wso2.carbon.identity.gateway.processor.util.Utility;
 import org.wso2.msf4j.Request;
 
 import javax.ws.rs.core.Response;
