@@ -18,17 +18,12 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.util;
 
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+/**
+ * Constants for SAML2 SSO Outbound Authenticator.
+ */
+public class Constants {
 
-import java.io.IOException;
+    public static final String AUTHENTICATOR_NAME = "SAML2SSOAuthenticator";
+    public static final String AUTHENTICATOR_FRIENDLY_NAME = "SAML2 Web SSO Federated Authenticator";
 
-public class CarbonEntityResolver implements EntityResolver {
-
-    @Override
-    public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-
-        throw new SAXException("SAML request contains invalid elements. Possible XML External Entity (XXE) attack.");
-    }
 }

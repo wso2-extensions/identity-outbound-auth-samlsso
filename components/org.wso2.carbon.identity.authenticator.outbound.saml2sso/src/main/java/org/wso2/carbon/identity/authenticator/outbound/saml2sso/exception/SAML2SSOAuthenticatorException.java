@@ -18,24 +18,19 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception;
 
-import org.wso2.carbon.identity.gateway.api.exception.GatewayServerException;
+import org.wso2.carbon.identity.gateway.exception.AuthenticationHandlerException;
 
-public class SAML2SSOAuthenticatorException extends GatewayServerException {
+/**
+ * SAML2 SSO Outbound Authenticator Server Exceptions.
+ */
+public class SAML2SSOAuthenticatorException extends AuthenticationHandlerException {
 
     public SAML2SSOAuthenticatorException(String message) {
         super(message);
     }
 
-    public SAML2SSOAuthenticatorException(String errorCode, String message) {
-        super(errorCode, message);
-    }
-
     public SAML2SSOAuthenticatorException(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public SAML2SSOAuthenticatorException(String errorCode, String message, Throwable cause) {
-        super(errorCode, message, cause);
     }
 
 }

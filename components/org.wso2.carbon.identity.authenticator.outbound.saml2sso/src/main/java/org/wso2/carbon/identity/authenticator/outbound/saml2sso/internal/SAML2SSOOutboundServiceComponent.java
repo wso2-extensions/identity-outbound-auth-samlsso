@@ -25,23 +25,20 @@ import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.authenticator.SAML2SSOAuthenticator;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.request.SAML2ACSRequestBuilderFactory;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSOPostRequestResponseBuilderFactory;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponseBuilderFactory;
-import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Utils;
-import org.wso2.carbon.identity.common.base.exception.IdentityRuntimeException;
-import org.wso2.carbon.identity.common.util.IdentityUtilService;
 import org.wso2.carbon.identity.gateway.api.request.GatewayRequestBuilderFactory;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponseBuilderFactory;
-import org.wso2.carbon.identity.gateway.processor.authenticator.AbstractApplicationAuthenticator;
-import org.wso2.carbon.identity.gateway.processor.authenticator.ApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.authentication.authenticator.AbstractApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.authentication.authenticator.ApplicationAuthenticator;
 
+/**
+ * SAML2 SSO Outbound Authenticator Service Component.
+ */
 @Component(
         name = "outbound.saml2sso.dscomponent",
         service = SAML2SSOOutboundServiceComponent.class,
@@ -49,56 +46,39 @@ import org.wso2.carbon.identity.gateway.processor.authenticator.ApplicationAuthe
 )
 public class SAML2SSOOutboundServiceComponent {
 
-    private static Logger log = LoggerFactory.getLogger(SAML2SSOOutboundServiceComponent.class);
+    private static Logger logger = LoggerFactory.getLogger(SAML2SSOOutboundServiceComponent.class);
 
     @Activate
     protected void activate(BundleContext bundleContext) {
 
         try {
             doBootstrap();
-            SAML2SSOAuthenticatorDataHolder.getInstance().setCredential(Utils.getServerCredentials());
-            bundleContext.registerService(ApplicationAuthenticator.class.getName(),
-                    new SAML2SSOAuthenticator(), null);
-            bundleContext.registerService(AbstractApplicationAuthenticator.class,
-                    new SAML2SSOAuthenticator(), null);
-            bundleContext.registerService(GatewayRequestBuilderFactory.class, new SAML2ACSRequestBuilderFactory(), null);
-            bundleContext.registerService(GatewayResponseBuilderFactory.class, new SAML2SSOPostRequestResponseBuilderFactory(), null);
-            bundleContext.registerService(GatewayResponseBuilderFactory.class, new SAML2SSORedirectRequestResponseBuilderFactory(), null);
+            // why do we need to register two times
+            bundleContext.registerService(ApplicationAuthenticator.class.getName(), new SAML2SSOAuthenticator(), null);
+            bundleContext.registerService(AbstractApplicationAuthenticator.class, new SAML2SSOAuthenticator(), null);
+            bundleContext.registerService(GatewayRequestBuilderFactory.class, new SAML2ACSRequestBuilderFactory(),
+                                          null);
+            bundleContext.registerService(GatewayResponseBuilderFactory.class,
+                                          new SAML2SSOPostRequestResponseBuilderFactory(), null);
+            bundleContext.registerService(GatewayResponseBuilderFactory.class,
+                                          new SAML2SSORedirectRequestResponseBuilderFactory(), null);
         } catch (Throwable e) {
-            log.error("Error while registering SAML2SSOAuthenticator.", e);
+            logger.error("Error while registering SAML2SSOAuthenticator.", e);
         }
     }
 
     @Deactivate
     protected void deactivate(ComponentContext context) {
-        if (log.isDebugEnabled()) {
-            log.debug("SAML2SSOAuthenticator bundle is de-activated");
+        if (logger.isDebugEnabled()) {
+            logger.debug("SAML2SSOAuthenticator bundle is de-activated.");
         }
     }
 
-    @Reference(
-            name = "identity.util.dscomponent",
-            service = IdentityUtilService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetIdentityUtilService")
-    protected void setIdentityUtilService(IdentityUtilService identityUtilService) {
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the IdentityUtilService");
-        }
-        SAML2SSOAuthenticatorDataHolder.getInstance().setIdentityUtilService(identityUtilService);
-    }
-
-    protected void unsetIdentityUtilService(IdentityUtilService identityUtilService) {
-        log.debug("UnSetting the IdentityUtilService");
-        SAML2SSOAuthenticatorDataHolder.getInstance().setIdentityUtilService(null);
-    }
-
-    public static void doBootstrap() {
+    private void doBootstrap() {
         try {
             DefaultBootstrap.bootstrap();
         } catch (ConfigurationException e) {
-            throw new IdentityRuntimeException("Error in bootstrapping the OpenSAML2 library", e);
+            logger.error("Error in bootstrapping the OpenSAML2 library.", e);
         }
     }
 }

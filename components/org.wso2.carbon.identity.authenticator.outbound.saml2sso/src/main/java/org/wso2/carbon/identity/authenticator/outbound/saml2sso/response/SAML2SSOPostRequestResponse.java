@@ -18,16 +18,13 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.response;
 
-import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.xml.security.x509.X509Credential;
-import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 
-// can we extend this from SAML2SSORedirectRequestResponse ?
-public class SAML2SSOPostRequestResponse extends GatewayResponse {
+/**
+ * The AuthnRequest sent over post binding to the federated IdP.
+ */
+public class SAML2SSOPostRequestResponse extends SAML2SSORequestResponse {
 
-    protected String saml2SSOUrl;
-    protected RequestAbstractType samlRequest;
-    protected String relayState;
     protected boolean isAuthnRequestSigned;
     protected X509Credential idPCredential;
     protected String sigAlg;
@@ -35,25 +32,10 @@ public class SAML2SSOPostRequestResponse extends GatewayResponse {
 
     protected SAML2SSOPostRequestResponse(SAML2SSOPostRequestResponseBuilder builder) {
         super(builder);
-        saml2SSOUrl = builder.saml2SSOUrl;
-        samlRequest = builder.samlRequest;
-        relayState = builder.relayState;
         isAuthnRequestSigned = builder.isAuthnRequestSigned;
         idPCredential = builder.idPCredential;
         sigAlg = builder.sigAlg;
         digestAlg = builder.digestAlg;
-    }
-
-    public String getSaml2SSOUrl() {
-        return saml2SSOUrl;
-    }
-
-    public RequestAbstractType getSamlRequest() {
-        return samlRequest;
-    }
-
-    public String getRelayState() {
-        return relayState;
     }
 
     public boolean isAuthnRequestSigned() {
@@ -72,30 +54,15 @@ public class SAML2SSOPostRequestResponse extends GatewayResponse {
         return digestAlg;
     }
 
-    public static class SAML2SSOPostRequestResponseBuilder extends GatewayResponseBuilder {
+    /**
+     * The builder for building SAML2SSOPostRequestResponse.
+     */
+    public static class SAML2SSOPostRequestResponseBuilder extends SAML2SSORequestResponseBuilder {
 
-        protected String saml2SSOUrl;
-        protected RequestAbstractType samlRequest;
-        protected String relayState;
         protected boolean isAuthnRequestSigned;
         protected X509Credential idPCredential;
         protected String sigAlg;
         protected String digestAlg;
-
-        public SAML2SSOPostRequestResponseBuilder setSaml2SSOUrl(String saml2SSOUrl) {
-            this.saml2SSOUrl = saml2SSOUrl;
-            return this;
-        }
-
-        public SAML2SSOPostRequestResponseBuilder setSamlRequest(RequestAbstractType samlRequest) {
-            this.samlRequest = samlRequest;
-            return this;
-        }
-
-        public SAML2SSOPostRequestResponseBuilder setRelayState(String relayState) {
-            this.relayState = relayState;
-            return this;
-        }
 
         public SAML2SSOPostRequestResponseBuilder setAuthnRequestSigned(boolean authnRequestSigned) {
             isAuthnRequestSigned = authnRequestSigned;

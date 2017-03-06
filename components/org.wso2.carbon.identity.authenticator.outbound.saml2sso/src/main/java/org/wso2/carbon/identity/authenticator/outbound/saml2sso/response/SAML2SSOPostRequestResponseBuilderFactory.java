@@ -22,39 +22,34 @@ import org.apache.commons.lang.StringUtils;
 import org.owasp.encoder.Encode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
+import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.bean.Config;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
-import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Utils;
 import org.wso2.carbon.identity.common.base.Constants;
-import org.wso2.carbon.identity.gateway.api.exception.GatewayServerException;
+import org.wso2.carbon.identity.common.base.exception.IdentityRuntimeException;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponseBuilderFactory;
 
 import javax.ws.rs.core.Response;
 
+/**
+ * The factory responsible of building the MSS4J Response from SAML2SSOPostRequestResponse.
+ */
 public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBuilderFactory {
 
     private static Logger log = LoggerFactory.getLogger(SAML2SSOPostRequestResponseBuilderFactory.class);
-
-    @Override
-    public String getName() {
-        return this.getName();
-    }
 
     public boolean canHandle(GatewayResponse gatewayResponse) {
         return gatewayResponse instanceof SAML2SSOPostRequestResponse;
     }
 
-    public boolean canHandle(GatewayServerException exception) {
-        return false;
-    }
-
-
     @Override
     public Response.ResponseBuilder createBuilder(GatewayResponse gatewayResponse) {
         Response.ResponseBuilder builder = Response.noContent();
-        createBuilder(builder,gatewayResponse);
-        return builder ;
+        createBuilder(builder, gatewayResponse);
+        return builder;
     }
 
     @Override
@@ -70,8 +65,8 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
         }
         String authnRequest = null;
         try {
-            authnRequest = Utils.encodeForPost((Utils.marshall(saml2Response.getSamlRequest())));
-        } catch (SAML2SSOAuthenticatorException e) {
+            authnRequest = SAML2AuthUtils.encodeForPost((SAML2AuthUtils.marshall(saml2Response.getSamlRequest())));
+        } catch (IdentityRuntimeException e) {
             // merge exception handling changes in inbound framework to gateway
             throw new SAML2SSOAuthenticatorRuntimeException("Error while marshalling and encoding AuthnRequest.", e);
         }
@@ -80,7 +75,6 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
     }
 
     protected void signSAMLResponse(SAML2SSOPostRequestResponse response) throws SAML2SSOAuthenticatorException {
-
 
         if (response.isAuthnRequestSigned()) {
             String sigAlg = response.getSigAlg();
@@ -91,36 +85,20 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
             if (StringUtils.isBlank(digAlg)) {
                 digAlg = Constants.XML.DigestAlgorithmURI.SHA1;
             }
-            Utils.setSignature(response.getSamlRequest(), sigAlg, digAlg, true, response.getIdPCredential());
+            SAML2AuthUtils.setSignature(response.getSamlRequest(), sigAlg, digAlg, true, response.getIdPCredential());
         }
     }
 
     protected String buildPostPage(String saml2SSOUrl, String samlRequest, String relayState) {
 
-        // be able to read post page from config
-        String postPage = postPage = "<html>\n" +
-                                     "\t<body>\n" +
-                                     "        \t<p>You are now redirected to $url \n" +
-                                     "        \tIf the redirection fails, please click the post button.</p>\n" +
-                                     "\n" +
-                                     "        \t<form method='post' action='$url'>\n" +
-                                     "       \t\t\t<p>\n" +
-                                     "                    <!--$params-->\n" +
-                                     "        \t\t\t<button type='submit'>POST</button>\n" +
-                                     "       \t\t\t</p>\n" +
-                                     "       \t\t</form>\n" +
-                                     "       \t\t<script type='text/javascript'>\n" +
-                                     "        \t\tdocument.forms[0].submit();\n" +
-                                     "        \t</script>\n" +
-                                     "        </body>\n" +
-                                     "</html>";
+        String postPage  = Config.getInstance().getAuthnRequestPage();
 
         postPage = postPage.replace("$url", Encode.forHtmlAttribute(saml2SSOUrl));
         StringBuilder hiddenInputBuilder = new StringBuilder("");
-        hiddenInputBuilder.append("<input type='hidden' name='SAMLRequest' value='")
+        hiddenInputBuilder.append("<input type='hidden' name='" + SAML2AuthConstants.SAML_REQUEST + "' value='")
                 .append(samlRequest).append("'>");
         if (relayState != null) {
-            hiddenInputBuilder.append("<input type='hidden' name='RelayState' value='")
+            hiddenInputBuilder.append("<input type='hidden' name='" + SAML2AuthConstants.RELAY_STATE + "' value='")
                     .append(relayState).append("'>");
         }
         postPage = postPage.replace("<!--$params-->", hiddenInputBuilder.toString());
