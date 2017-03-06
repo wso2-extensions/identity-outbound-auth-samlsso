@@ -57,25 +57,13 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
 
         SAML2SSOPostRequestResponse saml2Response = (SAML2SSOPostRequestResponse) gatewayResponse;
         builder.status(200);
-        try {
-            signSAMLResponse(saml2Response);
-        } catch (SAML2SSOAuthenticatorException e) {
-            // merge exception handling changes in inbound framework to gateway
-            throw new SAML2SSOAuthenticatorRuntimeException("Error while signing AuthnRequest.", e);
-        }
-        String authnRequest = null;
-        try {
-            authnRequest = SAML2AuthUtils.encodeForPost((SAML2AuthUtils.marshall(saml2Response.getSamlRequest())));
-        } catch (IdentityRuntimeException e) {
-            // merge exception handling changes in inbound framework to gateway
-            throw new SAML2SSOAuthenticatorRuntimeException("Error while marshalling and encoding AuthnRequest.", e);
-        }
+        signSAMLResponse(saml2Response);
+        String authnRequest = SAML2AuthUtils.encodeForPost((SAML2AuthUtils.marshall(saml2Response.getSamlRequest())));
         String body = buildPostPage(saml2Response.getSaml2SSOUrl(), authnRequest, saml2Response.getRelayState());
         builder.entity(body);
     }
 
-    protected void signSAMLResponse(SAML2SSOPostRequestResponse response) throws
-                                                                          SAML2SSOAuthenticatorException {
+    protected void signSAMLResponse(SAML2SSOPostRequestResponse response) {
 
         if (response.isAuthnRequestSigned()) {
             String sigAlg = response.getSigAlg();

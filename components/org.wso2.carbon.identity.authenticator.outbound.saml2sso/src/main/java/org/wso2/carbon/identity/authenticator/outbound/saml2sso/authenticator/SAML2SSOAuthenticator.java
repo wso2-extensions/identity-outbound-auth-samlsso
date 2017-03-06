@@ -63,7 +63,9 @@ import org.w3c.dom.Element;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 import org.wso2.carbon.identity.auth.saml2.common.X509CredentialImpl;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticationException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorException;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.request.SAML2ACSRequest;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSOPostRequestResponse;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponse;
@@ -148,7 +150,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     @Override
     protected AuthenticationResponse processRequest(AuthenticationContext context)
-            throws AuthenticationHandlerException {
+            throws SAML2SSOAuthenticationException {
 
         boolean isPost = isPost(getIdentityProviderConfig(context), context);
         boolean isForce = isForce(getIdentityProviderConfig(context), context);
@@ -166,8 +168,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected SAML2SSOPostRequestResponse.SAML2SSOPostRequestResponseBuilder buildSAML2SSOPostRequest(
-            boolean isForce, boolean isPassive, AuthenticationContext context)
-            throws AuthenticationHandlerException {
+            boolean isForce, boolean isPassive, AuthenticationContext context) {
 
         SAML2SSOPostRequestResponse.SAML2SSOPostRequestResponseBuilder builder = new SAML2SSOPostRequestResponse
                 .SAML2SSOPostRequestResponseBuilder();
@@ -184,8 +185,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected SAML2SSORedirectRequestResponse.SAML2SSORedirectRequestResponseBuilder buildSAML2SSORedirectRequest(
-            boolean isForce, boolean isPassive, AuthenticationContext context)
-            throws AuthenticationHandlerException {
+            boolean isForce, boolean isPassive, AuthenticationContext context) {
 
         SAML2SSORedirectRequestResponse.SAML2SSORedirectRequestResponseBuilder builder = new
                 SAML2SSORedirectRequestResponse.SAML2SSORedirectRequestResponseBuilder();
@@ -201,7 +201,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected AuthnRequest buildAuthnRequest(String idpUrl, boolean isForce, boolean isPassive, AuthenticationContext
-            context) throws AuthenticationHandlerException {
+            context) {
 
         IssuerBuilder issuerBuilder = new IssuerBuilder();
         Issuer issuer = issuerBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer", "samlp");
@@ -254,8 +254,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         return authRequest;
     }
 
-    protected void buildRequestedAuthnContext(AuthnRequest authnRequest, AuthenticationContext context)
-            throws AuthenticationHandlerException {
+    protected void buildRequestedAuthnContext(AuthnRequest authnRequest, AuthenticationContext context) {
 
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = null;
         RequestedAuthnContext requestedAuthnContext = null;
@@ -330,46 +329,32 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     @Override
     protected AuthenticationResponse processResponse(AuthenticationContext context)
-            throws AuthenticationHandlerException {
+            throws SAML2SSOAuthenticationException, SAML2SSOAuthenticatorException {
 
         SAML2ACSRequest saml2ACSRequest = (SAML2ACSRequest) context.getIdentityRequest();
         String samlResponse = saml2ACSRequest.getSamlResponse();
         String decodedResponse = new String(Base64.decode(samlResponse));
-        XMLObject xmlObject = null;
-        try {
-            xmlObject = SAML2AuthUtils.unmarshall(decodedResponse);
-        } catch (IdentityRuntimeException e) {
-            logger.error("Error while unmarshalling SAMLResponse message");
-            return AuthenticationResponse.AUTHENTICATED;
-
-        }
+        XMLObject xmlObject = SAML2AuthUtils.unmarshall(decodedResponse);
         Response response = (Response) xmlObject;
-        try {
-            Assertion assertion = decryptAssertion(response, context);
-            if (assertion != null) {
+        Assertion assertion = decryptAssertion(response, context);
 
-                validateIssuer(assertion, context);
+        if (assertion != null) {
 
-                validateAudienceRestriction(assertion, context);
+            validateIssuer(assertion, context);
 
-                validateSignature(assertion, response, getIdentityProviderConfig(context));
+            validateAudienceRestriction(assertion, context);
 
-                processSubject(assertion, context);
+            validateSignature(assertion, response, getIdentityProviderConfig(context));
 
-                processAttributeStatements(assertion, getIdentityProviderConfig(context), context);
+            processSubject(assertion, context);
 
-            }
-        } catch (SAML2SSOAuthenticatorException e) {
-            logger.error("Error while processing the SAMLResponse.", e);
-            return AuthenticationResponse.AUTHENTICATED;
+            processAttributeStatements(assertion, getIdentityProviderConfig(context), context);
         }
-
         return AuthenticationResponse.AUTHENTICATED;
     }
 
-    protected Assertion decryptAssertion(Response response, AuthenticationContext context) throws
-            SAML2SSOAuthenticatorException,
-            AuthenticationHandlerException {
+    protected Assertion decryptAssertion(Response response, AuthenticationContext context)
+            throws SAML2SSOAuthenticationException {
 
         Assertion assertion = null;
         if (isAssertionEncryptionEnabled(getIdentityProviderConfig(context))) {
@@ -391,7 +376,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                     decrypter.setRootInNewDocument(true);
                     assertion = decrypter.decrypt(encryptedAssertion);
                 } catch (DecryptionException e) {
-                    throw new SAML2SSOAuthenticatorException("Error while decrypting SAML Assertion.", e);
+                    throw new SAML2SSOAuthenticationException("Error while decrypting SAML Assertion.", e);
                 }
             }
         } else {
@@ -408,23 +393,23 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                     response.getStatus().getStatusCode().getStatusCode().getValue().equals(StatusCode.NO_PASSIVE_URI)) {
                 return null;
             }
-            throw new SAML2SSOAuthenticatorException("Cannot find Assertion in SAMLResponse");
+            throw new SAML2SSOAuthenticationException("Cannot find Assertion in SAMLResponse");
         }
         return assertion;
     }
 
     protected void validateIssuer(Assertion assertion, AuthenticationContext context)
-            throws AuthenticationHandlerException {
+            throws SAML2SSOAuthenticationException {
 
         if (assertion.getIssuer() == null) {
-            throw new SAML2SSOAuthenticatorException("Cannot find Issuer element in Assertion.");
+            throw new SAML2SSOAuthenticationException("Cannot find Issuer element in Assertion.");
         } else if (!assertion.getIssuer().getValue().equals(getIdPEntityId(getIdentityProviderConfig(context)))) {
-            throw new SAML2SSOAuthenticatorException("Issuer validation failed.");
+            throw new SAML2SSOAuthenticationException("Issuer validation failed.");
         }
     }
 
     protected void validateAudienceRestriction(Assertion assertion, AuthenticationContext context)
-            throws AuthenticationHandlerException {
+            throws SAML2SSOAuthenticationException {
 
         if (assertion != null) {
             Conditions conditions = assertion.getConditions();
@@ -442,29 +427,30 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                                 }
                             }
                             if (!audienceFound) {
-                                throw new SAML2SSOAuthenticatorException("Assertion Audience Restriction validation " +
+                                throw new SAML2SSOAuthenticationException("Assertion Audience Restriction validation " +
                                                                          "failed");
                             }
                         } else {
-                            throw new SAML2SSOAuthenticatorException("SAML Response's AudienceRestriction doesn't " +
+                            throw new SAML2SSOAuthenticationException("SAML Response's AudienceRestriction doesn't " +
                                                                      "contain Audiences");
                         }
                     }
                 } else {
-                    throw new SAML2SSOAuthenticatorException("SAML Response doesn't contain AudienceRestrictions");
+                    throw new SAML2SSOAuthenticationException("SAML Response doesn't contain AudienceRestrictions");
                 }
             } else {
-                throw new SAML2SSOAuthenticatorException("SAML Response doesn't contain Conditions");
+                throw new SAML2SSOAuthenticationException("SAML Response doesn't contain Conditions");
             }
         }
     }
 
     protected void validateSignature(Assertion assertion, Response response,
                                      IdentityProviderConfig identityProviderConfig) throws
-                                                                                    AuthenticationHandlerException {
+                                                                                    SAML2SSOAuthenticationException,
+                                                                                    SAML2SSOAuthenticatorException {
 
         if (assertion.getSignature() == null) {
-            throw new SAML2SSOAuthenticatorException("Signature element not found in Assertion.");
+            throw new SAML2SSOAuthenticationException("Signature element not found in Assertion.");
         } else {
             try {
                 Credential credential = getIdPCredential(identityProviderConfig);
@@ -475,26 +461,26 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 validator.validate(assertion.getSignature());
                 if (isAuthnResponseSigned(identityProviderConfig)) {
                     if (response.getSignature() == null) {
-                        throw new SAML2SSOAuthenticatorException("SAMLResponse signing is enabled, but signature " +
+                        throw new SAML2SSOAuthenticationException("SAMLResponse signing is enabled, but signature " +
                                                                  "element not found in Response element.");
                     } else {
                         try {
                             validator = new SignatureValidator(credential);
                             validator.validate(response.getSignature());
                         } catch (ValidationException e) {
-                            throw new SAML2SSOAuthenticatorException("Signature validation failed for Response", e);
+                            throw new SAML2SSOAuthenticationException("Signature validation failed for Response", e);
                         }
                     }
                 }
             } catch (ValidationException e) {
-                throw new SAML2SSOAuthenticatorException("Signature validation failed for Assertion.", e);
+                throw new SAML2SSOAuthenticationException("Signature validation failed for Assertion.", e);
             }
         }
 
     }
 
-    protected void processSubject(Assertion assertion, AuthenticationContext context) throws
-            SAML2SSOAuthenticatorException {
+    protected void processSubject(Assertion assertion, AuthenticationContext context)
+            throws SAML2SSOAuthenticationException {
 
         String subject = null;
         if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
@@ -502,7 +488,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         }
 
         if (StringUtils.isBlank(subject)) {
-            throw new SAML2SSOAuthenticatorException("Assertion does not contain the name of the subject");
+            throw new SAML2SSOAuthenticationException("Assertion does not contain the name of the subject");
         }
 
         FederatedUser federatedUser = new FederatedUser(subject);
@@ -510,7 +496,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected void processAttributeStatements(Assertion assertion, IdentityProviderConfig identityProviderConfig,
-                                              AuthenticationContext context) throws AuthenticationHandlerException {
+                                              AuthenticationContext context) throws SAML2SSOAuthenticationException {
 
         Set<Claim> claims = new HashSet();
         if (assertion != null) {
@@ -556,7 +542,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 }
             }
             if (!isUsernameExists) {
-                throw new SAML2SSOAuthenticatorException("Cannot find username claim.");
+                throw new SAML2SSOAuthenticationException("Cannot find username claim.");
             }
         } else {
             FederatedUser federatedUser = (FederatedUser) context.getParameter("Subject");
@@ -565,13 +551,20 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         }
     }
 
-    public IdentityProviderConfig getIdentityProviderConfig(AuthenticationContext context)
-            throws AuthenticationHandlerException {
+    public IdentityProviderConfig getIdentityProviderConfig(AuthenticationContext context) {
 
-        return context.getSequence().getIdentityProvider(context.getSequenceContext().getCurrentStep(),
-                context.getSequenceContext().getCurrentStepContext()
-                        .getIdentityProviderName())
-                .getIdentityProviderConfig();
+        try {
+            return context.getSequence().getIdentityProvider(context.getSequenceContext().getCurrentStep(),
+                    context.getSequenceContext().getCurrentStepContext()
+                            .getIdentityProviderName())
+                    .getIdentityProviderConfig();
+        } catch (AuthenticationHandlerException e) {
+            throw new SAML2SSOAuthenticatorRuntimeException("Error occurred while retrieving IdentityProviderConfig " +
+                                                            "for " + context.getSequenceContext()
+                                                                    .getCurrentStepContext().getIdentityProviderName() +
+                                                            "in step " + context.getSequenceContext().getCurrentStep()
+                                                            + ".", e);
+        }
     }
 
     public String getSPEntityId(IdentityProviderConfig identityProviderConfig) {

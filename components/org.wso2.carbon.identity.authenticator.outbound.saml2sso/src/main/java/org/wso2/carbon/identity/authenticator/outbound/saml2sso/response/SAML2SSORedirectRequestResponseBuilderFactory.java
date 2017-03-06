@@ -68,7 +68,6 @@ public class SAML2SSORedirectRequestResponseBuilderFactory extends GatewayRespon
                 SAML2AuthUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
                                                              samlResponse.getIdPCredential());
             } catch (IdentityRuntimeException e) {
-                // how to handle exceptions at factory level
                 throw new SAML2SSOAuthenticatorRuntimeException("Error while signing AuthnRequest.", e);
             }
 
