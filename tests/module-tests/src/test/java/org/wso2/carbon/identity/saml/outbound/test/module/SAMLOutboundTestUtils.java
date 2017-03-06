@@ -232,7 +232,7 @@ public class SAMLOutboundTestUtils {
 
     public static Issuer getIssuer() {
         Issuer issuer = new IssuerBuilder().buildObject();
-        String idPEntityId = "carbonServer";
+        String idPEntityId = "localhost";
         issuer.setValue(idPEntityId);
         issuer.setFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:entity");
         return issuer;

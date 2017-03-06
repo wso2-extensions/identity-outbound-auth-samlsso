@@ -72,8 +72,10 @@ public class SAMLOutboundTests {
             Assert.assertTrue(locationHeader.contains("authenticatedUser=AuthenticatedUserName"));
         } catch (IOException e) {
             log.error("Error while running federated authentication test case", e);
+            Assert.fail("Error while running federated authentication test case");
         } catch (IdentityException e) {
             log.error("Error while running building response", e);
+            Assert.fail("Error while running federated authentication test case");
         }
     }
 

@@ -139,10 +139,10 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     @Override
     protected boolean isInitialRequest(AuthenticationContext authenticationContext) {
 
-        if (authenticationContext.getIdentityRequest() instanceof SAML2ACSRequest) {
-            return false;
+        if (!(authenticationContext.getIdentityRequest() instanceof SAML2ACSRequest)) {
+            return true;
         }
-        return true;
+        return false;
     }
 
 
