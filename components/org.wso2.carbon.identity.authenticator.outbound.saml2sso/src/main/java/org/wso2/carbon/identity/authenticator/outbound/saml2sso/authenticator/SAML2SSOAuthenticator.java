@@ -368,6 +368,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     protected Assertion decryptAssertion(Response response, AuthenticationContext context) throws
+            SAML2SSOAuthenticatorException,
             AuthenticationHandlerException {
 
         Assertion assertion = null;
@@ -805,6 +806,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     }
 
     public String getUsernameClaimURI(IdentityProviderConfig identityProviderConfig) {
+
         return null;
     }
 

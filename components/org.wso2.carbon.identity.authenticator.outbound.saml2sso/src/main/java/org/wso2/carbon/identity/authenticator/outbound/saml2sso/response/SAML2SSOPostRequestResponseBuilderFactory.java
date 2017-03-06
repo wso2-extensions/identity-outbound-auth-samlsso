@@ -74,7 +74,8 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
         builder.entity(body);
     }
 
-    protected void signSAMLResponse(SAML2SSOPostRequestResponse response) throws SAML2SSOAuthenticatorException {
+    protected void signSAMLResponse(SAML2SSOPostRequestResponse response) throws
+                                                                          SAML2SSOAuthenticatorException {
 
         if (response.isAuthnRequestSigned()) {
             String sigAlg = response.getSigAlg();
