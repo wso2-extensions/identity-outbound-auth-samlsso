@@ -70,7 +70,6 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.request.SAML2ACS
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSOPostRequestResponse;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponse;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Constants;
-import org.wso2.carbon.identity.common.base.exception.IdentityRuntimeException;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 import org.wso2.carbon.identity.gateway.authentication.AuthenticationResponse;
 import org.wso2.carbon.identity.gateway.authentication.authenticator.AbstractApplicationAuthenticator;
