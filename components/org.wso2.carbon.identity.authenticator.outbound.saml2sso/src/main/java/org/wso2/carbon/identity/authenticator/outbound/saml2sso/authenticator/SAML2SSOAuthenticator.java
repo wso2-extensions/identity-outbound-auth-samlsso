@@ -363,8 +363,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             if (CollectionUtils.isNotEmpty(encryptedAssertions)) {
                 encryptedAssertion = encryptedAssertions.get(0);
                 try {
-                    // get IDP cert
-                    X509Certificate idPCredential = null;
+                    X509Certificate idPCredential = SAML2AuthUtils.getServerCredentials().getEntityCertificate();
                     X509Credential credential = new X509CredentialImpl(idPCredential);
                     KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(credential);
                     EncryptedKey key = encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
