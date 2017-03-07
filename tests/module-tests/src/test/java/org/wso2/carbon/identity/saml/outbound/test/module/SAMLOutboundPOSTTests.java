@@ -30,9 +30,9 @@ import java.util.List;
  */
 @Listeners(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
-public class SAMLOutboundTests {
+public class SAMLOutboundPOSTTests {
 
-    private static final Logger log = LoggerFactory.getLogger(SAMLOutboundTests.class);
+    private static final Logger log = LoggerFactory.getLogger(SAMLOutboundPOSTTests.class);
 
     @Inject
     private BundleContext bundleContext;
@@ -71,10 +71,8 @@ public class SAMLOutboundTests {
             String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
             Assert.assertTrue(locationHeader.contains("authenticatedUser=AuthenticatedUserName"));
         } catch (IOException e) {
-            log.error("Error while running federated authentication test case", e);
             Assert.fail("Error while running federated authentication test case");
         } catch (IdentityException e) {
-            log.error("Error while running building response", e);
             Assert.fail("Error while running federated authentication test case");
         }
     }

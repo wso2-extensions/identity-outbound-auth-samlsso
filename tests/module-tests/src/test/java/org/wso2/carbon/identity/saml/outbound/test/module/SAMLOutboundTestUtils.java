@@ -4,11 +4,15 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
+import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
 import org.opensaml.saml1.core.NameIdentifier;
 import org.opensaml.saml2.core.Assertion;
+import org.opensaml.saml2.core.Attribute;
+import org.opensaml.saml2.core.AttributeStatement;
+import org.opensaml.saml2.core.AttributeValue;
 import org.opensaml.saml2.core.Audience;
 import org.opensaml.saml2.core.AudienceRestriction;
 import org.opensaml.saml2.core.AuthnContext;
@@ -25,6 +29,8 @@ import org.opensaml.saml2.core.Subject;
 import org.opensaml.saml2.core.SubjectConfirmation;
 import org.opensaml.saml2.core.SubjectConfirmationData;
 import org.opensaml.saml2.core.impl.AssertionBuilder;
+import org.opensaml.saml2.core.impl.AttributeBuilder;
+import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
 import org.opensaml.saml2.core.impl.AudienceBuilder;
 import org.opensaml.saml2.core.impl.AudienceRestrictionBuilder;
 import org.opensaml.saml2.core.impl.AuthnContextBuilder;
@@ -43,15 +49,21 @@ import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
+import org.opensaml.xml.schema.XSString;
+import org.opensaml.xml.schema.impl.XSStringBuilder;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.opensaml.xml.signature.SignableXMLObject;
 import org.opensaml.xml.util.Base64;
+import org.osgi.framework.BundleContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
+import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
+import org.wso2.carbon.identity.gateway.store.IdentityProviderConfigStore;
+import org.wso2.carbon.identity.saml.util.SAMLSSOConstants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,6 +72,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class SAMLOutboundTestUtils {
 
@@ -186,13 +201,14 @@ public class SAMLOutboundTestUtils {
                 * If <AttributeConsumingServiceIndex> element is in the <AuthnRequest> and according to
                 * the spec 2.0 the subject MUST be in the assertion
                 */
-//            Map<String, String> claims = SAMLSSOUtil.getAttributes(authenticationContext);
-//            if (claims != null && !claims.isEmpty()) {
-//                AttributeStatement attrStmt = buildAttributeStatement(claims);
-//                if (attrStmt != null) {
-//                    samlAssertion.getAttributeStatements().add(attrStmt);
-//                }
-//            }
+            Map<String, String> claims = new HashMap<String, String>();
+            claims.put("http://application1.com/email" ,"testuser@wso2.com");
+            if (claims != null && !claims.isEmpty()) {
+                AttributeStatement attrStmt = buildAttributeStatement(claims);
+                if (attrStmt != null) {
+                    samlAssertion.getAttributeStatements().add(attrStmt);
+                }
+            }
 
             AudienceRestriction audienceRestriction = new AudienceRestrictionBuilder()
                     .buildObject();
@@ -335,4 +351,42 @@ public class SAMLOutboundTestUtils {
         return ssoSigner.setSignature(request, signatureAlgorithm, digestAlgorithm, cred);
     }
 
+    public static IdentityProviderConfig getIdentityProviderConfigs(String uniqueId, BundleContext bundleContext) {
+        IdentityProviderConfigStore identityProviderConfigStore = bundleContext.getService(bundleContext
+                .getServiceReference(IdentityProviderConfigStore.class));
+        return identityProviderConfigStore.getIdentityProvider(uniqueId);
+    }
+
+
+    public static AttributeStatement buildAttributeStatement(Map<String, String> claims) {
+
+        org.opensaml.saml2.core.AttributeStatement attStmt = new AttributeStatementBuilder().buildObject();
+        Iterator<Map.Entry<String, String>> iterator = claims.entrySet().iterator();
+        boolean atLeastOneNotEmpty = false;
+        for (int i = 0; i < claims.size(); i++) {
+            Map.Entry<String, String> claimEntry = iterator.next();
+            String claimUri = claimEntry.getKey();
+            String claimValue = claimEntry.getValue();
+            if (claimUri != null && !claimUri.trim().isEmpty() && claimValue != null && !claimValue.trim().isEmpty()) {
+                atLeastOneNotEmpty = true;
+                Attribute attribute = new AttributeBuilder().buildObject();
+                attribute.setName(claimUri);
+                attribute.setNameFormat(SAMLSSOConstants.NAME_FORMAT_BASIC);
+                XSStringBuilder stringBuilder = (XSStringBuilder) Configuration.getBuilderFactory().
+                        getBuilder(XSString.TYPE_NAME);
+                XSString stringValue;
+
+                stringValue = stringBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME, XSString.TYPE_NAME);
+                stringValue.setValue(claimValue);
+                attribute.getAttributeValues().add(stringValue);
+
+                attStmt.getAttributes().add(attribute);
+            }
+        }
+        if (atLeastOneNotEmpty) {
+            return attStmt;
+        } else {
+            return null;
+        }
+    }
 }

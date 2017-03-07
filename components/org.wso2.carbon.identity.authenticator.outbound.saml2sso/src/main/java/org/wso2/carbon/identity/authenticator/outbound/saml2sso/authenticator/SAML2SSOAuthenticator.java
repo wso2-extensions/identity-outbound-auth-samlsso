@@ -629,11 +629,11 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         String requestBinding = (String) getAuthenticatorConfigProperties(identityProviderConfig).get(
                 SAML2AuthConstants.Config.Name.REQUEST_BINDING);
         boolean isPost = true;
-        if (SAML2AuthConstants.Config.Value.GET.equals(requestBinding)) {
+        if (SAML2AuthConstants.Config.Value.REDIRECT.equals(requestBinding)) {
             isPost = false;
         } else if (SAML2AuthConstants.Config.Value.AS_REQUEST.equals(requestBinding)) {
             String method = context.getInitialAuthenticationRequest().getHttpMethod();
-            if (SAML2AuthConstants.Config.Value.GET.equalsIgnoreCase(method)) {
+            if (SAML2AuthConstants.Config.Value.REDIRECT.equalsIgnoreCase(method)) {
                 isPost = false;
             }
         }
