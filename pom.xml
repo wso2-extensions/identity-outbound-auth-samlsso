@@ -445,6 +445,7 @@
         <rs-api.version>2.0</rs-api.version>
         <disruptor.wso2.version>3.3.2.wso2v2</disruptor.wso2.version>
         <maven.paxexam.plugin.version>1.2.4</maven.paxexam.plugin.version>
+        <org.jacoco.ant.version>0.7.5.201505241946</org.jacoco.ant.version>
 
 
         <commons-codec.wso2.osgi.version.range>[1.4.0,2.0.0)</commons-codec.wso2.osgi.version.range>

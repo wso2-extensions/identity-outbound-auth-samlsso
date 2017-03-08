@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.response;
 
+import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
@@ -49,8 +50,8 @@ public class SAML2SSORedirectRequestResponseBuilderFactory extends GatewayRespon
         SAML2SSORedirectRequestResponse samlResponse = (SAML2SSORedirectRequestResponse) gatewayResponse;
 
         String saml2SSOUrl = samlResponse.getSaml2SSOUrl();
-        StringBuilder httpQueryString = new StringBuilder(SAML2AuthConstants.RELAY_STATE + "=" + samlResponse
-                .getSamlRequest());
+        StringBuilder httpQueryString = new StringBuilder(SAML2AuthConstants.SAML_REQUEST + "=" + SAML2AuthUtils
+                .encodeForRedirect(samlResponse.getSamlRequest()));
         try {
             httpQueryString.append("&" + SAML2AuthConstants.RELAY_STATE + "=" + URLEncoder.encode(samlResponse
                                                                                                        .getRelayState()
@@ -79,11 +80,8 @@ public class SAML2SSORedirectRequestResponseBuilderFactory extends GatewayRespon
         }
 
         builder.status(302);
-        try {
-            builder.location(new URI(saml2SSOUrl));
-        } catch (URISyntaxException e) {
-            throw new SAML2SSOAuthenticatorRuntimeException("Invalid URI: " + saml2SSOUrl);
-        }
+        builder.header(HttpHeaders.LOCATION, saml2SSOUrl);
+
     }
 
     @Override

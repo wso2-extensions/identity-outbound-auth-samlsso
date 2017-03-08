@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>org.wso2.carbon.identity.application.authenticator.samlsso.server.feature</artifactId>
     <packaging>carbon-feature</packaging>
-    <name>WSO2 Carbon - Identity SAML Inbound Feature</name>
+    <name>WSO2 Carbon - Identity SAML Outbound Feature</name>
     <url>http://wso2.org</url>
 
 

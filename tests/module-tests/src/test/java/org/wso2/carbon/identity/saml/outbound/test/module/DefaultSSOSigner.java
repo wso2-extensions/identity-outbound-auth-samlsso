@@ -1,12 +1,12 @@
 /*
- *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -97,24 +97,6 @@ public class DefaultSSOSigner  {
         }
 
         return signableXMLObject;
-    }
-
-    public boolean validateXMLSignature(RequestAbstractType request, X509Credential cred,
-                                        String alias) throws IdentityException {
-
-        boolean isSignatureValid = false;
-
-        if (request.getSignature() != null) {
-            try {
-                SignatureValidator validator = new SignatureValidator(cred);
-                validator.validate(request.getSignature());
-                isSignatureValid = true;
-            } catch (ValidationException e) {
-                throw IdentityException.error("Signature Validation Failed for the SAML Assertion : Signature is " +
-                                              "invalid.", e);
-            }
-        }
-        return isSignatureValid;
     }
 
     /**
