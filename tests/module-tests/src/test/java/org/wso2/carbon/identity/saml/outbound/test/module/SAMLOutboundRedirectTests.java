@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.wso2.carbon.identity.saml.outbound.test.module;
 
 import com.google.common.net.HttpHeaders;
@@ -56,6 +74,9 @@ public class SAMLOutboundRedirectTests {
         return optionList.toArray(new Option[optionList.size()]);
     }
 
+    /**
+     * Test SAML outbound authentication with redirect binding.
+     */
     @Test
     public void testSAMLFederatedAuthenticationWithRedirectBinding() {
         IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
@@ -64,13 +85,14 @@ public class SAMLOutboundRedirectTests {
                 .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
                         .REDIRECT);
         try {
-            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT + "?" +
-                    SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET, false);
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
+                    .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET,
+                    false);
             String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
             Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
                     (location);
             String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
-            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse();
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false);
             samlResponse = URLEncoder.encode(samlResponse);
             urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
                     true);
