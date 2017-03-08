@@ -84,7 +84,6 @@ import org.wso2.carbon.identity.gateway.request.ClientAuthenticationRequest;
 import org.wso2.carbon.identity.gateway.service.GatewayClaimResolverService;
 import org.wso2.carbon.identity.mgt.claim.Claim;
 import org.wso2.carbon.identity.saml.request.SAMLSPInitRequest;
-import org.wso2.carbon.identity.saml.util.SAMLSSOUtil;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
@@ -274,8 +273,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 } else {
                     decodedReq = SAML2AuthUtils.decodeForPost(samlRequest);
                 }
-                AuthnRequest clientAuthnRequest = (AuthnRequest) SAMLSSOUtil.SAMLAssertion.unmarshall
-                        (decodedReq);
+                AuthnRequest clientAuthnRequest = (AuthnRequest) SAML2AuthUtils.unmarshall(decodedReq);
 
                 RequestedAuthnContext incomingRequestedAuthnContext = clientAuthnRequest.getRequestedAuthnContext();
                 if (incomingRequestedAuthnContext != null) {
@@ -660,8 +658,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 } else {
                     decodedReq = SAML2AuthUtils.decodeForPost(samlRequest);
                 }
-                AuthnRequest clientAuthnRequest = (AuthnRequest) SAMLSSOUtil.SAMLAssertion.unmarshall
-                        (decodedReq);
+                AuthnRequest clientAuthnRequest = (AuthnRequest) SAML2AuthUtils.unmarshall(decodedReq);
                 isForce = clientAuthnRequest.isForceAuthn();
             }
         }
@@ -688,8 +685,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 } else {
                     decodedReq = SAML2AuthUtils.decodeForPost(samlRequest);
                 }
-                AuthnRequest clientAuthnRequest = (AuthnRequest) SAMLSSOUtil.SAMLAssertion.unmarshall
-                        (decodedReq);
+                AuthnRequest clientAuthnRequest = (AuthnRequest) SAML2AuthUtils.unmarshall(decodedReq);
                 isPassive = clientAuthnRequest.isPassive();
             }
         }
