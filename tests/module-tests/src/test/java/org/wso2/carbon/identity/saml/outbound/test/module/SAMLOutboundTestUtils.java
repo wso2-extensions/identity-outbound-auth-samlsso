@@ -71,11 +71,14 @@ import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
 import org.opensaml.xml.util.Base64;
 import org.osgi.framework.BundleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
+import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
@@ -93,6 +96,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class SAMLOutboundTestUtils {
+
+    Logger logger = LoggerFactory.getLogger(SAMLOutboundTestUtils.class);
 
     public static HttpURLConnection request(String path, String method, boolean keepAlive) throws IOException {
 
@@ -172,7 +177,7 @@ public class SAMLOutboundTestUtils {
 
             NameID nameId = new NameIDBuilder().buildObject();
             // TODO
-            nameId.setValue("AuthenticatedUserName");
+            nameId.setValue(SAMLOutboundTestConstants.AUTHENTICATED_USER_NAME);
 
             nameId.setFormat(NameIdentifier.EMAIL);
 

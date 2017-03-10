@@ -101,7 +101,8 @@ public class SAMLOutboundRedirectTests {
             urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
             urlConnection.getResponseCode();
             String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
-            Assert.assertTrue(locationHeader.contains("authenticatedUser=AuthenticatedUserName"));
+            Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
+                    .AUTHENTICATED_USER_NAME));
         } catch (IOException e) {
             Assert.fail("Error while running federated authentication test case");
         } catch (IdentityException e) {
