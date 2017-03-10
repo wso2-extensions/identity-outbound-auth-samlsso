@@ -69,8 +69,6 @@ import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
-import org.opensaml.xml.security.x509.X509Credential;
-import org.opensaml.xml.signature.SignableXMLObject;
 import org.opensaml.xml.util.Base64;
 import org.osgi.framework.BundleContext;
 import org.w3c.dom.Element;
@@ -78,6 +76,7 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
+import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
 import org.wso2.carbon.identity.gateway.store.IdentityProviderConfigStore;
@@ -88,7 +87,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -149,12 +147,12 @@ public class SAMLOutboundTestUtils {
         String sessionId = "";
         Assertion assertion = buildAssertion(notOnOrAfter);
         if (isEncryptedAssertion) {
-             // TODO
+            // TODO
         } else {
             response.getAssertions().add(assertion);
         }
-        SAMLOutboundTestUtils.doSetSignature(response, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www.w3" +
-                ".org/2000/09/xmldsig#sha1", new SignKeyDataHolder());
+        SAML2AuthUtils.setSignature(response, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www.w3" +
+                ".org/2000/09/xmldsig#sha1", false, SAML2AuthUtils.getServerCredentials());
         String respString = encode(marshall(response));
         return respString;
     }
@@ -224,7 +222,7 @@ public class SAMLOutboundTestUtils {
                 * the spec 2.0 the subject MUST be in the assertion
                 */
             Map<String, String> claims = new HashMap<String, String>();
-            claims.put("http://application1.com/email" ,"testuser@wso2.com");
+            claims.put("http://application1.com/email", "testuser@wso2.com");
             if (claims != null && !claims.isEmpty()) {
                 AttributeStatement attrStmt = buildAttributeStatement(claims);
                 if (attrStmt != null) {
@@ -248,8 +246,8 @@ public class SAMLOutboundTestUtils {
             conditions.getAudienceRestrictions().add(audienceRestriction);
             samlAssertion.setConditions(conditions);
 
-            SAMLOutboundTestUtils.doSetSignature(samlAssertion, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www.w3" +
-                    ".org/2000/09/xmldsig#sha1", new SignKeyDataHolder());
+            SAML2AuthUtils.setSignature(samlAssertion, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www" +
+                    ".w3.org/2000/09/xmldsig#sha1", false, SAML2AuthUtils.getServerCredentials());
 
             return samlAssertion;
         } catch (Exception e) {
@@ -342,35 +340,6 @@ public class SAMLOutboundTestUtils {
         }
 
         return stat;
-    }
-
-    public static X509CredentialImpl getX509CredentialImpl(String alias) {
-
-
-        KeyStoreManager keyStoreManager;
-        // get an instance of the corresponding Key Store Manager instance
-        try {
-            keyStoreManager = KeyStoreManager.getInstance();
-            X509CredentialImpl credentialImpl = null;
-            KeyStore keyStore;
-            keyStore = keyStoreManager.getKeyStore();
-
-            java.security.cert.X509Certificate cert =
-                    (java.security.cert.X509Certificate) keyStore.getCertificate(alias);
-            credentialImpl = new X509CredentialImpl(cert);
-            return credentialImpl;
-        } catch (Exception e) {
-        }
-        return null;
-    }
-
-    private static SignableXMLObject doSetSignature(SignableXMLObject request, String signatureAlgorithm, String
-            digestAlgorithm, X509Credential cred) throws IdentityException {
-
-        doBootstrap();
-        DefaultSSOSigner ssoSigner = new DefaultSSOSigner();
-
-        return ssoSigner.setSignature(request, signatureAlgorithm, digestAlgorithm, cred);
     }
 
     public static IdentityProviderConfig getIdentityProviderConfigs(String uniqueId, BundleContext bundleContext) {
