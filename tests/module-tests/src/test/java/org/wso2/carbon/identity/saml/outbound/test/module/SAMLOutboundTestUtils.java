@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.saml.outbound.test.module;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.xml.security.utils.EncryptionConstants;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
@@ -37,6 +38,7 @@ import org.opensaml.saml2.core.AuthnContext;
 import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnStatement;
 import org.opensaml.saml2.core.Conditions;
+import org.opensaml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
@@ -63,12 +65,18 @@ import org.opensaml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.saml2.core.impl.SubjectBuilder;
 import org.opensaml.saml2.core.impl.SubjectConfirmationBuilder;
 import org.opensaml.saml2.core.impl.SubjectConfirmationDataBuilder;
+import org.opensaml.saml2.encryption.Encrypter;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.encryption.EncryptionException;
+import org.opensaml.xml.encryption.EncryptionParameters;
+import org.opensaml.xml.encryption.KeyEncryptionParameters;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
+import org.opensaml.xml.security.SecurityHelper;
+import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.util.Base64;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
@@ -78,11 +86,14 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
-import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
+import org.wso2.carbon.identity.auth.saml2.common.X509CredentialImpl;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
+import org.wso2.carbon.identity.common.util.keystore.KeyStoreUtils;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
 import org.wso2.carbon.identity.gateway.store.IdentityProviderConfigStore;
+import org.wso2.carbon.identity.saml.exception.SAMLRuntimeException;
+import org.wso2.carbon.identity.saml.exception.SAMLServerException;
 import org.wso2.carbon.identity.saml.util.SAMLSSOConstants;
 
 import java.io.ByteArrayOutputStream;
@@ -90,14 +101,18 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 public class SAMLOutboundTestUtils {
 
-    Logger logger = LoggerFactory.getLogger(SAMLOutboundTestUtils.class);
+    private static Logger logger = LoggerFactory.getLogger(SAMLOutboundTestUtils.class);
 
     public static HttpURLConnection request(String path, String method, boolean keepAlive) throws IOException {
 
@@ -136,7 +151,8 @@ public class SAMLOutboundTestUtils {
     }
 
 
-    public static String getSAMLResponse(boolean isEncryptedAssertion) throws IdentityException {
+    public static String getSAMLResponse(boolean isEncryptedAssertion, String audience, boolean setSignature, boolean
+            isSignAssertions) throws IdentityException {
 
         Response response = new org.opensaml.saml2.core.impl.ResponseBuilder().buildObject();
         response.setIssuer(getIssuer());
@@ -150,19 +166,22 @@ public class SAMLOutboundTestUtils {
         response.setIssueInstant(issueInstant);
         //@TODO sessionHandling
         String sessionId = "";
-        Assertion assertion = buildAssertion(notOnOrAfter);
+        Assertion assertion = buildAssertion(notOnOrAfter, audience, isSignAssertions);
         if (isEncryptedAssertion) {
             // TODO
+
         } else {
             response.getAssertions().add(assertion);
         }
-        SAML2AuthUtils.setSignature(response, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www.w3" +
-                ".org/2000/09/xmldsig#sha1", false, SAML2AuthUtils.getServerCredentials());
+        if (setSignature) {
+            SAML2AuthUtils.setSignature(response, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www.w3" +
+                    ".org/2000/09/xmldsig#sha1", false, SAML2AuthUtils.getServerCredentials());
+        }
         String respString = encode(marshall(response));
         return respString;
     }
 
-    public static Assertion buildAssertion(DateTime notOnOrAfter) throws
+    public static Assertion buildAssertion(DateTime notOnOrAfter, String audience, boolean setSignature) throws
             IdentityException {
 
         try {
@@ -241,9 +260,9 @@ public class SAMLOutboundTestUtils {
 //            issuerAudience.setAudienceURI(context.getIssuerWithDomain());
             audienceRestriction.getAudiences().add(issuerAudience);
 
-            Audience audience = new AudienceBuilder().buildObject();
-            audience.setAudienceURI("carbonServer");
-            audienceRestriction.getAudiences().add(audience);
+            Audience audienceObj = new AudienceBuilder().buildObject();
+            audienceObj.setAudienceURI(audience);
+            audienceRestriction.getAudiences().add(audienceObj);
 
             Conditions conditions = new ConditionsBuilder().buildObject();
             conditions.setNotBefore(currentTime);
@@ -251,12 +270,13 @@ public class SAMLOutboundTestUtils {
             conditions.getAudienceRestrictions().add(audienceRestriction);
             samlAssertion.setConditions(conditions);
 
-            SAML2AuthUtils.setSignature(samlAssertion, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www" +
-                    ".w3.org/2000/09/xmldsig#sha1", false, SAML2AuthUtils.getServerCredentials());
-
+            if (setSignature) {
+                SAML2AuthUtils.setSignature(samlAssertion, "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www" +
+                        ".w3.org/2000/09/xmldsig#sha1", false, SAML2AuthUtils.getServerCredentials());
+            }
             return samlAssertion;
         } catch (Exception e) {
-            System.out.println("");
+            logger.error("Error while building assertion", e);
         }
         return null;
     }
@@ -267,6 +287,7 @@ public class SAMLOutboundTestUtils {
             SecureRandomIdentifierGenerator generator = new SecureRandomIdentifierGenerator();
             return generator.generateIdentifier();
         } catch (NoSuchAlgorithmException e) {
+            logger.error("Error while generating random ID", e);
         }
         return null;
     }
@@ -300,13 +321,13 @@ public class SAMLOutboundTestUtils {
             writer.write(element, output);
             return byteArrayOutputStrm.toString(StandardCharsets.UTF_8.name());
         } catch (Exception e) {
-
+            logger.error("Error while marshalling xml object", e);
         } finally {
             if (byteArrayOutputStrm != null) {
                 try {
                     byteArrayOutputStrm.close();
                 } catch (IOException e) {
-
+                    logger.error("Error while closing byteArrayOutputStream", e);
                 }
             }
         }
@@ -317,6 +338,7 @@ public class SAMLOutboundTestUtils {
         try {
             DefaultBootstrap.bootstrap();
         } catch (ConfigurationException e) {
+            logger.error("Error while bootstrapping opensaml", e);
         }
     }
 
@@ -385,4 +407,48 @@ public class SAMLOutboundTestUtils {
             return null;
         }
     }
+
+//    public void encryptAssertion(Response response, Assertion assertion)
+//            throws SAMLServerException {
+//
+//
+//        String encodedCert = config.getCertAlias();
+//        if (StringUtils.isBlank(encodedCert)) {
+//            throw new SAMLServerException("Encryption certificate is not configured.");
+//        }
+//        Certificate certificate;
+//        try {
+//            certificate = KeyStoreUtils.getInstance().decodeCertificate(encodedCert);
+//        } catch (CertificateException e) {
+//            throw new SAMLServerException("Invalid encoded certificate: " + encodedCert);
+//        }
+//
+//        Credential symmetricCredential = null;
+//        try {
+//            symmetricCredential = SecurityHelper.getSimpleCredential(
+//                    SecurityHelper.generateSymmetricKey(EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256));
+//        } catch (NoSuchAlgorithmException | KeyException e) {
+//            throw new SAMLRuntimeException("Error occurred while encrypting Assertion.");
+//        }
+//
+//        EncryptionParameters encParams = new EncryptionParameters();
+//        encParams.setAlgorithm(EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256);
+//        encParams.setEncryptionCredential(symmetricCredential);
+//
+//        KeyEncryptionParameters keyEncryptionParameters = new KeyEncryptionParameters();
+//        keyEncryptionParameters.setAlgorithm(EncryptionConstants.ALGO_ID_KEYTRANSPORT_RSA15);
+//        keyEncryptionParameters.setEncryptionCredential(new X509CredentialImpl((X509Certificate) certificate));
+//
+//        Encrypter encrypter = new Encrypter(encParams, keyEncryptionParameters);
+//        encrypter.setKeyPlacement(Encrypter.KeyPlacement.INLINE);
+//
+//        EncryptedAssertion encryptedAssertion = null;
+//        try {
+//            encryptedAssertion = encrypter.encrypt(assertion);
+//        } catch (EncryptionException e) {
+//            throw new SAMLRuntimeException("Error occurred while encrypting Assertion.");
+//        }
+//
+//        response.getEncryptedAssertions().add(encryptedAssertion);
+//    }
 }

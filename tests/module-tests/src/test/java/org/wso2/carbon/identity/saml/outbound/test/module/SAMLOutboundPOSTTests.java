@@ -81,7 +81,8 @@ public class SAMLOutboundPOSTTests {
                     SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET, false);
             String content = SAMLOutboundTestUtils.getContent(urlConnection);
             String relayState = SAMLOutboundTestUtils.getParameterFromHTML(content, "'RelayState' value='", "'>");
-            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false);
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER, true, true);
             samlResponse = URLEncoder.encode(samlResponse);
             urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
                     true);

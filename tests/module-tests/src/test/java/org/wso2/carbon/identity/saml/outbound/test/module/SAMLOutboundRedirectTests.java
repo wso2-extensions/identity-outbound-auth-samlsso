@@ -20,6 +20,8 @@ package org.wso2.carbon.identity.saml.outbound.test.module;
 
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.io.Charsets;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.xml.XMLObject;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
@@ -33,6 +35,7 @@ import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
+import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
 import org.wso2.carbon.kernel.utils.CarbonServerInfo;
@@ -86,13 +89,14 @@ public class SAMLOutboundRedirectTests {
                         .REDIRECT);
         try {
             HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
-                    .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET,
+                            .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET,
                     false);
             String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
             Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
                     (location);
             String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
-            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false);
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER, true, true);
             samlResponse = URLEncoder.encode(samlResponse);
             urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
                     true);
@@ -115,4 +119,324 @@ public class SAMLOutboundRedirectTests {
     }
 
 
+    /**
+     * Assert the content of outbound authentication request with redirect binding.
+     */
+    @Test
+    public void assertRequestContentWithRedirectBinding() {
+        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+        identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
+                        .REDIRECT);
+        try {
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
+                            .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET,
+                    false);
+            String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
+                    (location);
+            String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
+            String federatedSAMLRequest = queryParams.get(SAML2AuthConstants.SAML_REQUEST);
+            String decodedRequest = SAML2AuthUtils.decodeForRedirect(federatedSAMLRequest);
+            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
+            AuthnRequest authnRequest = (AuthnRequest) request;
+            Assert.assertNotNull(authnRequest);
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER, true, true);
+            samlResponse = URLEncoder.encode(samlResponse);
+            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+                    true);
+            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+            urlConnection.setDoOutput(true);
+            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+            urlConnection.getResponseCode();
+            String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
+                    .AUTHENTICATED_USER_NAME));
+        } catch (IOException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } catch (IdentityException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } finally {
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                    .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
+                            .POST);
+        }
+    }
+
+    /**
+     * Assert the content of outbound authentication request with redirect binding.
+     */
+    @Test
+    public void assertIssuerWithRedirectBinding() {
+        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+
+        String externalIDPName = "externalIDPName";
+        String originalBinding = (String) identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs()
+                .get(0).getProperties().get(SAML2AuthConstants.Config.Name.REQUEST_BINDING);
+        String originalSPEntityId = (String) identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                ().get(0).getProperties().get(SAML2AuthConstants.Config.Name.SP_ENTITY_ID);
+
+        identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
+                        .REDIRECT);
+        identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                .setProperty(SAML2AuthConstants.Config.Name.SP_ENTITY_ID, externalIDPName);
+        try {
+
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
+                    .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod
+                    .GET, false);
+            String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
+                    (location);
+            String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
+            String federatedSAMLRequest = queryParams.get(SAML2AuthConstants.SAML_REQUEST);
+            String decodedRequest = SAML2AuthUtils.decodeForRedirect(federatedSAMLRequest);
+            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
+            AuthnRequest authnRequest = (AuthnRequest) request;
+
+            Assert.assertEquals(authnRequest.getIssuer().getValue(), externalIDPName);
+            Assert.assertNotNull(authnRequest);
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, externalIDPName, true, true);
+            samlResponse = URLEncoder.encode(samlResponse);
+            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+                    true);
+            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+            urlConnection.setDoOutput(true);
+            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+            urlConnection.getResponseCode();
+            String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
+                    .AUTHENTICATED_USER_NAME));
+
+        } catch (IOException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } catch (IdentityException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } finally {
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                    .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, originalBinding);
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                    .setProperty(SAML2AuthConstants.Config.Name.SP_ENTITY_ID, originalSPEntityId);
+        }
+    }
+
+
+    /**
+     * Assert the content of outbound authentication request with redirect binding.
+     */
+    @Test
+    public void testNonExistingIssuer() {
+        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+
+        String originalBinding = (String) identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs()
+                .get(0).getProperties().get(SAML2AuthConstants.Config.Name.REQUEST_BINDING);
+        String originalSPEntityId = (String) identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                ().get(0).getProperties().get(SAML2AuthConstants.Config.Name.SP_ENTITY_ID);
+
+        identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
+                        .REDIRECT);
+        try {
+
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
+                    .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod
+                    .GET, false);
+            String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
+                    (location);
+            String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
+            String federatedSAMLRequest = queryParams.get(SAML2AuthConstants.SAML_REQUEST);
+            String decodedRequest = SAML2AuthUtils.decodeForRedirect(federatedSAMLRequest);
+            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
+            AuthnRequest authnRequest = (AuthnRequest) request;
+            Assert.assertNotNull(authnRequest);
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER + "nonExisting", true, true);
+            samlResponse = URLEncoder.encode(samlResponse);
+            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+                    true);
+            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+            urlConnection.setDoOutput(true);
+            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+            urlConnection.getResponseCode();
+            Assert.assertEquals(urlConnection.getResponseCode(), 500);
+
+        } catch (IOException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } catch (IdentityException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } finally {
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                    .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, originalBinding);
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                    .setProperty(SAML2AuthConstants.Config.Name.SP_ENTITY_ID, originalSPEntityId);
+        }
+    }
+
+
+    /**
+     * Assert the content of outbound authentication request with redirect binding.
+     */
+    @Test
+    public void testResponseWithoutSignature() {
+        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+
+        String originalBinding = (String) identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs()
+                .get(0).getProperties().get(SAML2AuthConstants.Config.Name.REQUEST_BINDING);
+
+        identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
+                        .REDIRECT);
+
+        try {
+
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
+                    .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod
+                    .GET, false);
+            String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
+                    (location);
+            String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
+            String federatedSAMLRequest = queryParams.get(SAML2AuthConstants.SAML_REQUEST);
+            String decodedRequest = SAML2AuthUtils.decodeForRedirect(federatedSAMLRequest);
+            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
+            AuthnRequest authnRequest = (AuthnRequest) request;
+
+            Assert.assertNotNull(authnRequest);
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER, false, true);
+            samlResponse = URLEncoder.encode(samlResponse);
+            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+                    true);
+            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+            urlConnection.setDoOutput(true);
+            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+            urlConnection.getResponseCode();
+            String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
+                    .AUTHENTICATED_USER_NAME));
+
+        } catch (IOException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } catch (IdentityException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } finally {
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                    .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, originalBinding);
+        }
+    }
+
+
+    /**
+     * Assert the content of outbound authentication request with redirect binding.
+     */
+    @Test
+    public void testResponseWithoutAssertionSigning() {
+        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+
+        String originalBinding = (String) identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs()
+                .get(0).getProperties().get(SAML2AuthConstants.Config.Name.REQUEST_BINDING);
+
+        identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
+                        .REDIRECT);
+
+        try {
+
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
+                    .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod
+                    .GET, false);
+            String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
+                    (location);
+            String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
+            String federatedSAMLRequest = queryParams.get(SAML2AuthConstants.SAML_REQUEST);
+            String decodedRequest = SAML2AuthUtils.decodeForRedirect(federatedSAMLRequest);
+            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
+            AuthnRequest authnRequest = (AuthnRequest) request;
+
+            Assert.assertNotNull(authnRequest);
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER, true, false);
+            samlResponse = URLEncoder.encode(samlResponse);
+            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+                    true);
+            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+            urlConnection.setDoOutput(true);
+            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+            urlConnection.getResponseCode();
+            String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Assert.assertEquals(500, urlConnection.getResponseCode());
+            Assert.assertNull(locationHeader);
+
+        } catch (IOException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } catch (IdentityException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } finally {
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+                    .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, originalBinding);
+        }
+    }
+
+
+//    /**
+//     * Assert the content of outbound authentication request with redirect binding.
+//     */
+//    @Test
+//    public void testEncryptedAssertions() {
+//        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+//                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+//
+//        String originalBinding = (String) identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs()
+//                .get(0).getProperties().get(SAML2AuthConstants.Config.Name.REQUEST_BINDING);
+//
+//        identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+//                .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, SAML2AuthConstants.Config.Value
+//                        .REDIRECT);
+//
+//        try {
+//
+//            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants
+//                    .GATEWAY_ENDPOINT + "?" + SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod
+//                    .GET, false);
+//            String location = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+//            Map<String, String> queryParams = org.wso2.carbon.identity.gateway.resource.util.Utils.getQueryParamMap
+//                    (location);
+//            String relayState = queryParams.get(SAML2AuthConstants.RELAY_STATE);
+//            String federatedSAMLRequest = queryParams.get(SAML2AuthConstants.SAML_REQUEST);
+//            String decodedRequest = SAML2AuthUtils.decodeForRedirect(federatedSAMLRequest);
+//            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
+//            AuthnRequest authnRequest = (AuthnRequest) request;
+//
+//            Assert.assertNotNull(authnRequest);
+//            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(true, SAMLOutboundTestConstants
+//                    .CARBON_SERVER, true, true);
+//            samlResponse = URLEncoder.encode(samlResponse);
+//            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+//                    true);
+//            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+//            urlConnection.setDoOutput(true);
+//            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+//            urlConnection.getResponseCode();
+//            String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+//            Assert.assertEquals(500, urlConnection.getResponseCode());
+//            Assert.assertNull(locationHeader);
+//
+//        } catch (IOException e) {
+//            Assert.fail("Error while running federated authentication test case");
+//        } catch (IdentityException e) {
+//            Assert.fail("Error while running federated authentication test case");
+//        } finally {
+//            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs().get(0).getProperties()
+//                    .setProperty(SAML2AuthConstants.Config.Name.REQUEST_BINDING, originalBinding);
+//        }
+//    }
 }
