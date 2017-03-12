@@ -60,6 +60,6 @@ public class SAML2ACSRequestBuilderFactory
     }
 
     public int getPriority() {
-        return 35;
+        return 40;
     }
 }

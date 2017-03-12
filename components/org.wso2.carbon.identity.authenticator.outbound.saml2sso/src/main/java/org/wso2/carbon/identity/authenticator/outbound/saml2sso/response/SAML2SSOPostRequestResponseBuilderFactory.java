@@ -98,6 +98,6 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
     }
 
     public int getPriority() {
-        return 400;
+        return 75;
     }
 }

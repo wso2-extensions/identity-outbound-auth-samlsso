@@ -92,6 +92,6 @@ public class SAML2SSORedirectRequestResponseBuilderFactory extends GatewayRespon
     }
 
     public int getPriority() {
-        return 300;
+        return 75;
     }
 }
