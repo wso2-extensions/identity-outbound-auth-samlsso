@@ -145,14 +145,14 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         boolean isForce = isForce(getIdentityProviderConfig(context), context);
         boolean isPassive = isPassive(getIdentityProviderConfig(context), context);
 
-        AuthenticationResponse authenticationResponse = AuthenticationResponse.INCOMPLETE;
+
         GatewayResponse.GatewayResponseBuilder builder;
         if (isPost) {
             builder = buildSAML2SSOPostRequest(isForce, isPassive, context);
         } else {
             builder = buildSAML2SSORedirectRequest(isForce, isPassive, context);
         }
-        authenticationResponse.setGatewayResponseBuilder(builder);
+        AuthenticationResponse authenticationResponse = new AuthenticationResponse(builder);
         return authenticationResponse;
     }
 
@@ -338,7 +338,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
             processAttributeStatements(assertion, getIdentityProviderConfig(context), context);
         }
-        return AuthenticationResponse.AUTHENTICATED;
+        return new AuthenticationResponse(AuthenticationResponse.Status.AUTHENTICATED);
     }
 
     protected Assertion decryptAssertion(Response response, AuthenticationContext context)
