@@ -24,7 +24,7 @@ Kv4XHECwLtIVdAbIdWHEtVZJyMSktcyysFcvuhPQK8Qc/E/Wq8uHSCo="
 
     claimConfig:
        profile : "null"
-       dialectUri : "http://wso2.org/claims"
+       dialectUri : "http://application1.com/"
 
     roleConfig :
       roleMappings :
