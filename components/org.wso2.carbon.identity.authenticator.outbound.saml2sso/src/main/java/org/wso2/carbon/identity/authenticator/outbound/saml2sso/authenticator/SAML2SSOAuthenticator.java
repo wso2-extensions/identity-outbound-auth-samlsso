@@ -71,7 +71,7 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SS
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponse;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Constants;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
-import org.wso2.carbon.identity.gateway.authentication.AuthenticationResponse;
+import org.wso2.carbon.identity.gateway.authentication.response.AuthenticationResponse;
 import org.wso2.carbon.identity.gateway.authentication.authenticator.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.gateway.authentication.authenticator.FederatedApplicationAuthenticator;
 import org.wso2.carbon.identity.gateway.common.model.idp.AuthenticatorConfig;
@@ -114,26 +114,6 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     @Override
     public String getFriendlyName() {
         return Constants.AUTHENTICATOR_FRIENDLY_NAME;
-    }
-
-    @Override
-    public String getClaimDialectURI() {
-        return null;
-    }
-
-    @Override
-    public List<Properties> getConfigurationProperties() {
-        return null;
-    }
-
-    @Override
-    public boolean canHandle(AuthenticationContext authenticationContext) {
-        return true;
-    }
-
-    @Override
-    public String getContextIdentifier(AuthenticationContext authenticationContext) {
-        return null;
     }
 
 
