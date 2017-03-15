@@ -24,7 +24,7 @@ Kv4XHECwLtIVdAbIdWHEtVZJyMSktcyysFcvuhPQK8Qc/E/Wq8uHSCo="
 
     claimConfig:
        profile : "null"
-       dialectUri : "http://application1.com/"
+       dialectUri : "http://org.sample.idp/claims"
 
     roleConfig :
       roleMappings :

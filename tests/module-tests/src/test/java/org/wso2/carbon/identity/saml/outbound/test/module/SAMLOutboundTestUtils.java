@@ -244,7 +244,7 @@ public class SAMLOutboundTestUtils {
                 * the spec 2.0 the subject MUST be in the assertion
                 */
             Map<String, String> claims = new HashMap<String, String>();
-            claims.put("http://application1.com/email", "testuser@wso2.com");
+            claims.put("http://org.sample.idp/claims/email", "testuser@wso2.com");
             if (claims != null && !claims.isEmpty()) {
                 AttributeStatement attrStmt = buildAttributeStatement(claims);
                 if (attrStmt != null) {
