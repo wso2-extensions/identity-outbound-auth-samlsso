@@ -20,6 +20,8 @@ package org.wso2.carbon.identity.saml.outbound.test.module;
 
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.io.Charsets;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.xml.XMLObject;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
@@ -33,6 +35,7 @@ import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
+import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
 import org.wso2.carbon.kernel.utils.CarbonServerInfo;
@@ -140,10 +143,8 @@ public class SAMLOutboundCommonTests {
 
             newProperties.setProperty(SAML2AuthConstants.Config.Name.SP_ENTITY_ID, originalProperties.getProperty
                     (SAML2AuthConstants.Config.Name.SP_ENTITY_ID));
-
             newProperties.setProperty(SAML2AuthConstants.Config.Name.IDP_ENTITY_ID, originalProperties.getProperty
                     (SAML2AuthConstants.Config.Name.IDP_ENTITY_ID));
-
             newProperties.setProperty(SAML2AuthConstants.Config.Name.AUTHN_RESPONSE_SIGNED, "true");
             newProperties.setProperty(SAML2AuthConstants.Config.Name.AUTHN_RESPONSE_ENCRYPTED, "true");
             newProperties.setProperty(SAML2AuthConstants.Config.Name.DIGEST_ALGO, "http://www.w3" +
@@ -180,5 +181,43 @@ public class SAMLOutboundCommonTests {
         }
     }
 
+
+    @Test
+    public void testRequestSigning() {
+
+        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+        Properties originalProperties = identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                ().get(0).getProperties();
+
+        try {
+            Properties newProperties = new Properties();
+            newProperties.setProperty(SAML2AuthConstants.Config.Name.SAML2_SSO_URL, originalProperties.getProperty
+                    (SAML2AuthConstants.Config.Name.SAML2_SSO_URL));
+
+            newProperties.setProperty(SAML2AuthConstants.Config.Name.AUTHN_REQUEST_SIGNED, "true");
+
+
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                    ().get(0).setProperties(newProperties);
+
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT + "?" +
+                    SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET, false);
+            String content = SAMLOutboundTestUtils.getContent(urlConnection);
+            String relayState = SAMLOutboundTestUtils.getParameterFromHTML(content, "'RelayState' value='", "'>");
+            String samlRequest = SAMLOutboundTestUtils.getParameterFromHTML(content, "'SAMLRequest' value='","'>" );
+
+            String decodedRequest = SAML2AuthUtils.decodeForPost(samlRequest);
+            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
+            Assert.assertTrue(request instanceof AuthnRequest);
+            AuthnRequest authnRequest = (AuthnRequest) request;
+            Assert.assertNotNull(authnRequest.getSignature());
+        } catch (IOException e) {
+            Assert.fail("Error while running federated authentication test case");
+        } finally {
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                    ().get(0).setProperties(originalProperties);
+        }
+    }
 
 }
