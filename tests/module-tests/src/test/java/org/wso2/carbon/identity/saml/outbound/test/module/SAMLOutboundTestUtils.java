@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.saml.outbound.test.module;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.xml.security.utils.EncryptionConstants;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
@@ -37,6 +38,7 @@ import org.opensaml.saml2.core.AuthnContext;
 import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnStatement;
 import org.opensaml.saml2.core.Conditions;
+import org.opensaml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
@@ -63,12 +65,18 @@ import org.opensaml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.saml2.core.impl.SubjectBuilder;
 import org.opensaml.saml2.core.impl.SubjectConfirmationBuilder;
 import org.opensaml.saml2.core.impl.SubjectConfirmationDataBuilder;
+import org.opensaml.saml2.encryption.Encrypter;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.encryption.EncryptionException;
+import org.opensaml.xml.encryption.EncryptionParameters;
+import org.opensaml.xml.encryption.KeyEncryptionParameters;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
+import org.opensaml.xml.security.SecurityHelper;
+import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.util.Base64;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
@@ -79,9 +87,12 @@ import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
+import org.wso2.carbon.identity.auth.saml2.common.X509CredentialImpl;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
+import org.wso2.carbon.identity.common.util.keystore.KeyStoreUtils;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
 import org.wso2.carbon.identity.gateway.store.IdentityProviderConfigStore;
+import org.wso2.carbon.identity.saml.exception.SAMLServerException;
 import org.wso2.carbon.identity.saml.util.SAMLSSOConstants;
 
 import java.io.ByteArrayOutputStream;
@@ -89,7 +100,11 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -152,8 +167,7 @@ public class SAMLOutboundTestUtils {
         String sessionId = "";
         Assertion assertion = buildAssertion(notOnOrAfter, audience, isSignAssertions);
         if (isEncryptedAssertion) {
-            // TODO
-
+            encryptAssertion(response, assertion);
         } else {
             response.getAssertions().add(assertion);
         }
@@ -392,47 +406,46 @@ public class SAMLOutboundTestUtils {
         }
     }
 
-//    public void encryptAssertion(Response response, Assertion assertion)
-//            throws SAMLServerException {
-//
-//
-//        String encodedCert = config.getCertAlias();
-//        if (StringUtils.isBlank(encodedCert)) {
-//            throw new SAMLServerException("Encryption certificate is not configured.");
-//        }
-//        Certificate certificate;
-//        try {
-//            certificate = KeyStoreUtils.getInstance().decodeCertificate(encodedCert);
-//        } catch (CertificateException e) {
-//            throw new SAMLServerException("Invalid encoded certificate: " + encodedCert);
-//        }
-//
-//        Credential symmetricCredential = null;
-//        try {
-//            symmetricCredential = SecurityHelper.getSimpleCredential(
-//                    SecurityHelper.generateSymmetricKey(EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256));
-//        } catch (NoSuchAlgorithmException | KeyException e) {
-//            throw new SAMLRuntimeException("Error occurred while encrypting Assertion.");
-//        }
-//
-//        EncryptionParameters encParams = new EncryptionParameters();
-//        encParams.setAlgorithm(EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256);
-//        encParams.setEncryptionCredential(symmetricCredential);
-//
-//        KeyEncryptionParameters keyEncryptionParameters = new KeyEncryptionParameters();
-//        keyEncryptionParameters.setAlgorithm(EncryptionConstants.ALGO_ID_KEYTRANSPORT_RSA15);
-//        keyEncryptionParameters.setEncryptionCredential(new X509CredentialImpl((X509Certificate) certificate));
-//
-//        Encrypter encrypter = new Encrypter(encParams, keyEncryptionParameters);
-//        encrypter.setKeyPlacement(Encrypter.KeyPlacement.INLINE);
-//
-//        EncryptedAssertion encryptedAssertion = null;
-//        try {
-//            encryptedAssertion = encrypter.encrypt(assertion);
-//        } catch (EncryptionException e) {
-//            throw new SAMLRuntimeException("Error occurred while encrypting Assertion.");
-//        }
-//
-//        response.getEncryptedAssertions().add(encryptedAssertion);
-//    }
+    public static void encryptAssertion(Response response, Assertion assertion) {
+
+
+        String encodedCert = SAMLOutboundTestConstants.SERVER_PUB_CERT;
+        if (StringUtils.isBlank(encodedCert)) {
+            throw new RuntimeException("Encryption certificate is not configured.");
+        }
+        Certificate certificate = null;
+        try {
+            certificate = KeyStoreUtils.getInstance().decodeCertificate(encodedCert);
+        } catch (CertificateException e) {
+            throw new RuntimeException("Error while decoding certificate", e);
+        }
+
+        Credential symmetricCredential = null;
+        try {
+            symmetricCredential = SecurityHelper.getSimpleCredential(
+                    SecurityHelper.generateSymmetricKey(EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256));
+        } catch (NoSuchAlgorithmException | KeyException e) {
+            logger.error("Error while getting symmetric credentials", e);
+        }
+
+        EncryptionParameters encParams = new EncryptionParameters();
+        encParams.setAlgorithm(EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256);
+        encParams.setEncryptionCredential(symmetricCredential);
+
+        KeyEncryptionParameters keyEncryptionParameters = new KeyEncryptionParameters();
+        keyEncryptionParameters.setAlgorithm(EncryptionConstants.ALGO_ID_KEYTRANSPORT_RSA15);
+        keyEncryptionParameters.setEncryptionCredential(new X509CredentialImpl((X509Certificate) certificate));
+
+        Encrypter encrypter = new Encrypter(encParams, keyEncryptionParameters);
+        encrypter.setKeyPlacement(Encrypter.KeyPlacement.INLINE);
+
+        EncryptedAssertion encryptedAssertion = null;
+        try {
+            encryptedAssertion = encrypter.encrypt(assertion);
+        } catch (EncryptionException e) {
+            logger.error("Error while encrypting assertion", e);
+        }
+
+        response.getEncryptedAssertions().add(encryptedAssertion);
+    }
 }

@@ -71,9 +71,9 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SS
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponse;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Constants;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
-import org.wso2.carbon.identity.gateway.authentication.response.AuthenticationResponse;
 import org.wso2.carbon.identity.gateway.authentication.authenticator.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.gateway.authentication.authenticator.FederatedApplicationAuthenticator;
+import org.wso2.carbon.identity.gateway.authentication.response.AuthenticationResponse;
 import org.wso2.carbon.identity.gateway.common.model.idp.AuthenticatorConfig;
 import org.wso2.carbon.identity.gateway.common.model.idp.IDPCertificate;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
@@ -85,7 +85,9 @@ import org.wso2.carbon.identity.gateway.service.GatewayClaimResolverService;
 import org.wso2.carbon.identity.mgt.claim.Claim;
 import org.wso2.carbon.identity.saml.request.SAMLSPInitRequest;
 
+import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -96,7 +98,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import javax.crypto.SecretKey;
 
 /**
  * SAML2 SSO Outbound Authenticator.
@@ -331,9 +332,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
             if (CollectionUtils.isNotEmpty(encryptedAssertions)) {
                 encryptedAssertion = encryptedAssertions.get(0);
                 try {
-                    X509Certificate idPCredential = SAML2AuthUtils.getServerCredentials().getEntityCertificate();
-                    X509Credential credential = new X509CredentialImpl(idPCredential);
-                    KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(credential);
+                    KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(SAML2AuthUtils
+                            .getServerCredentials());
                     EncryptedKey key = encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
                     Decrypter decrypter = new Decrypter(null, keyResolver, null);
                     SecretKey dkey = (SecretKey) decrypter.decryptKey(key, encryptedAssertion.getEncryptedData().
@@ -751,15 +751,24 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     public String getSignatureAlgorithm(IdentityProviderConfig identityProviderConfig) {
 
-        String sigAlg = (String) getAuthenticatorConfigProperties(identityProviderConfig).get
+        String sigAlg = SAML2AuthConstants.Config.Value.RSA_SHA1;
+        Object sigAlgObj = (String) getAuthenticatorConfigProperties(identityProviderConfig).get
                 (SAML2AuthConstants.Config.Name.SIGNATURE_ALGO);
+        if (sigAlgObj != null) {
+            sigAlg = (String) sigAlgObj;
+        }
         return sigAlg;
     }
 
     public String getDigestAlgorithm(IdentityProviderConfig identityProviderConfig) {
 
-        String digAlg = (String) getAuthenticatorConfigProperties(identityProviderConfig).get
+        String digAlg = SAML2AuthConstants.Config.Value.SHA1;
+        Object digAlgoObj = getAuthenticatorConfigProperties(identityProviderConfig).get
                 (SAML2AuthConstants.Config.Name.DIGEST_ALGO);
+
+        if (digAlgoObj != null) {
+            digAlg = (String) digAlgoObj;
+        }
         return digAlg;
     }
 
