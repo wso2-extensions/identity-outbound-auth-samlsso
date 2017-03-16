@@ -91,6 +91,7 @@ import org.wso2.carbon.identity.auth.saml2.common.X509CredentialImpl;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.common.util.keystore.KeyStoreUtils;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
+import org.wso2.carbon.identity.gateway.resource.util.Utils;
 import org.wso2.carbon.identity.gateway.store.IdentityProviderConfigStore;
 import org.wso2.carbon.identity.saml.exception.SAMLServerException;
 import org.wso2.carbon.identity.saml.util.SAMLSSOConstants;
@@ -245,6 +246,8 @@ public class SAMLOutboundTestUtils {
                 */
             Map<String, String> claims = new HashMap<String, String>();
             claims.put("http://org.sample.idp/claims/email", "testuser@wso2.com");
+            claims.put("http://org.sample.idp/claims/fullname", "testuser_fullname");
+            claims.put("http://org.sample.idp/claims/gender", "male");
             if (claims != null && !claims.isEmpty()) {
                 AttributeStatement attrStmt = buildAttributeStatement(claims);
                 if (attrStmt != null) {
@@ -447,5 +450,20 @@ public class SAMLOutboundTestUtils {
         }
 
         response.getEncryptedAssertions().add(encryptedAssertion);
+    }
+
+    public static Map<String,String> getClaims(String claims) {
+        Map<String, String> responseClaimMap = new HashMap<>();
+        String[] claimStets = claims.split("-");
+        for (String claimSet : claimStets) {
+            String[] claim = claimSet.split(",");
+            responseClaimMap.put(claim[0] ,claim[1]);
+        }
+        return responseClaimMap;
+    }
+
+    public static String getQueryParam(String queryString, String param) {
+        Map<String, String> queryParamMap = Utils.getQueryParamMap(queryString);
+        return queryParamMap.get(param);
     }
 }

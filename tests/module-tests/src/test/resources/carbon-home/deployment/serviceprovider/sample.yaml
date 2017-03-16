@@ -25,9 +25,9 @@ serviceProviderConfig:
               secret : "ssdf232f23f32f32f32f32f32f"
 
   claimConfig:
-   profile : "sdsd"
-   dialectUri : "dfdf"
-   subjectClaimUri : "SdsD"
+   profile : "default"
+   dialectUri : "http://sample.sp.org/claims"
+   subjectClaimUri : ""
 
   authenticationConfig:
     authenticationStepConfigs :

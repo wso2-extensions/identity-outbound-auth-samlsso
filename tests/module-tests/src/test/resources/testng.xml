@@ -24,6 +24,7 @@
             <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundPOSTTests"/>
             <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundRedirectTests"/>
             <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundCommonTests"/>
+            <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundClaimTests"/>
         </classes>
     </test>
 </suite>
