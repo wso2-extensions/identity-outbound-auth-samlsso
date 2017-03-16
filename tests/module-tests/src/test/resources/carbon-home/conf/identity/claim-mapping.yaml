@@ -22,3 +22,15 @@ claimMappings:
    gender: "http://wso2.org/claims/gender"
    email: "http://wso2.org/claims/email"
    displayName: "http://wso2.org/claims/displayName"
+
+ -
+  dialectURI: "http://sample.sp2.org/claims"
+  mappings:
+   username: "http://wso2.org/claims/gender"
+   fullname: "http://wso2.org/claims/fullname"
+
+ -
+  dialectURI: "http://sample.sp3.org/claims"
+  inherits: "http://sample.sp2.org/claims"
+  mappings:
+   email: "http://wso2.org/claims/email"

@@ -91,8 +91,10 @@ import org.wso2.carbon.identity.auth.saml2.common.X509CredentialImpl;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.common.util.keystore.KeyStoreUtils;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
+import org.wso2.carbon.identity.gateway.common.model.sp.ServiceProviderConfig;
 import org.wso2.carbon.identity.gateway.resource.util.Utils;
 import org.wso2.carbon.identity.gateway.store.IdentityProviderConfigStore;
+import org.wso2.carbon.identity.gateway.store.ServiceProviderConfigStore;
 import org.wso2.carbon.identity.saml.exception.SAMLServerException;
 import org.wso2.carbon.identity.saml.util.SAMLSSOConstants;
 
@@ -465,5 +467,11 @@ public class SAMLOutboundTestUtils {
     public static String getQueryParam(String queryString, String param) {
         Map<String, String> queryParamMap = Utils.getQueryParamMap(queryString);
         return queryParamMap.get(param);
+    }
+
+    public static ServiceProviderConfig getServiceProviderConfigs(String uniqueId, BundleContext bundleContext) {
+        ServiceProviderConfigStore serviceProviderConfigStore = bundleContext.getService(bundleContext
+                .getServiceReference(ServiceProviderConfigStore.class));
+        return serviceProviderConfigStore.getServiceProvider(uniqueId);
     }
 }
