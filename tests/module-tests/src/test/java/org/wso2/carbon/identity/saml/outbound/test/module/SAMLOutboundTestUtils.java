@@ -95,8 +95,6 @@ import org.wso2.carbon.identity.gateway.common.model.sp.ServiceProviderConfig;
 import org.wso2.carbon.identity.gateway.resource.util.Utils;
 import org.wso2.carbon.identity.gateway.store.IdentityProviderConfigStore;
 import org.wso2.carbon.identity.gateway.store.ServiceProviderConfigStore;
-import org.wso2.carbon.identity.saml.exception.SAMLServerException;
-import org.wso2.carbon.identity.saml.util.SAMLSSOConstants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -392,7 +390,7 @@ public class SAMLOutboundTestUtils {
                 atLeastOneNotEmpty = true;
                 Attribute attribute = new AttributeBuilder().buildObject();
                 attribute.setName(claimUri);
-                attribute.setNameFormat(SAMLSSOConstants.NAME_FORMAT_BASIC);
+                attribute.setNameFormat(Attribute.BASIC);
                 XSStringBuilder stringBuilder = (XSStringBuilder) Configuration.getBuilderFactory().
                         getBuilder(XSString.TYPE_NAME);
                 XSString stringValue;

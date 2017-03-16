@@ -83,11 +83,9 @@ import org.wso2.carbon.identity.gateway.model.FederatedUser;
 import org.wso2.carbon.identity.gateway.request.ClientAuthenticationRequest;
 import org.wso2.carbon.identity.gateway.service.GatewayClaimResolverService;
 import org.wso2.carbon.identity.mgt.claim.Claim;
-import org.wso2.carbon.identity.saml.request.SAMLSPInitRequest;
+import org.wso2.carbon.identity.saml.request.SPInitRequest;
 
-import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
-import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -98,6 +96,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import javax.crypto.SecretKey;
 
 /**
  * SAML2 SSO Outbound Authenticator.
@@ -235,8 +234,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
                 (includeAuthnContext)) {
 
             ClientAuthenticationRequest clientAuthenticationRequest = context.getInitialAuthenticationRequest();
-            if (clientAuthenticationRequest instanceof SAMLSPInitRequest) {
-                SAMLSPInitRequest samlspInitRequest = (SAMLSPInitRequest) clientAuthenticationRequest;
+            if (clientAuthenticationRequest instanceof SPInitRequest) {
+                SPInitRequest samlspInitRequest = (SPInitRequest) clientAuthenticationRequest;
                 String samlRequest = samlspInitRequest.getSAMLRequest();
 
                 String decodedReq = null;
@@ -619,8 +618,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         } else if (SAML2AuthConstants.Config.Value.AS_REQUEST.equals(force)) {
 
             ClientAuthenticationRequest clientAuthenticationRequest = context.getInitialAuthenticationRequest();
-            if (clientAuthenticationRequest instanceof SAMLSPInitRequest) {
-                SAMLSPInitRequest samlspInitRequest = (SAMLSPInitRequest) clientAuthenticationRequest;
+            if (clientAuthenticationRequest instanceof SPInitRequest) {
+                SPInitRequest samlspInitRequest = (SPInitRequest) clientAuthenticationRequest;
                 String samlRequest = samlspInitRequest.getSAMLRequest();
 
                 String decodedReq = null;
@@ -646,8 +645,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         } else if (SAML2AuthConstants.Config.Value.AS_REQUEST.equals(passive)) {
 
             ClientAuthenticationRequest clientAuthenticationRequest = context.getInitialAuthenticationRequest();
-            if (clientAuthenticationRequest instanceof SAMLSPInitRequest) {
-                SAMLSPInitRequest samlspInitRequest = (SAMLSPInitRequest) clientAuthenticationRequest;
+            if (clientAuthenticationRequest instanceof SPInitRequest) {
+                SPInitRequest samlspInitRequest = (SPInitRequest) clientAuthenticationRequest;
                 String samlRequest = samlspInitRequest.getSAMLRequest();
 
                 String decodedReq = null;
@@ -751,8 +750,8 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     public String getSignatureAlgorithm(IdentityProviderConfig identityProviderConfig) {
 
-        String sigAlg = SAML2AuthConstants.Config.Value.RSA_SHA1;
-        Object sigAlgObj = (String) getAuthenticatorConfigProperties(identityProviderConfig).get
+        String sigAlg = SAML2AuthConstants.XML.SignatureAlgorithmURI.RSA_SHA1;
+        Object sigAlgObj = getAuthenticatorConfigProperties(identityProviderConfig).get
                 (SAML2AuthConstants.Config.Name.SIGNATURE_ALGO);
         if (sigAlgObj != null) {
             sigAlg = (String) sigAlgObj;
@@ -762,7 +761,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
 
     public String getDigestAlgorithm(IdentityProviderConfig identityProviderConfig) {
 
-        String digAlg = SAML2AuthConstants.Config.Value.SHA1;
+        String digAlg = SAML2AuthConstants.XML.DigestAlgorithmURI.SHA1;
         Object digAlgoObj = getAuthenticatorConfigProperties(identityProviderConfig).get
                 (SAML2AuthConstants.Config.Name.DIGEST_ALGO);
 
