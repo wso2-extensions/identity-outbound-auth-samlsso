@@ -193,5 +193,66 @@ public class SAMLOutboundClaimTests {
         }
     }
 
+    /**
+     * SAML outbound federated authentication with post binding. SP claims has inherited dialect
+     */
+    @Test
+    public void testSPClaimMappingsWithCustomProfile() {
+
+        IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
+        Properties originalProperties = identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                ().get(0).getProperties();
+        String originalProfile = identityProviderConfig.getIdpMetaData().getClaimConfig().getProfile();
+
+        try {
+            identityProviderConfig.getIdpMetaData().getClaimConfig().setProfile("idp");
+            Properties newProperties = new Properties();
+            newProperties.setProperty(SAML2AuthConstants.Config.Name.SAML2_SSO_URL, originalProperties.getProperty
+                    (SAML2AuthConstants.Config.Name.SAML2_SSO_URL));
+
+            newProperties.setProperty(SAML2AuthConstants.Config.Name.SP_ENTITY_ID, originalProperties.getProperty
+                    (SAML2AuthConstants.Config.Name.SP_ENTITY_ID));
+
+            newProperties.setProperty(SAML2AuthConstants.Config.Name.IDP_ENTITY_ID, originalProperties.getProperty
+                    (SAML2AuthConstants.Config.Name.IDP_ENTITY_ID));
+
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                    ().get(0).setProperties(newProperties);
+            HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT + "?" +
+                    SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET, false);
+            String content = SAMLOutboundTestUtils.getContent(urlConnection);
+            String relayState = SAMLOutboundTestUtils.getParameterFromHTML(content, "'RelayState' value='", "'>");
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER, true, true);
+            samlResponse = URLEncoder.encode(samlResponse);
+            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+                    true);
+            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+            urlConnection.setDoOutput(true);
+            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+            urlConnection.getResponseCode();
+            String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
+                    .AUTHENTICATED_USER_NAME));
+            String claimsString = SAMLOutboundTestUtils.getQueryParam(locationHeader, "claims");
+            Map<String, String> claims = SAMLOutboundTestUtils.getClaims(claimsString);
+            Assert.assertTrue(claims.size() == 2);
+            Assert.assertTrue(claims.containsKey("http://sample.sp.org/claims/email"));
+            Assert.assertTrue(claims.containsKey("http://sample.sp.org/claims/email"));
+            Assert.assertTrue("testuser@wso2.com" .equalsIgnoreCase(claims.get("http://sample.sp.org/claims/email")));
+            Assert.assertNull(claims.get("http://sample.sp.org/claims/gender"));
+        } catch (IOException e) {
+            Assert.fail("Error while running sp configured inherited claim test case");
+        } catch (IdentityException e) {
+            Assert.fail("Error while running sp configured inherited claim test case");
+        } finally {
+            identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
+                    ().get(0).setProperties(originalProperties);
+            identityProviderConfig.getIdpMetaData().getClaimConfig().setProfile(originalProfile);
+        }
+    }
+
+
 
 }

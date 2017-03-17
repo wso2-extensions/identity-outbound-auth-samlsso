@@ -75,3 +75,32 @@ profiles:
    regex: "*"
    properties:
     customproperty: "custom value"
+ -
+  profileName: "idp"
+  isAdminProfile: false
+  claims:
+  -
+   claimURI: "http://wso2.org/claims/username"
+   displayName: "User Name"
+   required: true
+   readonly: true
+   verifier: "claim verifying extension"
+   validator: "claim validating extension"
+   transformer: "transform extension"
+   regex: "*"
+   defaultValue: "user1"
+   dataType: "text"
+   properties:
+    customproperty: "custom value"
+  -
+   claimURI: "http://wso2.org/claims/email"
+   displayName: "Email"
+   required: true
+   readonly: true
+   regex: "*"
+  -
+   claimURI: "http://wso2.org/claims/fullname"
+   displayName: "fullname"
+   required: true
+   readonly: true
+   regex: "*"
