@@ -376,7 +376,7 @@
 
         <saml2sso.pkg.export.version>${project.version}</saml2sso.pkg.export.version>
 
-        <identity.commons.version>0.1.20</identity.commons.version>
+        <identity.commons.version>0.1.24</identity.commons.version>
         <identity.gateway.version>1.0.0-SNAPSHOT</identity.gateway.version>
 
         <xmltooling.version>1.4.4</xmltooling.version>
