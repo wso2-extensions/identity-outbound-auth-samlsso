@@ -458,7 +458,6 @@
         <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
         <carbon.feature.plugin.version>2.0.1</carbon.feature.plugin.version>
 
-        <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>
     </properties>
 
