@@ -70,6 +70,7 @@ import org.wso2.carbon.identity.authenticator.outbound.saml2sso.request.SAML2ACS
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSOPostRequestResponse;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.response.SAML2SSORedirectRequestResponse;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.util.Constants;
+import org.wso2.carbon.identity.gateway.api.request.GatewayRequest;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 import org.wso2.carbon.identity.gateway.authentication.authenticator.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.gateway.authentication.authenticator.FederatedApplicationAuthenticator;
@@ -86,6 +87,7 @@ import org.wso2.carbon.identity.mgt.claim.Claim;
 import org.wso2.carbon.identity.saml.request.SPInitRequest;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -299,9 +301,15 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     protected AuthenticationResponse processResponse(AuthenticationContext context)
             throws SAML2SSOAuthenticationException, SAML2SSOAuthenticatorException {
 
-        SAML2ACSRequest saml2ACSRequest = (SAML2ACSRequest) context.getIdentityRequest();
+        SAML2ACSRequest saml2ACSRequest;
+        GatewayRequest gatewayRequest = context.getIdentityRequest();
+        if (gatewayRequest instanceof SAML2ACSRequest) {
+            saml2ACSRequest = (SAML2ACSRequest) gatewayRequest;
+        } else {
+            throw new SAML2SSOAuthenticatorRuntimeException("GatewayRequest not a SAML2ACSRequest.");
+        }
         String samlResponse = saml2ACSRequest.getSamlResponse();
-        String decodedResponse = new String(Base64.decode(samlResponse));
+        String decodedResponse = new String(Base64.decode(samlResponse), StandardCharsets.UTF_8);
         XMLObject xmlObject = SAML2AuthUtils.unmarshall(decodedResponse);
         Response response = (Response) xmlObject;
         Assertion assertion = decryptAssertion(response, context);

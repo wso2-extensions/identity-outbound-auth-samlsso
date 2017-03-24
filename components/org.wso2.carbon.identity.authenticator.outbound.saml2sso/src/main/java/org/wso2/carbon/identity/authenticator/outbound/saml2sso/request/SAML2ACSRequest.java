@@ -25,6 +25,8 @@ import org.wso2.carbon.identity.gateway.request.CallbackAuthenticationRequest;
  */
 public class SAML2ACSRequest extends CallbackAuthenticationRequest {
 
+    private static final long serialVersionUID = -757820420086475530L;
+
     protected String samlResponse;
 
     protected SAML2ACSRequest(SAML2ACSRequestBuilder builder) {
@@ -36,7 +38,11 @@ public class SAML2ACSRequest extends CallbackAuthenticationRequest {
         return samlResponse;
     }
 
-    public static class SAML2ACSRequestBuilder extends CallbackAuthenticationRequest.CallbackAuthenticationRequestBuilder {
+    /**
+     * Builder for building SAML2ACSRequest.
+     */
+    public static class SAML2ACSRequestBuilder extends
+                                               CallbackAuthenticationRequest.CallbackAuthenticationRequestBuilder {
 
         protected String saml2SSOResponse;
 

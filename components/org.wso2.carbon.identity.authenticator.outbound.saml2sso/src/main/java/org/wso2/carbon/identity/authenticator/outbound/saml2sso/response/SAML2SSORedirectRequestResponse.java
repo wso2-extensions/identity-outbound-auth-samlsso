@@ -19,14 +19,17 @@
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.response;
 
 import org.opensaml.xml.security.x509.X509Credential;
+import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 
 /**
  * The AuthnRequest sent over redirect binding to the federated IdP.
  */
 public class SAML2SSORedirectRequestResponse extends SAML2SSORequestResponse {
 
+    private static final long serialVersionUID = 8147926229380700336L;
+
     protected boolean isAuthnRequestSigned;
-    protected X509Credential idPCredential;
+    protected transient X509Credential idPCredential = null;
     protected String sigAlg;
 
     protected SAML2SSORedirectRequestResponse(
@@ -42,6 +45,9 @@ public class SAML2SSORedirectRequestResponse extends SAML2SSORequestResponse {
     }
 
     public X509Credential getIdPCredential() {
+        if (idPCredential == null) {
+            idPCredential = SAML2AuthUtils.getServerCredentials();
+        }
         return idPCredential;
     }
 

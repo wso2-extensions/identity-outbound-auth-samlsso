@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 import org.wso2.carbon.identity.authenticator.outbound.saml2sso.bean.Config;
+import org.wso2.carbon.identity.authenticator.outbound.saml2sso.exception.SAML2SSOAuthenticatorRuntimeException;
 import org.wso2.carbon.identity.common.base.Constants;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponse;
 import org.wso2.carbon.identity.gateway.api.response.GatewayResponseBuilderFactory;
@@ -52,7 +53,13 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
     @Override
     public void createBuilder(Response.ResponseBuilder builder, GatewayResponse gatewayResponse) {
 
-        SAML2SSOPostRequestResponse saml2Response = (SAML2SSOPostRequestResponse) gatewayResponse;
+        SAML2SSOPostRequestResponse saml2Response;
+        if (gatewayResponse instanceof SAML2SSOPostRequestResponse) {
+            saml2Response = (SAML2SSOPostRequestResponse) gatewayResponse;
+        } else {
+            throw new SAML2SSOAuthenticatorRuntimeException("GatewayResponse object is not a " +
+                                                            "SAML2SSOPostRequestResponse.");
+        }
         builder.status(200);
         signSAMLResponse(saml2Response);
         String authnRequest = SAML2AuthUtils.encodeForPost((SAML2AuthUtils.marshall(saml2Response.getSamlRequest())));

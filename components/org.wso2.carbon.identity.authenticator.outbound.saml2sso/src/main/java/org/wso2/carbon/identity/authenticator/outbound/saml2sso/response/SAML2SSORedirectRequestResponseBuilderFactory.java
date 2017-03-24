@@ -45,7 +45,13 @@ public class SAML2SSORedirectRequestResponseBuilderFactory extends GatewayRespon
     @Override
     public void createBuilder(Response.ResponseBuilder builder, GatewayResponse gatewayResponse) {
 
-        SAML2SSORedirectRequestResponse samlResponse = (SAML2SSORedirectRequestResponse) gatewayResponse;
+        SAML2SSORedirectRequestResponse samlResponse;
+        if (gatewayResponse instanceof SAML2SSORedirectRequestResponse) {
+            samlResponse = (SAML2SSORedirectRequestResponse) gatewayResponse;
+        } else {
+            throw new SAML2SSOAuthenticatorRuntimeException("GatewayResponse object is not a " +
+                                                            "SAML2SSORedirectRequestResponse.");
+        }
 
         String saml2SSOUrl = samlResponse.getSaml2SSOUrl();
         StringBuilder httpQueryString = new StringBuilder(SAML2AuthConstants.SAML_REQUEST + "=" + SAML2AuthUtils

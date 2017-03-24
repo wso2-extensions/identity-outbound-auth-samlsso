@@ -116,7 +116,5 @@
             org.wso2.carbon.identity.claim.*; version="${carbon.identity.mgt.import.version.range}",
             org.wso2.carbon.identity.mgt.*; version="${carbon.identity.mgt.import.version.range}",
         </import.package>
-        <checkstyle.skip>true</checkstyle.skip>
-        <findbugs.skip>true</findbugs.skip>
     </properties>
 </project>

@@ -382,9 +382,7 @@
             </build>
         </profile>
     </profiles>
-
     <properties>
         <checkstyle.skip>true</checkstyle.skip>
-        <findbugs.skip>true</findbugs.skip>
     </properties>
 </project>
