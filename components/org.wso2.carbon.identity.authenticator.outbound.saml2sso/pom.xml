@@ -93,17 +93,30 @@
         <private.package>org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal</private.package>
         <export.package>
             !org.wso2.carbon.identity.authenticator.outbound.saml2sso.internal,
-            org.wso2.carbon.identity.authenticator.outbound.saml2sso;
-            version="${project.version}",
-            org.wso2.carbon.identity.authenticator.outbound.saml2sso.*;
-            version="${project.version}"
+            org.wso2.carbon.identity.authenticator.outbound.saml2sso.*; version="${project.version}"
         </export.package>
         <import.package>
-
+            javax.ws.rs.*; version="${rs-api.imp.version.range}",
+            javax.crypto.*,
+            org.w3c.dom.*,
+            org.slf4j.*,
+            org.osgi.framework.*; version="${osgi.framework.imp.pkg.version.range}",
+            org.osgi.service.*; version="${osgi.service.imp.version.range}",
+            org.joda.time; version="${joda.wso2.osgi.version.range}",
+            org.bouncycastle.jce.provider.*; version="${bouncycastle.imp.version.range}",
+            org.opensaml.*; version="${opensaml2.wso2.osgi.version.range}",
+            org.apache.commons.lang.*; version="${commons-lang.wso2.osgi.version.range}",
+            org.apache.commons.collections.*; version="${commons-collections.imp.version.range}",
+            org.owasp.encoder; version="${encoder.wso2.imp.version.range}",
+            org.wso2.carbon.identity.common.*; version="${carbon.identity.commons.imp.version.range}",
+            org.wso2.carbon.identity.gateway.*; version="${carbon.identity.gateway.package.import.version.range}",
+            org.wso2.carbon.identity.auth.saml2.common; version="${inbound.saml2.common.import.version.range}",
+            org.wso2.carbon.identity.saml.request; version="${identity.inbound.auth.saml2.import.version.range}";
+            resolution:=optional,
+            org.wso2.carbon.identity.claim.*; version="${carbon.identity.mgt.import.version.range}",
+            org.wso2.carbon.identity.mgt.*; version="${carbon.identity.mgt.import.version.range}",
         </import.package>
         <checkstyle.skip>true</checkstyle.skip>
         <findbugs.skip>true</findbugs.skip>
-        <dynamic.import.package>*</dynamic.import.package>
-        <carbon.identity.gateway.import.version.range>[1.0.0, 2.0.0)</carbon.identity.gateway.import.version.range>
     </properties>
 </project>
