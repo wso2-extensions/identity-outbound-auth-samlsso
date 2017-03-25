@@ -268,7 +268,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.inbound.auth.saml2</groupId>
-                <artifactId>org.wso2.carbon.identity.saml</artifactId>
+                <artifactId>org.wso2.carbon.identity.authenticator.inbound.saml2sso</artifactId>
                 <version>${identity.inbound.auth.saml2.version}</version>
             </dependency>
             <dependency>

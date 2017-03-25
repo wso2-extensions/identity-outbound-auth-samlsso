@@ -85,7 +85,7 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.inbound.auth.saml2</groupId>
-            <artifactId>org.wso2.carbon.identity.saml</artifactId>
+            <artifactId>org.wso2.carbon.identity.authenticator.inbound.saml2sso</artifactId>
         </dependency>
     </dependencies>
 
@@ -111,7 +111,8 @@
             org.wso2.carbon.identity.common.*; version="${carbon.identity.commons.imp.version.range}",
             org.wso2.carbon.identity.gateway.*; version="${carbon.identity.gateway.package.import.version.range}",
             org.wso2.carbon.identity.auth.saml2.common; version="${inbound.saml2.common.import.version.range}",
-            org.wso2.carbon.identity.saml.request; version="${identity.inbound.auth.saml2.import.version.range}";
+            org.wso2.carbon.identity.authenticator.inbound.saml2sso.*;
+            version="${identity.inbound.auth.saml2.import.version.range}";
             resolution:=optional,
             org.wso2.carbon.identity.claim.*; version="${carbon.identity.mgt.import.version.range}",
             org.wso2.carbon.identity.mgt.*; version="${carbon.identity.mgt.import.version.range}",
