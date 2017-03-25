@@ -193,18 +193,6 @@
                                     <symbolicName>joda-time</symbolicName>
                                     <version>${joda.wso2.version}</version>
                                 </bundle>
-                                <!--<bundle>-->
-                                    <!--<symbolicName>tomcat-jsp-api</symbolicName>-->
-                                    <!--<version>${tomcat.jsp.api.version}</version>-->
-                                <!--</bundle>-->
-                                <!--<bundle>-->
-                                    <!--<symbolicName>tomcat-servlet-api</symbolicName>-->
-                                    <!--<version>${tomcat.servelet.api.version}</version>-->
-                                <!--</bundle>-->
-                                <!--<bundle>-->
-                                    <!--<symbolicName>axiom</symbolicName>-->
-                                    <!--<version>${axiom.version}</version>-->
-                                <!--</bundle>-->
                             </bundles>
                         </configuration>
                     </execution>
