@@ -26,7 +26,7 @@ import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
  */
 public class SAML2SSOPostRequestResponse extends SAML2SSORequestResponse {
 
-    private static final long serialVersionUID = 5460574817254356084L;
+    private static final long serialVersionUID = 2520601931198808145L;
 
     protected boolean isAuthnRequestSigned;
     protected transient X509Credential idPCredential = null;
@@ -58,6 +58,16 @@ public class SAML2SSOPostRequestResponse extends SAML2SSORequestResponse {
 
     public String getDigestAlg() {
         return digestAlg;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("SAML2SSOPostRequestResponse{");
+        sb.append("isAuthnRequestSigned=").append(isAuthnRequestSigned);
+        sb.append(", sigAlg='").append(sigAlg).append('\'');
+        sb.append(", digestAlg='").append(digestAlg).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 
     /**

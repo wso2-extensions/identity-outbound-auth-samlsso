@@ -38,6 +38,15 @@ public class SAML2ACSRequest extends CallbackAuthenticationRequest {
         return samlResponse;
     }
 
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("SAML2ACSRequest{");
+        sb.append("samlResponse='").append(samlResponse).append('\'');
+        sb.append("relayState='").append(requestKey).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
+
     /**
      * Builder for building SAML2ACSRequest.
      */

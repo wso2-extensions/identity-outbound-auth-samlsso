@@ -37,7 +37,7 @@ import javax.ws.rs.core.Response;
  */
 public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBuilderFactory {
 
-    private static Logger log = LoggerFactory.getLogger(SAML2SSOPostRequestResponseBuilderFactory.class);
+    private static Logger logger = LoggerFactory.getLogger(SAML2SSOPostRequestResponseBuilderFactory.class);
 
     public boolean canHandle(GatewayResponse gatewayResponse) {
         return gatewayResponse instanceof SAML2SSOPostRequestResponse;
@@ -95,8 +95,8 @@ public class SAML2SSOPostRequestResponseBuilderFactory extends GatewayResponseBu
                     .append(relayState).append("'>");
         }
         postPage = postPage.replace("<!--$params-->", hiddenInputBuilder.toString());
-        if (log.isDebugEnabled()) {
-            log.debug("SAML2 SSO Authenticator HTTP-POST page: " + postPage);
+        if (logger.isDebugEnabled()) {
+            logger.debug("SAML2 SSO Authenticator HTTP-POST page: " + postPage);
         }
         return postPage;
     }

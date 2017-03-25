@@ -55,6 +55,16 @@ public class SAML2SSORedirectRequestResponse extends SAML2SSORequestResponse {
         return sigAlg;
     }
 
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("SAML2SSORedirectRequestResponse{");
+        sb.append("isAuthnRequestSigned=").append(isAuthnRequestSigned);
+        sb.append(", sigAlg='").append(sigAlg).append('\'');
+        sb.append(", authnRequestSigned=").append(isAuthnRequestSigned());
+        sb.append('}');
+        return sb.toString();
+    }
+
     /**
      * The builder for building SAML2SSORedirectRequestResponse.
      */

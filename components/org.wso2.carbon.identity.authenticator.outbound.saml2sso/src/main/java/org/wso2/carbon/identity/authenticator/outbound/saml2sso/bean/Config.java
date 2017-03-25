@@ -18,16 +18,23 @@
 
 package org.wso2.carbon.identity.authenticator.outbound.saml2sso.bean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Bean class that represents the SAML2 SSO Outbound Authenticator Configuration.
  * This class must read configuration from deployment.yaml.
  */
 public class Config {
 
+    private static Logger logger = LoggerFactory.getLogger(Config.class);
+
     private static volatile Config instance = new Config();
 
     private Config() {
-
+        if (logger.isDebugEnabled()) {
+           logger.debug(toString());
+        }
     }
 
     public static Config getInstance() {
@@ -59,4 +66,12 @@ public class Config {
         this.authnRequestPage = authnRequestPage;
     }
 
+// Need to enable debug logging for outbound.saml2sso during tests to uncomment this
+//    @Override
+//    public String toString() {
+//        final StringBuffer sb = new StringBuffer("Config{");
+//        sb.append("authnRequestPage='").append(authnRequestPage).append('\'');
+//        sb.append('}');
+//        return sb.toString();
+//    }
 }
