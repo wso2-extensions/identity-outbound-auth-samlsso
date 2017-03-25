@@ -21,10 +21,10 @@
 <suite name="identity-outbound-auth-saml2sso-tests">
     <test name="identity-outbound-auth-saml2sso-tests" preserve-order="true" parallel="false">
         <classes>
-            <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundPOSTTests"/>
-            <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundRedirectTests"/>
-            <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundCommonTests"/>
-            <class name="org.wso2.carbon.identity.saml.outbound.test.module.SAMLOutboundClaimTests"/>
+            <class name="org.wso2.carbon.identity.authenticator.outbound.saml2sso.test.SAMLOutboundPOSTTests"/>
+            <class name="org.wso2.carbon.identity.authenticator.outbound.saml2sso.test.SAMLOutboundRedirectTests"/>
+            <class name="org.wso2.carbon.identity.authenticator.outbound.saml2sso.test.SAMLOutboundCommonTests"/>
+            <class name="org.wso2.carbon.identity.authenticator.outbound.saml2sso.test.SAMLOutboundClaimTests"/>
         </classes>
     </test>
 </suite>

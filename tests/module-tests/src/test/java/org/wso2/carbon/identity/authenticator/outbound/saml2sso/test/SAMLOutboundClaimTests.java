@@ -16,12 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.saml.outbound.test.module;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso.test;
 
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.io.Charsets;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.xml.XMLObject;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
@@ -35,9 +33,9 @@ import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthConstants;
-import org.wso2.carbon.identity.auth.saml2.common.SAML2AuthUtils;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.gateway.common.model.idp.IdentityProviderConfig;
+import org.wso2.carbon.identity.gateway.common.model.sp.ServiceProviderConfig;
 import org.wso2.carbon.kernel.utils.CarbonServerInfo;
 
 import java.io.IOException;
@@ -45,6 +43,7 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import javax.inject.Inject;
 import javax.ws.rs.HttpMethod;
@@ -54,7 +53,7 @@ import javax.ws.rs.HttpMethod;
  */
 @Listeners(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
-public class SAMLOutboundCommonTests {
+public class SAMLOutboundClaimTests {
 
     private static final Logger log = LoggerFactory.getLogger(SAMLOutboundPOSTTests.class);
 
@@ -78,11 +77,11 @@ public class SAMLOutboundCommonTests {
     }
 
     /**
-     * SAML outbound federated authentication with post binding
+     * SAML outbound federated authentication with post binding to test whether we are getting back claims which are
+     * sent in federated SAML IDP.
      */
     @Test
-    public void testMinimumConfigs() {
-
+    public void testClaimsInResponse() {
         IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
                 (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
         Properties originalProperties = identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
@@ -101,7 +100,6 @@ public class SAMLOutboundCommonTests {
 
             identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                     ().get(0).setProperties(newProperties);
-
             HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT + "?" +
                     SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET, false);
             String content = SAMLOutboundTestUtils.getContent(urlConnection);
@@ -118,48 +116,55 @@ public class SAMLOutboundCommonTests {
             String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
             Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
                     .AUTHENTICATED_USER_NAME));
+            String claimsString = SAMLOutboundTestUtils.getQueryParam(locationHeader, "claims");
+            Map<String, String> claims = SAMLOutboundTestUtils.getClaims(claimsString);
+            Assert.assertTrue(claims.size() == 3);
+            Assert.assertTrue(claims.containsKey("http://sample.sp.org/claims/email"));
+            Assert.assertTrue("testuser@wso2.com" .equalsIgnoreCase(claims.get("http://sample.sp.org/claims/email")));
+            System.out.println("");
         } catch (IOException e) {
-            Assert.fail("Error while running federated authentication test case");
+            Assert.fail("Error while running sp configured claim test case");
         } catch (IdentityException e) {
-            Assert.fail("Error while running federated authentication test case");
+            Assert.fail("Error while running sp configured claim test case");
         } finally {
             identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                     ().get(0).setProperties(originalProperties);
         }
     }
 
-    @Test
-    public void testWithResponseSigningAndAssertionEncryption() {
 
+    /**
+     * SAML outbound federated authentication with post binding. SP claims has inherited dialect
+     */
+    @Test
+    public void testSPClaimMappingsFromInheritedClaims() {
+        ServiceProviderConfig serviceProviderConfig = SAMLOutboundTestUtils.getServiceProviderConfigs
+                (SAMLOutboundTestConstants.SAMPLE_ISSUER_NAME, bundleContext);
         IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
                 (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
         Properties originalProperties = identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                 ().get(0).getProperties();
+        String originalDialect = serviceProviderConfig.getClaimConfig().getDialectUri();
 
         try {
+            serviceProviderConfig.getClaimConfig().setDialectUri("http://sample.sp3.org/claims");
             Properties newProperties = new Properties();
             newProperties.setProperty(SAML2AuthConstants.Config.Name.SAML2_SSO_URL, originalProperties.getProperty
                     (SAML2AuthConstants.Config.Name.SAML2_SSO_URL));
 
             newProperties.setProperty(SAML2AuthConstants.Config.Name.SP_ENTITY_ID, originalProperties.getProperty
                     (SAML2AuthConstants.Config.Name.SP_ENTITY_ID));
+
             newProperties.setProperty(SAML2AuthConstants.Config.Name.IDP_ENTITY_ID, originalProperties.getProperty
                     (SAML2AuthConstants.Config.Name.IDP_ENTITY_ID));
-            newProperties.setProperty(SAML2AuthConstants.Config.Name.AUTHN_RESPONSE_SIGNED, "true");
-            newProperties.setProperty(SAML2AuthConstants.Config.Name.AUTHN_RESPONSE_ENCRYPTED, "true");
-            newProperties.setProperty(SAML2AuthConstants.Config.Name.DIGEST_ALGO, "http://www.w3" +
-                    ".org/2001/04/xmldsig-more#md5");
-            newProperties.setProperty(SAML2AuthConstants.Config.Name.SIGNATURE_ALGO, "http://www.w3" +
-                    ".org/2000/09/xmldsig#dsa-sha1");
 
             identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                     ().get(0).setProperties(newProperties);
-
             HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT + "?" +
                     SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET, false);
             String content = SAMLOutboundTestUtils.getContent(urlConnection);
             String relayState = SAMLOutboundTestUtils.getParameterFromHTML(content, "'RelayState' value='", "'>");
-            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(true, SAMLOutboundTestConstants
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
                     .CARBON_SERVER, true, true);
             samlResponse = URLEncoder.encode(samlResponse);
             urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
@@ -171,53 +176,83 @@ public class SAMLOutboundCommonTests {
             String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
             Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
                     .AUTHENTICATED_USER_NAME));
+            String claimsString = SAMLOutboundTestUtils.getQueryParam(locationHeader, "claims");
+            Map<String, String> claims = SAMLOutboundTestUtils.getClaims(claimsString);
+            Assert.assertTrue(claims.size() == 3);
+            Assert.assertTrue(claims.containsKey("http://sample.sp3.org/claims/email"));
+            Assert.assertTrue(claims.containsKey("http://sample.sp2.org/claims/fullname"));
+            Assert.assertTrue("testuser@wso2.com" .equalsIgnoreCase(claims.get("http://sample.sp3.org/claims/email")));
         } catch (IOException e) {
-            Assert.fail("Error while running federated authentication test case");
+            Assert.fail("Error while running sp configured inherited claim test case");
         } catch (IdentityException e) {
-            Assert.fail("Error while running federated authentication test case");
+            Assert.fail("Error while running sp configured inherited claim test case");
         } finally {
             identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                     ().get(0).setProperties(originalProperties);
+            serviceProviderConfig.getClaimConfig().setDialectUri(originalDialect);
         }
     }
 
-
+    /**
+     * SAML outbound federated authentication with post binding. SP claims has inherited dialect
+     */
     @Test
-    public void testRequestSigning() {
+    public void testSPClaimMappingsWithCustomProfile() {
 
         IdentityProviderConfig identityProviderConfig = SAMLOutboundTestUtils.getIdentityProviderConfigs
                 (SAMLOutboundTestConstants.SAMPLE_IDP_NAME, bundleContext);
         Properties originalProperties = identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                 ().get(0).getProperties();
+        String originalProfile = identityProviderConfig.getIdpMetaData().getClaimConfig().getProfile();
 
         try {
+            identityProviderConfig.getIdpMetaData().getClaimConfig().setProfile("idp");
             Properties newProperties = new Properties();
             newProperties.setProperty(SAML2AuthConstants.Config.Name.SAML2_SSO_URL, originalProperties.getProperty
                     (SAML2AuthConstants.Config.Name.SAML2_SSO_URL));
 
-            newProperties.setProperty(SAML2AuthConstants.Config.Name.AUTHN_REQUEST_SIGNED, "true");
+            newProperties.setProperty(SAML2AuthConstants.Config.Name.SP_ENTITY_ID, originalProperties.getProperty
+                    (SAML2AuthConstants.Config.Name.SP_ENTITY_ID));
 
+            newProperties.setProperty(SAML2AuthConstants.Config.Name.IDP_ENTITY_ID, originalProperties.getProperty
+                    (SAML2AuthConstants.Config.Name.IDP_ENTITY_ID));
 
             identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                     ().get(0).setProperties(newProperties);
-
             HttpURLConnection urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT + "?" +
                     SAMLOutboundTestConstants.SAMPLE_PROTOCOL + "=true", HttpMethod.GET, false);
             String content = SAMLOutboundTestUtils.getContent(urlConnection);
             String relayState = SAMLOutboundTestUtils.getParameterFromHTML(content, "'RelayState' value='", "'>");
-            String samlRequest = SAMLOutboundTestUtils.getParameterFromHTML(content, "'SAMLRequest' value='","'>" );
-
-            String decodedRequest = SAML2AuthUtils.decodeForPost(samlRequest);
-            XMLObject request = SAML2AuthUtils.unmarshall(decodedRequest);
-            Assert.assertTrue(request instanceof AuthnRequest);
-            AuthnRequest authnRequest = (AuthnRequest) request;
-            Assert.assertNotNull(authnRequest.getSignature());
+            String samlResponse = SAMLOutboundTestUtils.getSAMLResponse(false, SAMLOutboundTestConstants
+                    .CARBON_SERVER, true, true);
+            samlResponse = URLEncoder.encode(samlResponse);
+            urlConnection = SAMLOutboundTestUtils.request(SAMLOutboundTestConstants.GATEWAY_ENDPOINT, HttpMethod.POST,
+                    true);
+            String postData = "SAMLResponse=" + samlResponse + "&" + "RelayState=" + relayState;
+            urlConnection.setDoOutput(true);
+            urlConnection.getOutputStream().write(postData.toString().getBytes(Charsets.UTF_8));
+            urlConnection.getResponseCode();
+            String locationHeader = SAMLOutboundTestUtils.getResponseHeader(HttpHeaders.LOCATION, urlConnection);
+            Assert.assertTrue(locationHeader.contains("authenticatedUser=" + SAMLOutboundTestConstants
+                    .AUTHENTICATED_USER_NAME));
+            String claimsString = SAMLOutboundTestUtils.getQueryParam(locationHeader, "claims");
+            Map<String, String> claims = SAMLOutboundTestUtils.getClaims(claimsString);
+            Assert.assertTrue(claims.size() == 2);
+            Assert.assertTrue(claims.containsKey("http://sample.sp.org/claims/email"));
+            Assert.assertTrue(claims.containsKey("http://sample.sp.org/claims/email"));
+            Assert.assertTrue("testuser@wso2.com" .equalsIgnoreCase(claims.get("http://sample.sp.org/claims/email")));
+            Assert.assertNull(claims.get("http://sample.sp.org/claims/gender"));
         } catch (IOException e) {
-            Assert.fail("Error while running federated authentication test case");
+            Assert.fail("Error while running sp configured inherited claim test case");
+        } catch (IdentityException e) {
+            Assert.fail("Error while running sp configured inherited claim test case");
         } finally {
             identityProviderConfig.getAuthenticationConfig().getAuthenticatorConfigs
                     ().get(0).setProperties(originalProperties);
+            identityProviderConfig.getIdpMetaData().getClaimConfig().setProfile(originalProfile);
         }
     }
+
+
 
 }

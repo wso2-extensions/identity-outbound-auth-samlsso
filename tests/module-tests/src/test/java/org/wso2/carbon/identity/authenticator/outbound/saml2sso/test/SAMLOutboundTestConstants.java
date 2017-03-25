@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.saml.outbound.test.module;
+package org.wso2.carbon.identity.authenticator.outbound.saml2sso.test;
 
 public class SAMLOutboundTestConstants {
 
