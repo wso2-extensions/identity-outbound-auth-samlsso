@@ -499,7 +499,7 @@
         <commons-collections.version>3.2.2.wso2v1</commons-collections.version>
         <commons-collections.imp.version.range>[3.2.0,4.0.0)</commons-collections.imp.version.range>
         <!--Identity Gateway versions -->
-        <carbon.identity.gateway.version>0.1.0</carbon.identity.gateway.version>
+        <carbon.identity.gateway.version>0.1.2</carbon.identity.gateway.version>
         <carbon.identity.gateway.package.import.version.range>[0.0.0, 1.0.0)</carbon.identity.gateway.package.import.version.range>
         <!-- Commons -->
         <carbon.identity.commons.imp.version.range>[0.0.0,1.0.0)</carbon.identity.commons.imp.version.range>
