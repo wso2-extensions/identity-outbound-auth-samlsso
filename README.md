@@ -1,1 +1,1 @@
-# identity-outbound-auth-samlsso
+Identity-Outbound-SAML2 authenticator
