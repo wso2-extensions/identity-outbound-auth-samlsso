@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
-  ~ Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2017, WSO2 Inc. (http://wso2.com) All Rights Reserved.
   ~
-  ~ WSO2 Inc. licenses this file to you under the Apache License,
-  ~ Version 2.0 (the "License"); you may not use this file except
-  ~ in compliance with the License.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
   ~ http://www.apache.org/licenses/LICENSE-2.0
   ~
-  ~ Unless required by applicable law or agreed to in writing,
-  ~ software distributed under the License is distributed on an
-  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  ~ KIND, either express or implied.  See the License for the
-  ~ specific language governing permissions and limitations
-  ~ under the License.
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
   -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
@@ -31,6 +31,14 @@
     <modelVersion>4.0.0</modelVersion>
     <name>WSO2 Carbon - SAML2 SSO Outbound Authentication Module</name>
     <url>http://wso2.org</url>
+
+    <scm>
+        <url>https://github.com/wso2-extensions/identity-outbound-auth-samlsso.git</url>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/identity-outbound-auth-samlsso.git
+        </developerConnection>
+        <connection>scm:git:https://github.com/wso2-extensions/identity-outbound-auth-samlsso.git</connection>
+        <tag>HEAD</tag>
+    </scm>
 
     <dependencyManagement>
         <dependencies>
@@ -365,6 +373,101 @@
         <module>tests</module>
     </modules>
 
+    <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+            </extension>
+        </extensions>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.wso2.carbon.maven</groupId>
+                    <artifactId>carbon-feature-plugin</artifactId>
+                    <version>${carbon.feature.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <configuration>
+                        <preparationGoals>clean install</preparationGoals>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>docs</id>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>javadoc</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>sql-maven-plugin</artifactId>
+                    <version>${sql.maven.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <preparationGoals>clean install</preparationGoals>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+    </build>
     <properties>
 
         <osgi.framework.imp.version.range>[1.8.0, 2.0.0)</osgi.framework.imp.version.range>
@@ -373,7 +476,6 @@
         <saml2sso.pkg.export.version>${project.version}</saml2sso.pkg.export.version>
 
         <identity.commons.version>0.1.24</identity.commons.version>
-        <identity.gateway.version>1.0.0-SNAPSHOT</identity.gateway.version>
 
         <xmltooling.version>1.4.4</xmltooling.version>
         <xmltooling.pkg.import.version.range>[1.4.4,2.0.0)</xmltooling.pkg.import.version.range>
@@ -386,11 +488,10 @@
         <carbon.identity.mgt.version>0.1.10</carbon.identity.mgt.version>
         <carbon.identity.mgt.import.version.range>[0.0.0,1.0.0)</carbon.identity.mgt.import.version.range>
 
-        <identity.auth.saml2.common.version>6.0.0-SNAPSHOT</identity.auth.saml2.common.version>
+        <identity.auth.saml2.common.version>6.0.0-m1</identity.auth.saml2.common.version>
         <identity.auth.saml2.common.import.version.range>[6.0.0,7.0.0)</identity.auth.saml2.common.import.version.range>
-        <identity.inbound.auth.saml2.version>6.0.0-SNAPSHOT</identity.inbound.auth.saml2.version>
-        <identity.inbound.auth.saml2.import.version.range>[6.0.0,7.0
-            .0)</identity.inbound.auth.saml2.import.version.range>
+        <identity.inbound.auth.saml2.version>6.0.0-m1</identity.inbound.auth.saml2.version>
+        <identity.inbound.auth.saml2.import.version.range>[6.0.0,7.0.0)</identity.inbound.auth.saml2.import.version.range>
 
         <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
         <encoder.wso2.imp.version.range>[1.0.0,2.0.0)</encoder.wso2.imp.version.range>
@@ -398,8 +499,8 @@
         <commons-collections.version>3.2.2.wso2v1</commons-collections.version>
         <commons-collections.imp.version.range>[3.2.0,4.0.0)</commons-collections.imp.version.range>
         <!--Identity Gateway versions -->
-        <carbon.identity.gateway.version>1.0.0-SNAPSHOT</carbon.identity.gateway.version>
-        <carbon.identity.gateway.package.import.version.range>[1.0.0, 2.0.0)</carbon.identity.gateway.package.import.version.range>
+        <carbon.identity.gateway.version>0.1.0</carbon.identity.gateway.version>
+        <carbon.identity.gateway.package.import.version.range>[0.0.0, 1.0.0)</carbon.identity.gateway.package.import.version.range>
         <!-- Commons -->
         <carbon.identity.commons.imp.version.range>[0.0.0,1.0.0)</carbon.identity.commons.imp.version.range>
         <inbound.saml2.common.import.version.range>[6.0.0,7.0.0)</inbound.saml2.common.import.version.range>
@@ -457,6 +558,8 @@
         <org.slf4j.imp.pkg.version.range>[1.0.0,2.0.0)</org.slf4j.imp.pkg.version.range>
         <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
         <carbon.feature.plugin.version>2.0.1</carbon.feature.plugin.version>
+
+        <project.scm.id>my-scm-server</project.scm.id>
 
     </properties>
 
