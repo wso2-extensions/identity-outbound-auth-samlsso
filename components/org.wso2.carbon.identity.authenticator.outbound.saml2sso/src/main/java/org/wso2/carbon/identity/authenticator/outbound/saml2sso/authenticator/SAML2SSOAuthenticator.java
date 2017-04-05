@@ -109,15 +109,19 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
     private static Logger logger = LoggerFactory.getLogger(SAML2SSOAuthenticator.class);
 
     @Override
+    public String getDisplayKey() {
+        return "authenticator.saml2sso";
+    }
+
+    @Override
     public String getName() {
         return Constants.AUTHENTICATOR_NAME;
     }
 
     @Override
-    public String getFriendlyName() {
-        return Constants.AUTHENTICATOR_FRIENDLY_NAME;
+    public boolean isRetryEnable(AuthenticationContext authenticationContext) {
+        return false;
     }
-
 
     @Override
     protected AuthenticationResponse processRequest(AuthenticationContext context)
@@ -608,7 +612,7 @@ public class SAML2SSOAuthenticator extends AbstractApplicationAuthenticator impl
         if (SAML2AuthConstants.Config.Value.REDIRECT.equals(requestBinding)) {
             isPost = false;
         } else if (SAML2AuthConstants.Config.Value.AS_REQUEST.equals(requestBinding)) {
-            String method = context.getInitialAuthenticationRequest().getHttpMethod();
+            String method = context.getInitialAuthenticationRequest().getMethod();
             if (SAML2AuthConstants.Config.Value.REDIRECT.equalsIgnoreCase(method)) {
                 isPost = false;
             }
