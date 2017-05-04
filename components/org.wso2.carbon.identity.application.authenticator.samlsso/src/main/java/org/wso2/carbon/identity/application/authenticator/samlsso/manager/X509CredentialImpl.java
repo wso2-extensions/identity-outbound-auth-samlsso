@@ -100,12 +100,12 @@ public class X509CredentialImpl implements X509Credential {
                     String ksName = tenantDomain.trim().replace(".", "-");
                     // derive JKS name
                     String jksName = ksName + ".jks";
-                    key =
-                            (PrivateKey) keyStoreManager.getPrivateKey(jksName, tenantDomain);
+                    key = (PrivateKey) SAMLSSOAuthenticatorServiceComponent.getKeyProvider().getPrivateKey(tenantDomain);
                     cert = (X509Certificate) keyStoreManager.getKeyStore(jksName)
                             .getCertificate(tenantDomain);
                 } else {
-                    key = keyStoreManager.getDefaultPrivateKey();
+                    //key = keyStoreManager.getDefaultPrivateKey();
+                    key = (PrivateKey) SAMLSSOAuthenticatorServiceComponent.getKeyProvider().getPrivateKey(tenantDomain);
                     cert = keyStoreManager.getDefaultPrimaryCertificate();
 
                 }
