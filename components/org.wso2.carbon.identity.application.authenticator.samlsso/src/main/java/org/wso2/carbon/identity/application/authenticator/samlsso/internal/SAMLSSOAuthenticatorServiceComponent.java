@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
-import org.wso2.carbon.identity.application.authenticator.samlsso.DefaultKeyProvider;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.core.KeyProviderService;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
@@ -41,7 +40,7 @@ import java.util.Scanner;
  * unbind="unsetRealmService"
  * @scr.component name="identity.application.authenticator.samlsso.component" immediate="true"
  * @scr.reference name="private.key.provider" interface="org.wso2.carbon.identity.core.KeyProviderService"
- * cardinality="0..1" policy="dynamic" bind="setKeyProvider"  unbind="unsetKeyProvider"
+ * cardinality="1..1" policy="dynamic" bind="setKeyProvider"  unbind="unsetKeyProvider"
  */
 
 public class SAMLSSOAuthenticatorServiceComponent {
@@ -109,17 +108,14 @@ public class SAMLSSOAuthenticatorServiceComponent {
     }
 
     protected void setKeyProvider(KeyProviderService pkProvider) {
-        SAMLSSOAuthenticatorServiceComponent.keyProviderService = pkProvider;
+        keyProviderService = pkProvider;
     }
 
     protected void unsetKeyProvider(KeyProviderService pkProvider) {
-        SAMLSSOAuthenticatorServiceComponent.keyProviderService = null;
+        keyProviderService = null;
     }
 
     public static KeyProviderService getKeyProvider() {
-        if (SAMLSSOAuthenticatorServiceComponent.keyProviderService == null) {
-            SAMLSSOAuthenticatorServiceComponent.keyProviderService = new DefaultKeyProvider();
-        }
-        return SAMLSSOAuthenticatorServiceComponent.keyProviderService;
+        return keyProviderService;
     }
 }
