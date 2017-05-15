@@ -70,6 +70,7 @@ public class SAMLSSOAuthenticatorServiceComponent {
         FileInputStream fis = null;
         try {
             SAMLSSOAuthenticator samlSSOAuthenticator = new SAMLSSOAuthenticator();
+            samlSSOAuthenticator.setKeyProviderService(keyProviderService);
             ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), samlSSOAuthenticator, null);
             postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository"
                     + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File
@@ -113,9 +114,5 @@ public class SAMLSSOAuthenticatorServiceComponent {
 
     protected void unsetKeyProvider(KeyProviderService pkProvider) {
         keyProviderService = null;
-    }
-
-    public static KeyProviderService getKeyProvider() {
-        return keyProviderService;
     }
 }
