@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConsta
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.KeyProviderService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,7 +56,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
     private static final long serialVersionUID = -8097512332218044859L;
     public static final String AS_REQUEST = "AS_REQUEST";
 
-    private static Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
+    private static final Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
+    private KeyProviderService keyProviderService;
 
     @Override
     public boolean canHandle(HttpServletRequest request) {
@@ -367,7 +369,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 throw new SAMLSSOException(e.getMessage(), e);
             }
         } else {
-            return new DefaultSAML2SSOManager();
+            return new DefaultSAML2SSOManager(keyProviderService);
         }
     }
 
@@ -448,5 +450,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         } catch (Exception e) {
             throw new SAMLSSOException("Error while sending POST request", e);
         }
+    }
+
+    public void setKeyProviderService(KeyProviderService keyProviderService) {
+        this.keyProviderService = keyProviderService;
     }
 }

@@ -19,6 +19,8 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.security.credential.CredentialContextSet;
 import org.opensaml.xml.security.credential.UsageType;
@@ -28,26 +30,102 @@ import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
+import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.core.KeyProviderService;
 import org.wso2.carbon.user.api.UserStoreException;
 
-import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
+import javax.crypto.SecretKey;
 
 /**
  * X509Credential implementation for signing and verification.
  */
 public class X509CredentialImpl implements X509Credential {
 
-
+    private static final Log log = LogFactory.getLog(X509CredentialImpl.class);
     private PublicKey publicKey = null;
     private PrivateKey privateKey = null;
     private X509Certificate entityCertificate = null;
+    private KeyProviderService keyProviderService;
+
+    /**
+     * Instantiates X509Credential.
+     * If the IDP cert passed is not null the instantiated credential object will hold the passed
+     * cert and the public key of the cert.
+     * Otherwise the object will hold the private key, public key and the cert for the respective
+     * tenant domain.
+     *
+     * @param tenantDomain tenant domain
+     * @param idpCert      certificate of the IDP
+     * @param keyProviderService the key provider service
+     * @throws SAMLSSOException
+     */
+    public X509CredentialImpl(String tenantDomain, String idpCert, KeyProviderService keyProviderService)
+            throws SAMLSSOException {
+        this.keyProviderService = keyProviderService;
+        X509Certificate cert = null;
+
+        /**
+         * If IDP cert is passed as a parameter set the cert to the IDP cert.
+         * IDP cert should be passed when used with response validation.
+         */
+        if (idpCert != null && !idpCert.isEmpty()) {
+            try {
+                cert = (X509Certificate) IdentityApplicationManagementUtil.decodeCertificate(idpCert);
+            } catch (CertificateException e) {
+                throw new SAMLSSOException("Error retrieving the certificate for alias " + idpCert, e);
+            }
+            if (cert == null) {
+                throw new SAMLSSOException(
+                        "Cannot find the certificate from IdP certificate: " + idpCert + " , for tenant: "
+                                + tenantDomain);
+            }
+        } else {
+            PrivateKey key = null;
+            try {
+                if (keyProviderService != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using Key provider service to lookup the private key and certificates");
+                    }
+                    key = keyProviderService.getPrivateKey(tenantDomain);
+                    Certificate certificateFromService = keyProviderService.getCertificate(tenantDomain);
+                    if (certificateFromService instanceof X509Certificate) {
+                        cert = (X509Certificate) certificateFromService;
+                    }
+                }
+
+                if (key == null) {
+                    throw new SAMLSSOException(
+                            "Error retrieving private key from keyProviderService for tenant " + tenantDomain);
+                }
+                if (key == null) {
+                    throw new SAMLSSOException(
+                            "Error retrieving the X.509 Certificate from keyProviderService for tenant "
+                                    + tenantDomain);
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("Key provider service was able to find the private key:" + key + " and certificate:"
+                            + cert);
+                }
+            } catch (IdentityException e) {
+                throw new SAMLSSOException(
+                        "Error retrieving private key or the certificate from keyProviderService for tenant "
+                                + tenantDomain, e);
+            }
+
+            this.privateKey = key;
+        }
+
+        entityCertificate = cert;
+        publicKey = cert.getPublicKey();
+    }
 
     /**
      * Instantiates X509Credential.
@@ -59,10 +137,12 @@ public class X509CredentialImpl implements X509Credential {
      * @param tenantDomain tenant domain
      * @param idpCert      certificate of the IDP
      * @throws SAMLSSOException
+     * @deprecated please use X509CredentialImpl(String tenantDomain, String idpCert, KeyProviderService keyProviderService)
      */
+    @Deprecated
     public X509CredentialImpl(String tenantDomain, String idpCert) throws SAMLSSOException {
 
-        X509Certificate cert;
+        X509Certificate cert = null;
 
         /**
          * If IDP cert is passed as a parameter set the cert to the IDP cert.
@@ -100,12 +180,12 @@ public class X509CredentialImpl implements X509Credential {
                     String ksName = tenantDomain.trim().replace(".", "-");
                     // derive JKS name
                     String jksName = ksName + ".jks";
-                    key =
-                            (PrivateKey) keyStoreManager.getPrivateKey(jksName, tenantDomain);
+                    key = (PrivateKey) keyStoreManager.getPrivateKey(jksName, tenantDomain);
                     cert = (X509Certificate) keyStoreManager.getKeyStore(jksName)
                             .getCertificate(tenantDomain);
                 } else {
-                    key = keyStoreManager.getDefaultPrivateKey();
+                    //key = keyStoreManager.getDefaultPrivateKey();
+                    key = (PrivateKey) keyStoreManager.getDefaultPrivateKey();
                     cert = keyStoreManager.getDefaultPrimaryCertificate();
 
                 }
@@ -152,49 +232,41 @@ public class X509CredentialImpl implements X509Credential {
     // ********** Not implemented **************************************************************
     @Override
     public Collection<X509CRL> getCRLs() {
-        // TODO Auto-generated method stub
         return CollectionUtils.EMPTY_COLLECTION;
     }
 
     @Override
     public Collection<X509Certificate> getEntityCertificateChain() {
-        // TODO Auto-generated method stub
         return Collections.emptySet();
     }
 
     @Override
     public CredentialContextSet getCredentalContextSet() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Class<? extends Credential> getCredentialType() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public String getEntityId() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Collection<String> getKeyNames() {
-        // TODO Auto-generated method stub
         return Collections.emptySet();
     }
 
     @Override
     public SecretKey getSecretKey() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public UsageType getUsageType() {
-        // TODO Auto-generated method stub
         return null;
     }
 }
