@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.opensaml.xml.security.credential.Credential;
@@ -65,7 +66,7 @@ public class X509CredentialImpl implements X509Credential {
      * @param tenantDomain tenant domain
      * @param idpCert      certificate of the IDP
      * @param keyProviderService the key provider service
-     * @throws SAMLSSOException
+     * @throws SAMLSSOException In case cannot retrieve public, private keys from keystore
      */
     public X509CredentialImpl(String tenantDomain, String idpCert, KeyProviderService keyProviderService)
             throws SAMLSSOException {
@@ -76,7 +77,7 @@ public class X509CredentialImpl implements X509Credential {
          * If IDP cert is passed as a parameter set the cert to the IDP cert.
          * IDP cert should be passed when used with response validation.
          */
-        if (idpCert != null && !idpCert.isEmpty()) {
+        if (StringUtils.isNotEmpty(idpCert)) {
             try {
                 cert = (X509Certificate) IdentityApplicationManagementUtil.decodeCertificate(idpCert);
             } catch (CertificateException e) {
@@ -92,7 +93,8 @@ public class X509CredentialImpl implements X509Credential {
             try {
                 if (keyProviderService != null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Using Key provider service to lookup the private key and certificates");
+                        log.debug("Using Key provider service to lookup the private key and certificates for " +
+                                "tenant: " + tenantDomain);
                     }
                     key = keyProviderService.getPrivateKey(tenantDomain);
                     Certificate certificateFromService = keyProviderService.getCertificate(tenantDomain);
@@ -105,18 +107,18 @@ public class X509CredentialImpl implements X509Credential {
                     throw new SAMLSSOException(
                             "Error retrieving private key from keyProviderService for tenant " + tenantDomain);
                 }
-                if (key == null) {
+                if (cert == null) {
                     throw new SAMLSSOException(
                             "Error retrieving the X.509 Certificate from keyProviderService for tenant "
                                     + tenantDomain);
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("Key provider service was able to find the private key:" + key + " and certificate:"
-                            + cert);
+                            + cert + " for tenant: " + tenantDomain);
                 }
             } catch (IdentityException e) {
                 throw new SAMLSSOException(
-                        "Error retrieving private key or the certificate from keyProviderService for tenant "
+                        "Error retrieving private key or the certificate from keyProviderService for tenant: "
                                 + tenantDomain, e);
             }
 

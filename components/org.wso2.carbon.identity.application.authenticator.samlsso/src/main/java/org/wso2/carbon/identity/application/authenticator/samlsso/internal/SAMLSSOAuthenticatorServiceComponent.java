@@ -47,7 +47,7 @@ public class SAMLSSOAuthenticatorServiceComponent {
 
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
     private static RealmService realmService;
-    private static KeyProviderService keyProviderService;
+    private KeyProviderService keyProviderService;
     private static String postPage = null;
 
     public static RealmService getRealmService() {
