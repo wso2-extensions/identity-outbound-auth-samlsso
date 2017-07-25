@@ -129,6 +129,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private static boolean bootStrapped = false;
     private static String DEFAULT_MULTI_ATTRIBUTE_SEPARATOR = ",";
     private static String MULTI_ATTRIBUTE_SEPARATOR = "MultiAttributeSeparator";
+    private static final String VERIFY_ASSERTION_ISSUER = "VerifyAssertionIssuer";
     private IdentityProvider identityProvider = null;
     private Map<String, String> properties;
     private String tenantDomain;
@@ -465,6 +466,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             }
             throw new SAMLSSOException("SAML Assertion not found in the Response");
         }
+
+        // Validate the assertion issuer. This is an optional validation which is not mandate by the spec.
+        validateAssertionIssuer(assertion);
 
         // validate the assertion validity period
         validateAssertionValidityPeriod(assertion);
@@ -1018,6 +1022,37 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         decrypter = new Decrypter(new StaticKeyInfoCredentialResolver(shared), null, null);
         decrypter.setRootInNewDocument(true);
         return decrypter.decrypt(encryptedAssertion);
+    }
+
+    private void validateAssertionIssuer(Assertion assertion) throws SAMLSSOException {
+
+        if (isAssertionIssuerVerificationEnabled()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Assertion issuer verification is enabled.");
+            }
+
+            String idpEntityId = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID);
+            if (!idpEntityId.equals(assertion.getIssuer().getValue())) {
+                log.warn("Issuer value in the assertion is invalid. Expected value is '" + idpEntityId + "'," +
+                        " but received value in the assertion is '" + assertion.getIssuer().getValue() + "'.");
+                throw new SAMLSSOException("Identity provider with entity id '" + assertion.getIssuer().getValue()
+                        + "' is not registered in the system.");
+            }
+        }
+    }
+
+    private boolean isAssertionIssuerVerificationEnabled() {
+
+        AuthenticatorConfig authenticatorConfig = FileBasedConfigurationBuilder.getInstance()
+                .getAuthenticatorConfigMap().get(SSOConstants.AUTHENTICATOR_NAME);
+
+        if (authenticatorConfig != null && authenticatorConfig.getParameterMap() != null) {
+            String isVerifyAssertionIssuer = authenticatorConfig.getParameterMap().get(VERIFY_ASSERTION_ISSUER);
+            if (StringUtils.isNotEmpty(isVerifyAssertionIssuer)) {
+                return Boolean.parseBoolean(isVerifyAssertionIssuer);
+            }
+        }
+        return false;
     }
 
 }
