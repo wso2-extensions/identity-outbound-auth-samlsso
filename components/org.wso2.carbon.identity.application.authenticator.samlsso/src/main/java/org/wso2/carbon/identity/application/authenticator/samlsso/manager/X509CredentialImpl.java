@@ -30,10 +30,12 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
+import org.wso2.carbon.identity.application.authenticator.samlsso.internal.ServiceReferenceHolder;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.KeyProviderService;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -55,6 +57,7 @@ public class X509CredentialImpl implements X509Credential {
     private PrivateKey privateKey = null;
     private X509Certificate entityCertificate = null;
     private KeyProviderService keyProviderService;
+    private RealmService realmService;
 
     /**
      * Instantiates X509Credential.
@@ -66,18 +69,20 @@ public class X509CredentialImpl implements X509Credential {
      * @param tenantDomain tenant domain
      * @param idpCert      certificate of the IDP
      * @param keyProviderService the key provider service
-     * @throws SAMLSSOException In case cannot retrieve public, private keys from keystore
+     * @throws SAMLSSOException In case of error in retrieving pub/pri keys from keystore.
      */
-    public X509CredentialImpl(String tenantDomain, String idpCert, KeyProviderService keyProviderService)
-            throws SAMLSSOException {
+    public X509CredentialImpl(String tenantDomain, String idpCert, KeyProviderService keyProviderService,
+                              RealmService realmService) throws SAMLSSOException {
+
         this.keyProviderService = keyProviderService;
+        this.realmService = realmService;
         X509Certificate cert = null;
 
         /**
          * If IDP cert is passed as a parameter set the cert to the IDP cert.
          * IDP cert should be passed when used with response validation.
          */
-        if (StringUtils.isNotEmpty(idpCert)) {
+        if (StringUtils.isNotBlank(idpCert)) {
             try {
                 cert = (X509Certificate) IdentityApplicationManagementUtil.decodeCertificate(idpCert);
             } catch (CertificateException e) {
@@ -138,19 +143,20 @@ public class X509CredentialImpl implements X509Credential {
      *
      * @param tenantDomain tenant domain
      * @param idpCert      certificate of the IDP
-     * @throws SAMLSSOException
+     * @throws SAMLSSOException In case of error in retrieving pub/pri keys from keystore.
      * @deprecated please use X509CredentialImpl(String tenantDomain, String idpCert, KeyProviderService keyProviderService)
      */
     @Deprecated
     public X509CredentialImpl(String tenantDomain, String idpCert) throws SAMLSSOException {
 
         X509Certificate cert = null;
+        this.realmService = ServiceReferenceHolder.getRealmService();
 
         /**
          * If IDP cert is passed as a parameter set the cert to the IDP cert.
          * IDP cert should be passed when used with response validation.
          */
-        if (idpCert != null && !idpCert.isEmpty()) {
+        if (StringUtils.isNotBlank(idpCert)) {
             try {
                 cert = (X509Certificate) IdentityApplicationManagementUtil
                         .decodeCertificate(idpCert);
@@ -162,8 +168,7 @@ public class X509CredentialImpl implements X509Credential {
             int tenantId;
 
             try {
-                tenantId = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantManager()
-                        .getTenantId(tenantDomain);
+                tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
             } catch (UserStoreException e) {
                 throw new SAMLSSOException(
                         "Exception occurred while retrieving Tenant ID from tenant domain " +

@@ -101,6 +101,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
@@ -133,9 +134,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private Map<String, String> properties;
     private String tenantDomain;
     private KeyProviderService keyProviderService;
+    private RealmService realmService;
 
-    public DefaultSAML2SSOManager(KeyProviderService keyProviderService) {
+    public DefaultSAML2SSOManager(KeyProviderService keyProviderService, RealmService realmService) {
         this.keyProviderService = keyProviderService;
+        this.realmService = realmService;
     }
 
     public static void doBootstrap() {
@@ -825,8 +828,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         UserRealm realm;
         try {
-            realm = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantUserRealm
-                    (MultitenantConstants.SUPER_TENANT_ID);
+            realm = realmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID);
             UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
 
             multiAttributeSeparator = userStoreManager.

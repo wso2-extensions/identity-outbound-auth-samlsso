@@ -46,19 +46,16 @@ import java.util.Scanner;
 public class SAMLSSOAuthenticatorServiceComponent {
 
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
-    private static RealmService realmService;
+    private RealmService realmService;
     private KeyProviderService keyProviderService;
     private static String postPage = null;
-
-    public static RealmService getRealmService() {
-        return SAMLSSOAuthenticatorServiceComponent.realmService;
-    }
 
     protected void setRealmService(RealmService realmService) {
         if (log.isDebugEnabled()) {
             log.debug("RealmService is set in the SAML2 SSO Authenticator bundle");
         }
-        SAMLSSOAuthenticatorServiceComponent.realmService = realmService;
+        this.realmService = realmService;
+        ServiceReferenceHolder.setRealmService(realmService);
     }
 
     public static String getPostPage() {
@@ -69,9 +66,9 @@ public class SAMLSSOAuthenticatorServiceComponent {
         String postPagePath = null;
         FileInputStream fis = null;
         try {
-            SAMLSSOAuthenticator samlSSOAuthenticator = new SAMLSSOAuthenticator();
-            samlSSOAuthenticator.setKeyProviderService(keyProviderService);
-            ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), samlSSOAuthenticator, null);
+            SAMLSSOAuthenticator samlSSOAuthenticator = new SAMLSSOAuthenticator(keyProviderService, realmService);
+            ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), samlSSOAuthenticator,
+                    null);
             postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository"
                     + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File
                     .separator + "samlsso_federate.html";
@@ -105,7 +102,8 @@ public class SAMLSSOAuthenticatorServiceComponent {
         if (log.isDebugEnabled()) {
             log.debug("RealmService is unset in the SAML2 SSO Authenticator bundle");
         }
-        SAMLSSOAuthenticatorServiceComponent.realmService = null;
+        this.realmService = null;
+        ServiceReferenceHolder.setRealmService(null);
     }
 
     protected void setKeyProvider(KeyProviderService pkProvider) {
