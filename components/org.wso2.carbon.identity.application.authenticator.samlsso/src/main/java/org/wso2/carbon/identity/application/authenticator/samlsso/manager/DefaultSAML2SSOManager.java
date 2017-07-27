@@ -101,6 +101,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
@@ -133,9 +134,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private Map<String, String> properties;
     private String tenantDomain;
     private KeyProviderService keyProviderService;
+    private RealmService realmService;
 
-    public DefaultSAML2SSOManager(KeyProviderService keyProviderService) {
+    public DefaultSAML2SSOManager(KeyProviderService keyProviderService, RealmService realmService) {
         this.keyProviderService = keyProviderService;
+        this.realmService = realmService;
     }
 
     public static void doBootstrap() {
@@ -241,10 +244,12 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             }
             if (isSignAuth2SAMLUsingSuperTenant) {
                 SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
-                        new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null, keyProviderService));
+                        new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null,
+                                keyProviderService, realmService));
             } else {
                 SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
-                        new X509CredentialImpl(context.getTenantDomain(), null, keyProviderService));
+                        new X509CredentialImpl(context.getTenantDomain(), null, keyProviderService,
+                                realmService));
             }
         }
         if (loginPage.indexOf("?") > -1) {
@@ -302,7 +307,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             requestMessage = buildAuthnRequest(request, isPassive, loginPage, context);
             if (SSOUtils.isAuthnRequestSigned(properties)) {
                 SSOUtils.setSignature(requestMessage, signatureAlgo, digestAlgo, includeCert,
-                        new X509CredentialImpl(context.getTenantDomain(), null, keyProviderService));
+                        new X509CredentialImpl(context.getTenantDomain(), null, keyProviderService,
+                                realmService));
             }
         } else {
             String username = (String) request.getSession().getAttribute(SSOConstants.LOGOUT_USERNAME);
@@ -313,7 +319,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier);
             if (SSOUtils.isLogoutRequestSigned(properties)) {
                 SSOUtils.setSignature(requestMessage, signatureAlgo, digestAlgo, includeCert,
-                        new X509CredentialImpl(context.getTenantDomain(), null, keyProviderService));
+                        new X509CredentialImpl(context.getTenantDomain(), null, keyProviderService,
+                                realmService));
             }
         }
 
@@ -825,8 +832,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         UserRealm realm;
         try {
-            realm = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantUserRealm
-                    (MultitenantConstants.SUPER_TENANT_ID);
+            realm = realmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID);
             UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
 
             multiAttributeSeparator = userStoreManager.
@@ -961,7 +967,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 
         try {
-            X509Credential credential = new X509CredentialImpl(tenantDomain, identityProvider.getCertificate(), keyProviderService);
+            X509Credential credential = new X509CredentialImpl(tenantDomain, identityProvider.getCertificate(),
+                    keyProviderService, realmService);
             SignatureValidator validator = new SignatureValidator(credential);
             validator.validate(signImpl);
         } catch (ValidationException e) {
@@ -1006,7 +1013,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      */
     private Assertion getDecryptedAssertion(EncryptedAssertion encryptedAssertion) throws Exception {
 
-        X509Credential credential = new X509CredentialImpl(tenantDomain, null, keyProviderService);
+        X509Credential credential = new X509CredentialImpl(tenantDomain, null, keyProviderService, realmService);
         KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(credential);
         EncryptedKey key = encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
         Decrypter decrypter = new Decrypter(null, keyResolver, null);

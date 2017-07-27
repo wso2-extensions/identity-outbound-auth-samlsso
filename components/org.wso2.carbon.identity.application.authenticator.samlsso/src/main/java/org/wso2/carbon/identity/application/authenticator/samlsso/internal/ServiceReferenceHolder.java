@@ -19,18 +19,21 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 
 import org.wso2.carbon.identity.core.KeyProviderService;
+import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * Holds OSGi service references for utility classes.
  */
 public class ServiceReferenceHolder {
-    private static KeyProviderService keyProvider;
 
-    public static KeyProviderService getKeyProvider() {
-        return keyProvider;
+    private static RealmService realmService;
+
+    public static RealmService getRealmService() {
+        return realmService;
     }
 
-    public static void setKeyProvider(KeyProviderService keyProvider) {
-        ServiceReferenceHolder.keyProvider = keyProvider;
+    public static void setRealmService(RealmService realmService) {
+        ServiceReferenceHolder.realmService = realmService;
     }
+
 }
