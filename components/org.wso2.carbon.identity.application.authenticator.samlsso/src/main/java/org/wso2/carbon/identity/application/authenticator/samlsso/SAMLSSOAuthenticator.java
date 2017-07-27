@@ -376,7 +376,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 throw new SAMLSSOException(e.getMessage(), e);
             }
         } else {
-            return new DefaultSAML2SSOManager(keyProviderService);
+            return new DefaultSAML2SSOManager(keyProviderService, realmService);
         }
     }
 
