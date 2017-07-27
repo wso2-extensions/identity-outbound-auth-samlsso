@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
+import org.wso2.carbon.identity.core.KeyProviderService;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.CarbonUtils;
@@ -38,12 +39,15 @@ import java.util.Scanner;
  * cardinality="1..1" policy="dynamic" bind="setRealmService"
  * unbind="unsetRealmService"
  * @scr.component name="identity.application.authenticator.samlsso.component" immediate="true"
+ * @scr.reference name="private.key.provider" interface="org.wso2.carbon.identity.core.KeyProviderService"
+ * cardinality="1..1" policy="dynamic" bind="setKeyProvider"  unbind="unsetKeyProvider"
  */
 
 public class SAMLSSOAuthenticatorServiceComponent {
 
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
     private static RealmService realmService;
+    private static KeyProviderService keyProviderService;
     private static String postPage = null;
 
     public static RealmService getRealmService() {
@@ -66,6 +70,7 @@ public class SAMLSSOAuthenticatorServiceComponent {
         FileInputStream fis = null;
         try {
             SAMLSSOAuthenticator samlSSOAuthenticator = new SAMLSSOAuthenticator();
+            samlSSOAuthenticator.setKeyProviderService(keyProviderService);
             ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), samlSSOAuthenticator, null);
             postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository"
                     + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File
@@ -101,5 +106,13 @@ public class SAMLSSOAuthenticatorServiceComponent {
             log.debug("RealmService is unset in the SAML2 SSO Authenticator bundle");
         }
         SAMLSSOAuthenticatorServiceComponent.realmService = null;
+    }
+
+    protected void setKeyProvider(KeyProviderService pkProvider) {
+        keyProviderService = pkProvider;
+    }
+
+    protected void unsetKeyProvider(KeyProviderService pkProvider) {
+        keyProviderService = null;
     }
 }
