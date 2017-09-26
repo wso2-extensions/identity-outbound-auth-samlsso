@@ -396,16 +396,19 @@ public class SSOUtils {
     }
 
     public static Map<String, String> getQueryMap(String query) {
-        String[] params = query.split("&");
-        Map<String, String> map = new HashMap<String, String>();
-        for (String param : params) {
-            String[] paramSplitArr = param.split("=");
-            String name = paramSplitArr[0];
-            String value = "";
-            if (paramSplitArr.length > 1) {
-                value = paramSplitArr[1];
+
+        Map<String, String> map = new HashMap<>();
+        if (StringUtils.isNotBlank(query)) {
+            String[] params = query.split("&");
+            for (String param : params) {
+                String[] paramSplitArr = param.split("=");
+                String name = paramSplitArr[0];
+                String value = "";
+                if (paramSplitArr.length > 1) {
+                    value = paramSplitArr[1];
+                }
+                map.put(name, value);
             }
-            map.put(name, value);
         }
         return map;
     }
