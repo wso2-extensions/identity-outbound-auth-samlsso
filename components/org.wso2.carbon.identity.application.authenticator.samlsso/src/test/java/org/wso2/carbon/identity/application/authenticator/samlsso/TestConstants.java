@@ -92,11 +92,11 @@ public class TestConstants {
 
     public static final String ENCODED_STRING =
             "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNhbWwycDpBdXRoblJlcXVlc3QgSU" +
-            "Q9Il8xN2M5ZmY5ZjcwZjA2ZDQxMjFiNDVhOWIyODY2NGViYiIgSXNzdWVJbnN0YW50PSIyMDE3LTA5LTI1VDA0OjAwOjQxLjgzMl" +
-            "oiIFZlcnNpb249IjIuMCIgeG1sbnM6c2FtbDJwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiPjxzYW1sMj" +
-            "pJc3N1ZXIgeG1sbnM6c2FtbDI9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDphc3NlcnRpb24iPndzbzIubXkuZGFzaGJvYX" +
-            "JkPC9zYW1sMjpJc3N1ZXI+PHNhbWwycDpOYW1lSURQb2xpY3kgQWxsb3dDcmVhdGU9InRydWUiIEZvcm1hdD0idXJuOm9hc2lzOm" +
-            "5hbWVzOnRjOlNBTUw6Mi4wOm5hbWVpZC1mb3JtYXQ6ZW50aXR5Ii8+PC9zYW1sMnA6QXV0aG5SZXF1ZXN0Pg==";
+                    "Q9Il8xN2M5ZmY5ZjcwZjA2ZDQxMjFiNDVhOWIyODY2NGViYiIgSXNzdWVJbnN0YW50PSIyMDE3LTA5LTI1VDA0OjAwOjQxLjgzMl" +
+                    "oiIFZlcnNpb249IjIuMCIgeG1sbnM6c2FtbDJwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiPjxzYW1sMj" +
+                    "pJc3N1ZXIgeG1sbnM6c2FtbDI9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDphc3NlcnRpb24iPndzbzIubXkuZGFzaGJvYX" +
+                    "JkPC9zYW1sMjpJc3N1ZXI+PHNhbWwycDpOYW1lSURQb2xpY3kgQWxsb3dDcmVhdGU9InRydWUiIEZvcm1hdD0idXJuOm9hc2lzOm" +
+                    "5hbWVzOnRjOlNBTUw6Mi4wOm5hbWVpZC1mb3JtYXQ6ZW50aXR5Ii8+PC9zYW1sMnA6QXV0aG5SZXF1ZXN0Pg==";
 
     public static final String REDIRECT_REQUEST =
             "nVNhb9owEP0rkb+TpCntqEWoGKgaUjcxoPuwb8a5EC+OnfkulP77OUnZaLUhtG/W+d275/fO4/tDpYM9OFTWpOwqjFkARtpMmV3Kn" +
@@ -243,4 +243,14 @@ public class TestConstants {
             "l%2Frse9AjNBi2BKr12on3wpKw6KfCOqBFT9UVjtneTnusuziMN62E0QcLt0ikzUL1XXzPU6F9iKoCOHJnnjwTH7cBl0Vsy21tgU" +
             "b0TziV3x9eOgOH2A7r%2FCT%2Feg9puWTc9cEwgvMv9CTKTxp7xxD1pcUbYUPTcC2ih%2BIfHM1yfWkLFjKrdqgV0%2BSRi3835O" +
             "UXlQ%3D%3D";
+
+    public static final String KEY_ALIAS = "wso2carbon";
+
+    public static final String KEY_PASSWORD = "wso2carbon";
+
+    public static final String KEY_STORE_PASSWORD = "wso2carbon";
+
+    public static final String SAMPLE_TENANT_DOMAIN_NAME = "wso2";
+
+    public static final int SAMPLE_TENANT_ID = 1;
 }

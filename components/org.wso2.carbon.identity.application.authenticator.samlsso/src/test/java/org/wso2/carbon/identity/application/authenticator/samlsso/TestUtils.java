@@ -18,8 +18,13 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
 import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.utils.CarbonUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Paths;
+import java.security.KeyStore;
 
 /**
  * Test util methods
@@ -36,5 +41,17 @@ public class TestUtils {
             return Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "conf", fileName).toString();
         }
         return null;
+    }
+
+    public static KeyStore loadKeyStoreFromFileSystem(String keyStorePath, String password, String type) {
+
+        try (FileInputStream inputStream = new FileInputStream(keyStorePath)) {
+            KeyStore keyStore = KeyStore.getInstance(type);
+            keyStore.load(inputStream, password.toCharArray());
+            return keyStore;
+        } catch (Exception e) {
+            String errorMsg = "Error loading the key store from the given location.";
+            throw new SecurityException(errorMsg, e);
+        }
     }
 }
