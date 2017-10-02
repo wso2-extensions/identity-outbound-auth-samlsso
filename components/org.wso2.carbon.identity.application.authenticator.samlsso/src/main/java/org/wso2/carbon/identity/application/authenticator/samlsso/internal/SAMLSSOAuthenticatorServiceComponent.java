@@ -43,18 +43,13 @@ import java.util.Scanner;
 public class SAMLSSOAuthenticatorServiceComponent {
 
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
-    private static RealmService realmService;
     private static String postPage = null;
-
-    public static RealmService getRealmService() {
-        return SAMLSSOAuthenticatorServiceComponent.realmService;
-    }
 
     protected void setRealmService(RealmService realmService) {
         if (log.isDebugEnabled()) {
             log.debug("RealmService is set in the SAML2 SSO Authenticator bundle");
         }
-        SAMLSSOAuthenticatorServiceComponent.realmService = realmService;
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(realmService);
     }
 
     public static String getPostPage() {
@@ -100,6 +95,6 @@ public class SAMLSSOAuthenticatorServiceComponent {
         if (log.isDebugEnabled()) {
             log.debug("RealmService is unset in the SAML2 SSO Authenticator bundle");
         }
-        SAMLSSOAuthenticatorServiceComponent.realmService = null;
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(null);
     }
 }

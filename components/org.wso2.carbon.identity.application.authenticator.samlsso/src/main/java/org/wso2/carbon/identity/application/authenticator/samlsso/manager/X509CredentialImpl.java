@@ -27,6 +27,7 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
+import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 
@@ -80,7 +81,7 @@ public class X509CredentialImpl implements X509Credential {
             int tenantId;
 
             try {
-                tenantId = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantManager()
+                tenantId = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getRealmService().getTenantManager()
                         .getTenantId(tenantDomain);
             } catch (UserStoreException e) {
                 throw new SAMLSSOException(

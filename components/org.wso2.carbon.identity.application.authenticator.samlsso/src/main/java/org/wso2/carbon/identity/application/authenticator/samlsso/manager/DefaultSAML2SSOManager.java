@@ -89,6 +89,7 @@ import org.wso2.carbon.identity.application.authentication.framework.model.Authe
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
+import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
@@ -827,7 +828,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         UserRealm realm;
         try {
-            realm = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantUserRealm
+            realm = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getRealmService().getTenantUserRealm
                     (MultitenantConstants.SUPER_TENANT_ID);
             UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
 
