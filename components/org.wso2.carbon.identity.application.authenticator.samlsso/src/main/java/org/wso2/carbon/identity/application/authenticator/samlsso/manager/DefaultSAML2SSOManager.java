@@ -38,6 +38,7 @@ import org.opensaml.saml2.core.AuthnContext;
 import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnContextComparisonTypeEnumeration;
 import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.AuthnStatement;
 import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml2.core.Issuer;
@@ -107,6 +108,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -496,6 +498,31 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         spNameQualifier = assertion.getSubject().getNameID().getSPNameQualifier();
 
         request.getSession(false).setAttribute("samlssoAttributes", getAssertionStatements(assertion));
+
+        if (assertion.getAuthnStatements() != null) {
+            List<String> authnContextClassRefs = new ArrayList<>();
+            for (AuthnStatement authnStatement : assertion.getAuthnStatements()) {
+                if (authnStatement.getAuthnContext() != null
+                        && authnStatement.getAuthnContext().getAuthnContextClassRef() != null
+                        && StringUtils.isNotBlank(authnStatement.getAuthnContext().getAuthnContextClassRef()
+                        .getAuthnContextClassRef())) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Received AuthnContextClassRef: " + authnStatement.getAuthnContext()
+                                .getAuthnContextClassRef().getAuthnContextClassRef());
+                    }
+                    authnContextClassRefs.add(authnStatement.getAuthnContext().getAuthnContextClassRef()
+                            .getAuthnContextClassRef());
+                }
+            }
+
+            if (!authnContextClassRefs.isEmpty()) {
+                Map<String, Object> authnContextClassRefMap = new HashMap<>();
+                authnContextClassRefMap.put(SSOConstants.AUTHN_CONTEXT_CLASS_REF, authnContextClassRefs);
+                authnContextClassRefMap.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID,
+                        assertion.getIssuer().getValue());
+                request.getSession().setAttribute(SSOConstants.AUTHN_CONTEXT_CLASS_REF, authnContextClassRefMap);
+            }
+        }
 
         //For removing the session when the single sign out request made by the SP itself
         if (SSOUtils.isLogoutEnabled(properties)) {

@@ -37,6 +37,7 @@ public class SSOConstants {
     public static final String NAME_QUALIFIER = "nameQualifier";
     public static final String LOGOUT_USERNAME = "logoutUsername";
     public static final String LOGOUT_SESSION_INDEX = "logoutSessionIndex";
+    public static final String AUTHN_CONTEXT_CLASS_REF = "AuthnContextClassRef";
 
     public class StatusCodes {
         private StatusCodes() {

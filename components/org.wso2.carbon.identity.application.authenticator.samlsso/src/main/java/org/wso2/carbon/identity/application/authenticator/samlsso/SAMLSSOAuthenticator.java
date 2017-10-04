@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.application.authentication.framework.context.Aut
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationContextProperty;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
@@ -47,13 +48,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements FederatedApplicationAuthenticator {
 
     private static final long serialVersionUID = -8097512332218044859L;
     public static final String AS_REQUEST = "AS_REQUEST";
+
+    private static final String AS_RESPONSE = "AS_RESPONSE";
 
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
 
@@ -194,6 +199,33 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             stateInfoDO.setNameQualifier(nameQualifier);
             stateInfoDO.setSpNameQualifier(spNameQualifier);
             context.setStateInfo(stateInfoDO);
+
+            // Add AuthnContextClassRefs received with SAML2 Response to AuthenticationContext
+            if (AS_RESPONSE.equalsIgnoreCase(context.getAuthenticatorProperties()
+                    .get(IdentityApplicationConstants.Authenticator.SAML2SSO.RESPONSE_AUTHN_CONTEXT_CLASS_REF))) {
+                if (log.isDebugEnabled()) {
+                    log.debug("AuthnContextClassRefs received with SAML response from the IdP '" + context
+                            .getExternalIdP().getIdPName() + "' is passed to service provider.");
+                }
+                if (request.getSession().getAttribute(SSOConstants.AUTHN_CONTEXT_CLASS_REF) != null) {
+                    AuthenticationContextProperty authenticationContextProperty =
+                            new AuthenticationContextProperty(
+                                    context.getExternalIdP().getIdPName(),
+                                    SSOConstants.AUTHN_CONTEXT_CLASS_REF,
+                                    request.getSession().getAttribute(SSOConstants.AUTHN_CONTEXT_CLASS_REF));
+
+                    List<AuthenticationContextProperty> authenticationContextProperties;
+                    if (context.getProperty(FrameworkConstants.AUTHENTICATION_CONTEXT_PROPERTIES) != null) {
+                        authenticationContextProperties = (List<AuthenticationContextProperty>) context
+                                .getProperty(FrameworkConstants.AUTHENTICATION_CONTEXT_PROPERTIES);
+                    } else {
+                        authenticationContextProperties = new ArrayList<>();
+                        context.setProperty(FrameworkConstants.AUTHENTICATION_CONTEXT_PROPERTIES,
+                                authenticationContextProperties);
+                    }
+                    authenticationContextProperties.add(authenticationContextProperty);
+                }
+            }
 
             AuthenticatedUser authenticatedUser =
                     AuthenticatedUser.createFederateAuthenticatedUserFromSubjectIdentifier(subject);
