@@ -212,18 +212,18 @@ public class TestConstants {
 
     public static final String QUERY_STRING =
             "SAMLRequest=nVPRctowEPwVj97BDtCWaDAZCpMpM2mHAslD32T5jGVknauTCfn7yHZoaaZlmL6e9vb2dk" +
-            "%2BTu2OpgwNYUmhidtOPWABGYqrMLmaP2" +
-            "%2FvemN1NJyRKXfFZ7XKzhp81kAt8nyHePsSstoajIEXciBKIO8k3s68PfNCPeGXRoUTNghkRWOcHzdFQXYLdgD0oCY" +
-            "%2Frh5jlzlU8DDVKoXMkx8fROAqdFQfwNeVe%2BhLLMMcS%2BgVVLFh4EcoI1" +
-            "%2BpumumP7tvRaBg26oiQBfdoJbTyY5YJTcCC5SJmSaEw2xfJThVlleTFPldpkqDa5zsosMh2eSr3Sao8mlaCSB3gdz9RDUtDThg" +
-            "Xs0F086kX3fYGH7bRiI9GfBj1Pw7HP1iwelv%2FszKdqZe8SjoQ8S%2Fb7aq3hlRZkI4FT6eAPIid4mgV2OuDECf72fSdrZPwnLH" +
-            "jH1T8m6dYLlaolXw5GzO4PnCt8XluQTjvm7M1tEmUwl0maCoq7WUtlFfN7uTAeB82q0bT91polSmwMesUs%2FCX5rfzhLRN2x%2B" +
-            "ag6P7L%2FFzLCthFTW2w1H4GLoh%2FJx5rr2ra8jOJlwdwkWY5LKh9uXm8J7Rps0h%2BWOAdGuFoQqt62L7q55p9%2FYvQ6anxM%" +
-            "2B%2F9PQV&SigAlg=http%3A%2F%2Fwww.w3.org%2F2000%2F09%2Fxmldsig%23rsa-sha1&Signature=S7Mjer2jAF1nFnGg" +
-            "vjdwNwD4Gyqf4RTGnA9vS5Gc%2BR4ZZJv4FuOoFcMQpJVLj5LfBU95P1fvVutoIY%2Bg79osPEL8K5fKS%2F%2B7Ai7HGEGik7OF" +
-            "8B5b7Teo3qLDDjraokf5%2BAkpTqsk8oVJF7wPlP0tl%2Frse9AjNBi2BKr12on3wpKw6KfCOqBFT9UVjtneTnusuziMN62E0QcL" +
-            "t0ikzUL1XXzPU6F9iKoCOHJnnjwTH7cBl0Vsy21tgUb0TziV3x9eOgOH2A7r%2FCT%2Feg9puWTc9cEwgvMv9CTKTxp7xxD1pcUb" +
-            "YUPTcC2ih%2BIfHM1yfWkLFjKrdqgV0%2BSRi3835OUXlQ%3D%3D&empty=";
+                    "%2BTu2OpgwNYUmhidtOPWABGYqrMLmaP2" +
+                    "%2FvemN1NJyRKXfFZ7XKzhp81kAt8nyHePsSstoajIEXciBKIO8k3s68PfNCPeGXRoUTNghkRWOcHzdFQXYLdgD0oCY" +
+                    "%2Frh5jlzlU8DDVKoXMkx8fROAqdFQfwNeVe%2BhLLMMcS%2BgVVLFh4EcoI1" +
+                    "%2BpumumP7tvRaBg26oiQBfdoJbTyY5YJTcCC5SJmSaEw2xfJThVlleTFPldpkqDa5zsosMh2eSr3Sao8mlaCSB3gdz9RDUtDThg" +
+                    "Xs0F086kX3fYGH7bRiI9GfBj1Pw7HP1iwelv%2FszKdqZe8SjoQ8S%2Fb7aq3hlRZkI4FT6eAPIid4mgV2OuDECf72fSdrZPwnLH" +
+                    "jH1T8m6dYLlaolXw5GzO4PnCt8XluQTjvm7M1tEmUwl0maCoq7WUtlFfN7uTAeB82q0bT91polSmwMesUs%2FCX5rfzhLRN2x%2B" +
+                    "ag6P7L%2FFzLCthFTW2w1H4GLoh%2FJx5rr2ra8jOJlwdwkWY5LKh9uXm8J7Rps0h%2BWOAdGuFoQqt62L7q55p9%2FYvQ6anxM%" +
+                    "2B%2F9PQV&SigAlg=http%3A%2F%2Fwww.w3.org%2F2000%2F09%2Fxmldsig%23rsa-sha1&Signature=S7Mjer2jAF1nFnGg" +
+                    "vjdwNwD4Gyqf4RTGnA9vS5Gc%2BR4ZZJv4FuOoFcMQpJVLj5LfBU95P1fvVutoIY%2Bg79osPEL8K5fKS%2F%2B7Ai7HGEGik7OF" +
+                    "8B5b7Teo3qLDDjraokf5%2BAkpTqsk8oVJF7wPlP0tl%2Frse9AjNBi2BKr12on3wpKw6KfCOqBFT9UVjtneTnusuziMN62E0QcL" +
+                    "t0ikzUL1XXzPU6F9iKoCOHJnnjwTH7cBl0Vsy21tgUb0TziV3x9eOgOH2A7r%2FCT%2Feg9puWTc9cEwgvMv9CTKTxp7xxD1pcUb" +
+                    "YUPTcC2ih%2BIfHM1yfWkLFjKrdqgV0%2BSRi3835OUXlQ%3D%3D&empty=";
 
     public static final String IDP_URL = "https://localhost:9443/samlsso";
 
@@ -252,5 +252,75 @@ public class TestConstants {
 
     public static final String SAMPLE_TENANT_DOMAIN_NAME = "wso2";
 
+    public static final String INVALID_TENANT_DOMAIN = "invalid_tenant_domain";
+
     public static final int SAMPLE_TENANT_ID = 1;
+
+    public static final String IDP_CERTIFICATE = "MIIDSTCCAjGgAwIBAgIEAoLQ/TANBgkqhkiG9w0BAQsFADBVMQswCQYDVQQGEwJV\n" +
+            "UzELMAkGA1UECBMCQ0ExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxDTALBgNVBAoT\n" +
+            "BFdTTzIxEjAQBgNVBAMTCWxvY2FsaG9zdDAeFw0xNzA3MTkwNjUyNTFaFw0yNzA3\n" +
+            "MTcwNjUyNTFaMFUxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMN\n" +
+            "TW91bnRhaW4gVmlldzENMAsGA1UEChMEV1NPMjESMBAGA1UEAxMJbG9jYWxob3N0\n" +
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAluZFdW1ynitztkWLC6xK\n" +
+            "egbRWxky+5P0p4ShYEOkHs30QI2VCuR6Qo4Bz5rTgLBrky03W1GAVrZxuvKRGj9V\n" +
+            "9+PmjdGtau4CTXu9pLLcqnruaczoSdvBYA3lS9a7zgFU0+s6kMl2EhB+rk7gXluE\n" +
+            "ep7lIOenzfl2f6IoTKa2fVgVd3YKiSGsyL4tztS70vmmX121qm0sTJdKWP4HxXyq\n" +
+            "K9neolXI9fYyHOYILVNZ69z/73OOVhkh/mvTmWZLM7GM6sApmyLX6OXUp8z0pkY+\n" +
+            "vT/9+zRxxQs7GurC4/C1nK3rI/0ySUgGEafO1atNjYmlFN+M3tZX6nEcA6g94Iav\n" +
+            "yQIDAQABoyEwHzAdBgNVHQ4EFgQUtS8kIYxQ8UVvVrZSdgyide9OHxUwDQYJKoZI\n" +
+            "hvcNAQELBQADggEBABfk5mqsVUrpFCYTZZhOxTRRpGXqoW1G05bOxHxs42Paxw8r\n" +
+            "AJ06Pty9jqM1CgRPpqvZa2lPQBQqZrHkdDE06q4NG0DqMH8NT+tNkXBe9YTre3EJ\n" +
+            "CSfsvswtLVDZ7GDvTHKojJjQvdVCzRj6XH5Truwefb4BJz9APtnlyJIvjHk1hdoz\n" +
+            "qyOniVZd0QOxLAbcdt946chNdQvCm6aUOputp8Xogr0KBnEy3U8es2cAfNZaEkPU\n" +
+            "8Va5bU6Xjny8zGQnXCXxPKp7sMpgO93nPBt/liX1qfyXM7xEotWoxmm6HZx8oWQ8\n" +
+            "U5aiXjZ5RKDWCCq4ZuXl6wVsUz1iE61suO5yWi8=";
+
+    public static String SAML_RESPONSE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<saml2p:Response Destination=\"https://localhost:9443/commonauth\" ID=\"_81cb9b7f29a53cd851ebb9c60bbb3" +
+            "11b\" InResponseTo=\"_91be4de3aad1f66d8c01f085c299ad86\" IssueInstant=\"2017-10-06T14:13:59.302Z\" Ver" +
+            "sion=\"2.0\" xmlns:saml2p=\"urn:oasis:names:tc:SAML:2.0:protocol\"><saml2:Issuer Format=\"urn:oasis:na" +
+            "mes:tc:SAML:2.0:nameid-format:entity\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">idp1</sam" +
+            "l2:Issuer><saml2p:Status><saml2p:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/></sa" +
+            "ml2p:Status><saml2:Assertion ID=\"_0858c812a810036a3205cbab7bc4c416\" IssueInstant=\"2017-10-06T14:13:" +
+            "59.311Z\" Version=\"2.0\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer Format=\"" +
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">idp1</saml2:Issuer><ds:Signature xmlns:ds=\"http://" +
+            "www.w3.org/2000/09/xmldsig#\">\n" +
+            "<ds:SignedInfo>\n" +
+            "<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "<ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/>\n" +
+            "<ds:Reference URI=\"#_0858c812a810036a3205cbab7bc4c416\">\n" +
+            "<ds:Transforms>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "</ds:Transforms>\n" +
+            "<ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>\n" +
+            "<ds:DigestValue>ZGeH+OVicgNf8ink+aeV9nMwVM4=</ds:DigestValue>\n" +
+            "</ds:Reference>\n" +
+            "</ds:SignedInfo>\n" +
+            "<ds:SignatureValue>\n" +
+            "Z9t7Do+AKoKzARjqxv1xiiQO67ylTnJPlrlxGLIwQS33mPJnAcDc2OVUPC4EQQQLo48XyT81hcyj\n" +
+            "t03nVak6eoQHXqC//+ZPqc0t7H657C1AGMb5LC1OdF6bTzjcmXqaeSUJ1qEnm0It5R6NzQ35yn8m\n" +
+            "U1w/7vpBGlF1Uc9SktU=\n" +
+            "</ds:SignatureValue>\n" +
+            "<ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIICNTCCAZ6gAwIBAgIES343gjANBgkqhkiG9w0BAQUFADBVMQswCQYDVQ" +
+            "QGEwJVUzELMAkGA1UE\n" +
+            "CAwCQ0ExFjAUBgNVBAcMDU1vdW50YWluIFZpZXcxDTALBgNVBAoMBFdTTzIxEjAQBgNVBAMMCWxv\n" +
+            "Y2FsaG9zdDAeFw0xMDAyMTkwNzAyMjZaFw0zNTAyMTMwNzAyMjZaMFUxCzAJBgNVBAYTAlVTMQsw\n" +
+            "CQYDVQQIDAJDQTEWMBQGA1UEBwwNTW91bnRhaW4gVmlldzENMAsGA1UECgwEV1NPMjESMBAGA1UE\n" +
+            "AwwJbG9jYWxob3N0MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCUp/oV1vWc8/TkQSiAvTou\n" +
+            "sMzOM4asB2iltr2QKozni5aVFu818MpOLZIr8LMnTzWllJvvaA5RAAdpbECb+48FjbBe0hseUdN5\n" +
+            "HpwvnH/DW8ZccGvk53I6Orq7hLCv1ZHtuOCokghz/ATrhyPq+QktMfXnRS4HrKGJTzxaCcU7OQID\n" +
+            "AQABoxIwEDAOBgNVHQ8BAf8EBAMCBPAwDQYJKoZIhvcNAQEFBQADgYEAW5wPR7cr1LAdq+IrR44i\n" +
+            "QlRG5ITCZXY9hI0PygLP2rHANh+PYfTmxbuOnykNGyhM6FjFLbW2uZHQTY1jMrPprjOrmyK5sjJR\n" +
+            "O4d1DeGHT/YnIjs9JogRKv4XHECwLtIVdAbIdWHEtVZJyMSktcyysFcvuhPQK8Qc/E/Wq8uHSCo=</ds:X509Certificate></ds:X" +
+            "509Data></ds:KeyInfo></ds:Signature><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:n" +
+            "ameid-format:emailAddress\">admin</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:" +
+            "SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData InResponseTo=\"_91be4de3aad1f66d8c01f085c299ad86\" " +
+            "NotOnOrAfter=\"2017-10-06T14:18:59.302Z\" Recipient=\"https://localhost:9443/commonauth\"/></saml2:Subj" +
+            "ectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2017-10-06T14:13:59.311Z\" NotOnOrAfter=\"" +
+            "2017-10-06T14:18:59.302Z\"><saml2:AudienceRestriction><saml2:Audience>SAMLSSOIdentity</saml2:Audience><" +
+            "/saml2:AudienceRestriction></saml2:Conditions><saml2:AuthnStatement AuthnInstant=\"2017-10-06T14:13:59." +
+            "315Z\" SessionIndex=\"21720bc3-cdfe-4168-b1ff-e66062df0eaf\"><saml2:AuthnContext><saml2:AuthnContextCla" +
+            "ssRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext>" +
+            "</saml2:AuthnStatement></saml2:Assertion></saml2p:Response>";
 }

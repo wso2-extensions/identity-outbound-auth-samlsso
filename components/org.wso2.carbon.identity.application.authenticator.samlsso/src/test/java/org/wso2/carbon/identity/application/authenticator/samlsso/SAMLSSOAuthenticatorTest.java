@@ -17,26 +17,39 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.joda.time.DateTimeUtils;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opensaml.saml2.core.NameIDType;
-import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
+import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
+import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,8 +57,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.doCallRealMethod;
 import static org.powermock.api.mockito.PowerMockito.when;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Unit test cases for SAMLSSOAuthenticator
@@ -59,6 +77,10 @@ public class SAMLSSOAuthenticatorTest {
     @Mock
     private HttpServletResponse mockedLogoutHttpServletResponse;
     @Mock
+    private HttpServletRequest mockedReturnedHttpServletRequest;
+    @Mock
+    private HttpServletResponse mockedReturnedHttpServletResponse;
+    @Mock
     private AuthenticationContext mockedAuthenticationContext;
     @Mock
     private IdentityProvider mockedIdentityProvider;
@@ -68,6 +90,14 @@ public class SAMLSSOAuthenticatorTest {
     private AuthenticationRequest mockedAuthenticationRequest;
     @Mock
     private HttpSession mockedHttpSession;
+    @Mock
+    private UserRealm mockedUserRealm;
+    @Mock
+    private RealmService mockedRealmService;
+    @Mock
+    private UserStoreManager mockedUserStoreManager;
+    @Mock
+    private RealmConfiguration mockedRealmConfiguration;
 
     private SAMLSSOAuthenticator samlssoAuthenticator = new SAMLSSOAuthenticator();
 
@@ -82,15 +112,14 @@ public class SAMLSSOAuthenticatorTest {
     public void testCanHandle() {
 
         when(mockedHttpServletRequest.getParameter("SAMLResponse")).thenReturn("SAMLResponse");
-        Assert.assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
+        assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
     }
 
     @Test(priority = 2)
     public void testCanHandleFalse() {
 
         when(mockedHttpServletRequest.getParameter("SAMLResponse")).thenReturn(null);
-        Assert.assertFalse(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Able to handle for invalid " +
-                "input");
+        assertFalse(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Able to handle for invalid input");
     }
 
     @Test(priority = 3)
@@ -118,8 +147,8 @@ public class SAMLSSOAuthenticatorTest {
                 mockedAuthenticationContext);
         out.flush();
         String postPage = FileUtils.readFileToString(new File("auth-request.txt"), "UTF-8");
-        Assert.assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
-        Assert.assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
+        assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
+        assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
     }
 
     @Test(priority = 4)
@@ -145,8 +174,8 @@ public class SAMLSSOAuthenticatorTest {
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(mockedAuthnHttpServletResponse).sendRedirect(captor.capture());
-        Assert.assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
-        Assert.assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
+        assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
+        assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
     }
 
     @Test(priority = 5)
@@ -172,8 +201,8 @@ public class SAMLSSOAuthenticatorTest {
                 mockedAuthenticationContext);
         out.flush();
         String postPage = FileUtils.readFileToString(new File("logout-request.txt"), "UTF-8");
-        Assert.assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
-        Assert.assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
+        assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
+        assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
     }
 
     @Test(priority = 6)
@@ -198,15 +227,15 @@ public class SAMLSSOAuthenticatorTest {
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(mockedLogoutHttpServletResponse).sendRedirect(captor.capture());
-        Assert.assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
-        Assert.assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
+        assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
+        assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
     }
 
     @Test(priority = 7)
     public void testGetContextIdentifierFromSessionDataKey() {
 
         when(mockedHttpServletRequest.getParameter("sessionDataKey")).thenReturn("123456789");
-        Assert.assertEquals("123456789", samlssoAuthenticator.getContextIdentifier(mockedHttpServletRequest), "Failed" +
+        assertEquals("123456789", samlssoAuthenticator.getContextIdentifier(mockedHttpServletRequest), "Failed" +
                 " to retrive context identifier from sessionDataKey");
     }
 
@@ -215,21 +244,21 @@ public class SAMLSSOAuthenticatorTest {
 
         when(mockedHttpServletRequest.getParameter("sessionDataKey")).thenReturn(null);
         when(mockedHttpServletRequest.getParameter("RelayState")).thenReturn("987654321");
-        Assert.assertEquals("987654321", samlssoAuthenticator.getContextIdentifier(mockedHttpServletRequest), "Failed" +
+        assertEquals("987654321", samlssoAuthenticator.getContextIdentifier(mockedHttpServletRequest), "Failed" +
                 " to retrieve context identifier from RelayState");
     }
 
     @Test(priority = 9)
     public void testGetFriendlyName() {
 
-        Assert.assertEquals(SSOConstants.AUTHENTICATOR_FRIENDLY_NAME, samlssoAuthenticator.getFriendlyName(), "Failed" +
+        assertEquals(SSOConstants.AUTHENTICATOR_FRIENDLY_NAME, samlssoAuthenticator.getFriendlyName(), "Failed" +
                 " to retrieve connector friendly name");
     }
 
     @Test(priority = 10)
     public void testGetName() {
 
-        Assert.assertEquals(SSOConstants.AUTHENTICATOR_NAME, samlssoAuthenticator.getName(), "Failed to retrieve " +
+        assertEquals(SSOConstants.AUTHENTICATOR_NAME, samlssoAuthenticator.getName(), "Failed to retrieve " +
                 "connector name");
     }
 
@@ -238,5 +267,46 @@ public class SAMLSSOAuthenticatorTest {
 
         samlssoAuthenticator.processLogoutResponse(mockedHttpServletRequest, mockedLogoutHttpServletResponse,
                 mockedAuthenticationContext);
+    }
+
+    @Test
+    public void testProcessAuthenticationResponse() throws AuthenticationFailedException, NoSuchMethodException,
+            InvocationTargetException, IllegalAccessException, UserStoreException {
+
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(mockedRealmService);
+
+        when(mockedRealmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID)).thenReturn(mockedUserRealm);
+        when(mockedUserRealm.getUserStoreManager()).thenReturn(mockedUserStoreManager);
+        when(mockedUserStoreManager.getRealmConfiguration()).thenReturn(mockedRealmConfiguration);
+        when(mockedRealmConfiguration.getUserStoreProperty(IdentityCoreConstants.MULTI_ATTRIBUTE_SEPARATOR))
+                .thenReturn(",");
+
+        when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
+        when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
+
+        String notOnOrAfter = DateFormatUtils.format(DateTimeUtils.currentTimeMillis() + 5 * 60 * 1000L,
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        String samlResponse = TestConstants.SAML_RESPONSE.replace("NotOnOrAfter=\"2017-10-06T14:18:59.302Z\"",
+                "NotOnOrAfter=\"" + notOnOrAfter + "\"");
+        when(mockedReturnedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_RESP))
+                .thenReturn(new String(Base64.encodeBase64(samlResponse.getBytes())));
+
+        when(mockedReturnedHttpServletRequest.getSession()).thenReturn(mockedHttpSession);
+        when(mockedReturnedHttpServletRequest.getSession(false)).thenReturn(mockedHttpSession);
+        when(mockedHttpSession.getAttribute("username")).thenReturn("admin");
+
+        Map<String, String> authenticatorProperties = new HashMap<>();
+        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID,
+                "SAMLSSOIdentity");
+        when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
+
+        doCallRealMethod().when(mockedAuthenticationContext).setSubject(any(AuthenticatedUser.class));
+        doCallRealMethod().when(mockedAuthenticationContext).getSubject();
+
+        samlssoAuthenticator.processAuthenticationResponse(mockedReturnedHttpServletRequest,
+                mockedReturnedHttpServletResponse, mockedAuthenticationContext);
+
+        assertEquals("admin", mockedAuthenticationContext.getSubject().getAuthenticatedSubjectIdentifier(), "Failed " +
+                "retrive the authenticated user from the SAML2 response");
     }
 }
