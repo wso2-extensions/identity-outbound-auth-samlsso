@@ -17,10 +17,13 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
+import org.opensaml.common.xml.SAMLConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.RequestData;
+
 /**
  * Test constants.
  */
-public class TestConstants {
+public final class TestConstants {
 
     private TestConstants() {
 
@@ -225,8 +228,6 @@ public class TestConstants {
                     "t0ikzUL1XXzPU6F9iKoCOHJnnjwTH7cBl0Vsy21tgUb0TziV3x9eOgOH2A7r%2FCT%2Feg9puWTc9cEwgvMv9CTKTxp7xxD1pcUb" +
                     "YUPTcC2ih%2BIfHM1yfWkLFjKrdqgV0%2BSRi3835OUXlQ%3D%3D&empty=";
 
-    public static final String IDP_URL = "https://localhost:9443/samlsso";
-
     public static final String SAML_REQUEST_PARAMETER = "nVPRctowEPwVj97BDtCWaDAZCpMpM2mHAslD32T5jGVknauTCfn7yHZo" +
             "aaZlmL6e9vb2dk%2BTu2OpgwNYUmhidtOPWABGYqrMLmaP2%2FvemN1NJyRKXfFZ7XKzhp81kAt8nyHePsSstoajIEXciBKIO8k3" +
             "s68PfNCPeGXRoUTNghkRWOcHzdFQXYLdgD0oCY%2Frh5jlzlU8DDVKoXMkx8fROAqdFQfwNeVe%2BhLLMMcS%2BgVVLFh4EcoI1%" +
@@ -323,4 +324,166 @@ public class TestConstants {
             "315Z\" SessionIndex=\"21720bc3-cdfe-4168-b1ff-e66062df0eaf\"><saml2:AuthnContext><saml2:AuthnContextCla" +
             "ssRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext>" +
             "</saml2:AuthnStatement></saml2:Assertion></saml2p:Response>";
+
+    public static final String HTTP_POST_PARAM_SAML2_AUTH_REQ = "SAMLRequest";
+
+    public static final String HTTP_POST_PARAM_SAML2_RESP = "SAMLResponse";
+
+    public static final String INBOUND_SP_ENTITY_ID = "sample.com";
+
+    public static final String INBOUND_SESSION_INDEX = "123456789";
+
+    public static final String INBOUND_ACS_URL = "http://sample.com/sso";
+
+    public static final String INBOUND_IDP_URL = "https://localhost:9443/samlsso";
+
+    public static final String AUTHENTICATED_USER = "admin";
+
+    public static final String SP_ENTITY_ID = "wso2is";
+
+    public static final String ACS_URL = "http://localhost:9443/commonauth";
+
+    public static final String ACS_INDEX = "123456789";
+
+    public static final String IDP_URL = "https://localhost:9444/samlsso";
+
+    public enum InboundRequestData {
+
+        /**
+         * String spEntityId
+         * boolean isForce
+         * boolean isPassive
+         * String httpBinding
+         * String acsUrl
+         * String idPUrl
+         * boolean enableExtensions
+         * String acsIndex
+         */
+        INBOUND_POST_REQUEST(new RequestData(INBOUND_SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, INBOUND_ACS_URL, INBOUND_IDP_URL, false, null)),
+        INBOUND_REDIRECT_REQUEST(new RequestData(INBOUND_SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_REDIRECT_BINDING_URI, INBOUND_ACS_URL, INBOUND_IDP_URL, false, null)),
+        /**
+         * String spEntityId
+         * boolean isForce
+         * boolean isPassive
+         * String httpBinding
+         * String acsUrl
+         * String idPUrl
+         * boolean enableExtensions
+         * String acsIndex
+         * signRequest
+         * protocolBinding
+         * includeCertProperty
+         * forceAuthenticateProp
+         * authenticatorConfigAvailable
+         * includeNameIDPolicyProp
+         */
+        OUTBOUND_POST_REQUEST_SIGNED(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, null, true, null, false, null)),
+        OUTBOUND_POST_REQUEST_SIGNED_CERT_NOT_INCLUDED(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, null, false, null, false,
+                null)),
+        OUTBOUND_POST_REQUEST_UNSIGNED(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, false, null)),
+        OUTBOUND_POST_REQUEST_NULL_SP(new RequestData(null, false, false, SAMLConstants.SAML2_POST_BINDING_URI,
+                ACS_URL, IDP_URL, false, null, true, null, true, null, false, null)),
+        OUTBOUND_POST_REQUEST_EMPTRY_SP(new RequestData("", false, false, SAMLConstants.SAML2_POST_BINDING_URI,
+                ACS_URL, IDP_URL, false, null, true, null, true, null, false, null)),
+        OUTBOUND_POST_REQUEST_FORCE_AUTH_YES(new RequestData("", false, false, SAMLConstants.SAML2_POST_BINDING_URI,
+                ACS_URL, IDP_URL, false, null, true, null, true, "yes", false, null)),
+        OUTBOUND_POST_REQUEST_FORCE_AUTH_AS_REQUEST(new RequestData("", false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, null, true, "as_request", false, null)),
+        OUTBOUND_POST_REQUEST_EMPTY_PROTOCOL_BINDING(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, "", true, null, false,
+                null)),
+        OUTBOUND_POST_REQUEST_PROTOCOL_BINDING_TRUE(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, "true", true, null, false,
+                null)),
+        OUTBOUND_POST_REQUEST_PROTOCOL_BINDING_FALSE(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, "false", true, null,
+                false, null)),
+        OUTBOUND_POST_REQUEST_AUTH_CONFIG_AVAILABLE(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, true,
+                null)),
+        OUTBOUND_POST_REQUEST_AUTH_CONFIG_ACS_EMPTY(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, null, IDP_URL, false, null, false, null, false, null, true,
+                null)),
+        OUTBOUND_POST_REQUEST_WITH_ACS_INDEX(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, ACS_INDEX, false, null, false, null, false, null)),
+        OUTBOUND_POST_REQUEST_INCLUDE_NAME_ID_POLICY(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, false, "true")),
+        OUTBOUND_POST_REQUEST_NOT_INCLUDE_NAME_ID_POLICY(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, false, "false")),
+
+
+        OUTBOUND_REDIRECT_REQUEST_SIGNED(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, null, true, null, true, null)),
+        OUTBOUND_REDIRECT_REQUEST_SIGNED_CERT_NOT_INCLUDED(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, null, false, null, true,
+                null)),
+        OUTBOUND_REDIRECT_REQUEST_UNSIGNED(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, true, null)),
+        OUTBOUND_REDIRECT_REQUEST_NULL_SP(new RequestData(null, false, false, SAMLConstants.SAML2_POST_BINDING_URI,
+                ACS_URL, IDP_URL, false, null, true, null, true, null, true, null)),
+        OUTBOUND_REDIRECT_REQUEST_EMPTRY_SP(new RequestData("", false, false, SAMLConstants.SAML2_POST_BINDING_URI,
+                ACS_URL, IDP_URL, false, null, true, null, true, null, true, null)),
+        OUTBOUND_REDIRECT_REQUEST_FORCE_AUTH_YES(new RequestData("", false, false, SAMLConstants.SAML2_POST_BINDING_URI,
+                ACS_URL, IDP_URL, false, null, true, null, true, "yes", true, null)),
+        OUTBOUND_REDIRECT_REQUEST_FORCE_AUTH_AS_REQUEST(new RequestData("", false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, null, true, "as_request", true, null)),
+        OUTBOUND_REDIRECT_REQUEST_EMPTY_PROTOCOL_BINDING(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, "", true, null, true, null)),
+        OUTBOUND_REDIRECT_REQUEST_PROTOCOL_BINDING_TRUE(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, "true", true, null, true,
+                null)),
+        OUTBOUND_REDIRECT_REQUEST_PROTOCOL_BINDING_FALSE(new RequestData(SP_ENTITY_ID, false, false,
+                SAMLConstants.SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, true, "false", true, null,
+                true, null)),
+        OUTBOUND_REDIRECT_REQUEST_WITH_ACS_INDEX(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, ACS_INDEX, false, null, false, null, true, null)),
+        OUTBOUND_REDIRECT_REQUEST_INCLUDE_NAME_ID_POLICY(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, true, "true")),
+        OUTBOUND_REDIRECT_REQUEST_NOT_INCLUDE_NAME_ID_POLICY(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, true, "false")),
+
+        /**
+         * String spEntityId
+         * boolean isForce
+         * boolean isPassive
+         * String httpBinding
+         * String acsUrl
+         * String idPUrl
+         * boolean enableExtensions
+         * String acsIndex
+         * signRequest
+         * protocolBinding
+         * includeCertProperty
+         * forceAuthenticateProp
+         * authenticatorConfigAvailable
+         * includeNameIDPolicyProp
+         * includePostParam
+         */
+        OUTBOUND_REDIRECT_REQUEST_INCLUDE_POST_PARAM(new RequestData(SP_ENTITY_ID, false, false, SAMLConstants
+                .SAML2_POST_BINDING_URI, ACS_URL, IDP_URL, false, null, false, null, false, null, true, null, true)),
+
+        /**
+         * spEntityId
+         * idPUrl
+         * sessionIndex
+         * user
+         */
+        INBOUND_LOGOUT_REQUEST(new RequestData(INBOUND_SP_ENTITY_ID, INBOUND_IDP_URL, INBOUND_SESSION_INDEX,
+                AUTHENTICATED_USER));
+
+        private final RequestData requestData;
+
+        InboundRequestData(RequestData requestData) {
+            this.requestData = requestData;
+        }
+
+        public RequestData getRequestData() {
+            return requestData;
+        }
+    }
 }
