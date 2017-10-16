@@ -238,6 +238,7 @@ public class X509CredentialImplTest {
 
     @ObjectFactory
     public IObjectFactory getObjectFactory() {
+
         return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 
