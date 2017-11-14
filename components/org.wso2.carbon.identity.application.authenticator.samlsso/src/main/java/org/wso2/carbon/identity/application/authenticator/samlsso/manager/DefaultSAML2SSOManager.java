@@ -467,7 +467,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                             SSOConstants.StatusCodes.NO_PASSIVE)) {
                 return;
             }
-            throw new SAMLSSOException("SAML Assertion not found in the Response");
+            throw new SAMLSSOException("SAML Assertion is not found in the Response");
         }
 
         // Validate the assertion issuer. This is an optional validation which is not mandate by the spec.
