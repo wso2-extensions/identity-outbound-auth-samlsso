@@ -19,20 +19,34 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.security.credential.CredentialContextSet;
 import org.opensaml.xml.security.credential.UsageType;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
+import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 
 import javax.crypto.SecretKey;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -48,6 +62,15 @@ public class X509CredentialImpl implements X509Credential {
     private PublicKey publicKey = null;
     private PrivateKey privateKey = null;
     private X509Certificate entityCertificate = null;
+
+    private static KeyStore superTenantSignKeyStore = null;
+    private static Log log = LogFactory.getLog(X509CredentialImpl.class);
+
+    public static final String SECURITY_SAML_SIGN_KEY_STORE_LOCATION = "Security.SAMLSignKeyStore.Location";
+    public static final String SECURITY_SAML_SIGN_KEY_STORE_TYPE = "Security.SAMLSignKeyStore.Type";
+    public static final String SECURITY_SAML_SIGN_KEY_STORE_PASSWORD = "Security.SAMLSignKeyStore.Password";
+    public static final String SECURITY_SAML_SIGN_KEY_STORE_KEY_ALIAS = "Security.SAMLSignKeyStore.KeyAlias";
+    public static final String SECURITY_SAML_SIGN_KEY_STORE_KEY_PASSWORD = "Security.SAMLSignKeyStore.KeyPassword";
 
     /**
      * Instantiates X509Credential.
@@ -80,7 +103,7 @@ public class X509CredentialImpl implements X509Credential {
             int tenantId;
 
             try {
-                tenantId = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantManager()
+                tenantId = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getRealmService().getTenantManager()
                         .getTenantId(tenantDomain);
             } catch (UserStoreException e) {
                 throw new SAMLSSOException(
@@ -105,9 +128,66 @@ public class X509CredentialImpl implements X509Credential {
                     cert = (X509Certificate) keyStoreManager.getKeyStore(jksName)
                             .getCertificate(tenantDomain);
                 } else {
-                    key = keyStoreManager.getDefaultPrivateKey();
-                    cert = keyStoreManager.getDefaultPrimaryCertificate();
+                    if (isSignKeyStoreConfigured()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Initializing Key Data for super tenant using separate sign key store");
+                        }
 
+                        try {
+                            if (superTenantSignKeyStore == null) {
+
+                                String keyStoreLocation = ServerConfiguration.getInstance().getFirstProperty(
+                                        SECURITY_SAML_SIGN_KEY_STORE_LOCATION);
+                                try (FileInputStream is = new FileInputStream(keyStoreLocation)) {
+                                    String keyStoreType = ServerConfiguration.getInstance().getFirstProperty(
+                                            SECURITY_SAML_SIGN_KEY_STORE_TYPE);
+                                    KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+
+                                    char[] keyStorePassword = ServerConfiguration.getInstance().getFirstProperty(
+                                            SECURITY_SAML_SIGN_KEY_STORE_PASSWORD).toCharArray();
+                                    keyStore.load(is, keyStorePassword);
+
+                                    superTenantSignKeyStore = keyStore;
+                                } catch (FileNotFoundException e) {
+                                    throw new SAMLSSOException("Unable to locate keystore", e);
+                                } catch (IOException e) {
+                                    throw new SAMLSSOException("Unable to read keystore", e);
+                                } catch (CertificateException e) {
+                                    throw new SAMLSSOException("Unable to read certificate", e);
+                                }
+                            }
+
+                            String keyAlias = ServerConfiguration.getInstance().getFirstProperty(
+                                    SECURITY_SAML_SIGN_KEY_STORE_KEY_ALIAS);
+                            char[] keyPassword = ServerConfiguration.getInstance().getFirstProperty(
+                                    SECURITY_SAML_SIGN_KEY_STORE_KEY_PASSWORD).toCharArray();
+                            Key privateKey = superTenantSignKeyStore.getKey(keyAlias, keyPassword);
+
+                            Certificate publicKey = superTenantSignKeyStore.getCertificate(keyAlias);
+
+                            if (privateKey instanceof PrivateKey) {
+                                key = (PrivateKey) privateKey;
+                            } else {
+                                throw new SAMLSSOException("Configured signing KeyStore private key is invalid");
+                            }
+
+                            if (publicKey instanceof X509Certificate) {
+                                cert = (X509Certificate) publicKey;
+                            } else {
+                                throw new SAMLSSOException("Configured signing KeyStore public key is invalid");
+                            }
+
+                        } catch (NoSuchAlgorithmException e) {
+                            throw new SAMLSSOException("Unable to load algorithm", e);
+                        } catch (UnrecoverableKeyException e) {
+                            throw new SAMLSSOException("Unable to load key", e);
+                        } catch (KeyStoreException e) {
+                            throw new SAMLSSOException("Unable to load keystore", e);
+                        }
+                    } else {
+                        key = keyStoreManager.getDefaultPrivateKey();
+                        cert = keyStoreManager.getDefaultPrimaryCertificate();
+                    }
                 }
             } catch (Exception e) {
                 throw new SAMLSSOException(
@@ -129,6 +209,28 @@ public class X509CredentialImpl implements X509Credential {
 
         entityCertificate = cert;
         publicKey = cert.getPublicKey();
+    }
+
+    /**
+     * Check whether separate configurations for sign KeyStore available
+     *
+     * @return true if necessary configurations are defined for sign KeyStore; false otherwise.
+     */
+    private boolean isSignKeyStoreConfigured() {
+        String keyStoreLocation = ServerConfiguration.getInstance().getFirstProperty(
+                SECURITY_SAML_SIGN_KEY_STORE_LOCATION);
+        String keyStoreType = ServerConfiguration.getInstance().getFirstProperty(
+                SECURITY_SAML_SIGN_KEY_STORE_TYPE);
+        String keyStorePassword = ServerConfiguration.getInstance().getFirstProperty(
+                SECURITY_SAML_SIGN_KEY_STORE_PASSWORD);
+        String keyAlias = ServerConfiguration.getInstance().getFirstProperty(
+                SECURITY_SAML_SIGN_KEY_STORE_KEY_ALIAS);
+        String keyPassword = ServerConfiguration.getInstance().getFirstProperty(
+                SECURITY_SAML_SIGN_KEY_STORE_KEY_PASSWORD);
+
+        return StringUtils.isNotBlank(keyStoreLocation) && StringUtils.isNotBlank(keyStoreType)
+                && StringUtils.isNotBlank(keyStorePassword) && StringUtils.isNotBlank(keyAlias)
+                && StringUtils.isNotBlank(keyPassword);
     }
 
     /**

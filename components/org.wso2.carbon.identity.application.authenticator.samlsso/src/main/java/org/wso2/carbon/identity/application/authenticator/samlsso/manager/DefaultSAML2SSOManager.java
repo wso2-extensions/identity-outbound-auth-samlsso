@@ -38,6 +38,7 @@ import org.opensaml.saml2.core.AuthnContext;
 import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnContextComparisonTypeEnumeration;
 import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.AuthnStatement;
 import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml2.core.Issuer;
@@ -89,6 +90,7 @@ import org.wso2.carbon.identity.application.authentication.framework.model.Authe
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
+import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
@@ -107,6 +109,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,6 +132,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private static boolean bootStrapped = false;
     private static String DEFAULT_MULTI_ATTRIBUTE_SEPARATOR = ",";
     private static String MULTI_ATTRIBUTE_SEPARATOR = "MultiAttributeSeparator";
+    private static final String VERIFY_ASSERTION_ISSUER = "VerifyAssertionIssuer";
     private IdentityProvider identityProvider = null;
     private Map<String, String> properties;
     private String tenantDomain;
@@ -463,8 +467,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                             SSOConstants.StatusCodes.NO_PASSIVE)) {
                 return;
             }
-            throw new SAMLSSOException("SAML Assertion not found in the Response");
+            throw new SAMLSSOException("SAML Assertion is not found in the Response");
         }
+
+        // Validate the assertion issuer. This is an optional validation which is not mandate by the spec.
+        validateAssertionIssuer(assertion);
 
         // validate the assertion validity period
         validateAssertionValidityPeriod(assertion);
@@ -492,6 +499,31 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         spNameQualifier = assertion.getSubject().getNameID().getSPNameQualifier();
 
         request.getSession(false).setAttribute("samlssoAttributes", getAssertionStatements(assertion));
+
+        if (assertion.getAuthnStatements() != null) {
+            List<String> authnContextClassRefs = new ArrayList<>();
+            for (AuthnStatement authnStatement : assertion.getAuthnStatements()) {
+                if (authnStatement.getAuthnContext() != null
+                        && authnStatement.getAuthnContext().getAuthnContextClassRef() != null
+                        && StringUtils.isNotBlank(authnStatement.getAuthnContext().getAuthnContextClassRef()
+                        .getAuthnContextClassRef())) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Received AuthnContextClassRef: " + authnStatement.getAuthnContext()
+                                .getAuthnContextClassRef().getAuthnContextClassRef());
+                    }
+                    authnContextClassRefs.add(authnStatement.getAuthnContext().getAuthnContextClassRef()
+                            .getAuthnContextClassRef());
+                }
+            }
+
+            if (!authnContextClassRefs.isEmpty()) {
+                Map<String, Object> authnContextClassRefMap = new HashMap<>();
+                authnContextClassRefMap.put(SSOConstants.AUTHN_CONTEXT_CLASS_REF, authnContextClassRefs);
+                authnContextClassRefMap.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID,
+                        assertion.getIssuer().getValue());
+                request.getSession().setAttribute(SSOConstants.AUTHN_CONTEXT_CLASS_REF, authnContextClassRefMap);
+            }
+        }
 
         //For removing the session when the single sign out request made by the SP itself
         if (SSOUtils.isLogoutEnabled(properties)) {
@@ -827,7 +859,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         UserRealm realm;
         try {
-            realm = SAMLSSOAuthenticatorServiceComponent.getRealmService().getTenantUserRealm
+            realm = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getRealmService().getTenantUserRealm
                     (MultitenantConstants.SUPER_TENANT_ID);
             UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
 
@@ -1018,6 +1050,37 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         decrypter = new Decrypter(new StaticKeyInfoCredentialResolver(shared), null, null);
         decrypter.setRootInNewDocument(true);
         return decrypter.decrypt(encryptedAssertion);
+    }
+
+    private void validateAssertionIssuer(Assertion assertion) throws SAMLSSOException {
+
+        if (isAssertionIssuerVerificationEnabled()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Assertion issuer verification is enabled.");
+            }
+
+            String idpEntityId = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID);
+            if (!idpEntityId.equals(assertion.getIssuer().getValue())) {
+                log.warn("Issuer value in the assertion is invalid. Expected value is '" + idpEntityId + "'," +
+                        " but received value in the assertion is '" + assertion.getIssuer().getValue() + "'.");
+                throw new SAMLSSOException("Identity provider with entity id '" + assertion.getIssuer().getValue()
+                        + "' is not registered in the system.");
+            }
+        }
+    }
+
+    private boolean isAssertionIssuerVerificationEnabled() {
+
+        AuthenticatorConfig authenticatorConfig = FileBasedConfigurationBuilder.getInstance()
+                .getAuthenticatorConfigMap().get(SSOConstants.AUTHENTICATOR_NAME);
+
+        if (authenticatorConfig != null && authenticatorConfig.getParameterMap() != null) {
+            String isVerifyAssertionIssuer = authenticatorConfig.getParameterMap().get(VERIFY_ASSERTION_ISSUER);
+            if (StringUtils.isNotEmpty(isVerifyAssertionIssuer)) {
+                return Boolean.parseBoolean(isVerifyAssertionIssuer);
+            }
+        }
+        return false;
     }
 
 }
