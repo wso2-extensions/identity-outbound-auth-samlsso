@@ -41,14 +41,16 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements FederatedApplicationAuthenticator {
 
@@ -64,11 +66,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             log.trace("Inside canHandle()");
         }
 
-        if (request.getParameter("SAMLResponse") != null) {
-            return true;
-        }
+        return request.getParameter("SAMLResponse") != null;
 
-        return false;
     }
 
     @Override
@@ -99,6 +98,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 isPost = false;
             }
 
+            // Resolves dynamic query parameters from "Additional Query Parameters".
+            resolveDynamicParameter(context);
+
             if (isPost) {
                 sendPostRequest(request, response, false, false, idpURL, context);
                 return;
@@ -111,11 +113,55 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 generateAuthenticationRequest(request, response, ssoUrl, authenticatorProperties);
 
             }
-        } catch (SAMLSSOException e) {
+        } catch (SAMLSSOException | UnsupportedEncodingException e) {
             throw new AuthenticationFailedException(e.getMessage(), e);
         }
 
-        return;
+    }
+
+    /**
+     * Resolves dynamic query parameters from "Additional Query Parameters" string.
+     *
+     * @param context authentication context
+     * @throws UnsupportedEncodingException if the character encoding is unsupported
+     */
+    private void resolveDynamicParameter(AuthenticationContext context) throws UnsupportedEncodingException {
+
+        String queryParameters = context.getAuthenticatorProperties().get(FrameworkConstants.QUERY_PARAMS);
+        if (queryParameters != null) {
+            context.getAuthenticatorProperties()
+                    .put(FrameworkConstants.QUERY_PARAMS, getResolvedQueryParams(context, queryParameters));
+        }
+    }
+
+    /**
+     * Checks for any dynamic query parameters and replaces it with the values in the SAML request.
+     *
+     * @param context          authentication context
+     * @param queryParamString query parameters string
+     * @return resolved query parameter string
+     * @throws UnsupportedEncodingException if the character encoding is unsupported
+     */
+    private String getResolvedQueryParams(AuthenticationContext context, String queryParamString)
+            throws UnsupportedEncodingException {
+
+        Map<String, String> queryMap = SSOUtils.getQueryMap(queryParamString);
+        StringBuilder queryBuilder = new StringBuilder();
+        for (Map.Entry<String, String> entry : queryMap.entrySet()) {
+            if (entry.getValue().startsWith("{") && entry.getValue().endsWith("}") && entry.getValue().length() > 2) {
+                String[] dynamicParam = context.getAuthenticationRequest()
+                        .getRequestQueryParam(entry.getValue().substring(1, entry.getValue().length() - 1));
+                if (dynamicParam != null && dynamicParam.length > 0) {
+                    entry.setValue(dynamicParam[0]);
+                }
+            }
+            if (queryBuilder.length() > 0) {
+                queryBuilder.append('&');
+            }
+            queryBuilder.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name())).append("=")
+                    .append((URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.name())));
+        }
+        return queryBuilder.toString();
     }
 
     private void generateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,
