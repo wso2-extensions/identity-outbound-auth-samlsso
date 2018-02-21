@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -152,21 +153,51 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         Map<String, String> queryMap = SSOUtils.getQueryMap(queryParamString);
         StringBuilder queryBuilder = new StringBuilder();
-        for (Map.Entry<String, String> entry : queryMap.entrySet()) {
-            if (entry.getValue().startsWith("{") && entry.getValue().endsWith("}") && entry.getValue().length() > 2) {
-                String[] dynamicParam = context.getAuthenticationRequest()
-                        .getRequestQueryParam(entry.getValue().substring(1, entry.getValue().length() - 1));
-                if (dynamicParam != null && dynamicParam.length > 0) {
-                    entry.setValue(dynamicParam[0]);
-                }
-            }
+        for (Map.Entry<String, String> queryParamEntry : queryMap.entrySet()) {
+            String resolvedQueryParamValue = getResolvedQueryParamValue(context, queryParamEntry);
+
             if (queryBuilder.length() > 0) {
+                // Add an & if this is not the first query param.
                 queryBuilder.append('&');
             }
-            queryBuilder.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name())).append("=")
-                    .append((URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.name())));
+
+            queryBuilder.append(URLEncoder.encode(queryParamEntry.getKey(), StandardCharsets.UTF_8.name())).append("=")
+                    .append((URLEncoder.encode(resolvedQueryParamValue, StandardCharsets.UTF_8.name())));
         }
         return queryBuilder.toString();
+    }
+
+    private String getResolvedQueryParamValue(AuthenticationContext context, Map.Entry<String, String> queryParam) {
+        String resolvedQueryParamValue = queryParam.getValue();
+        if (isDynamicQueryParam(resolvedQueryParamValue)) {
+            String inboundQueryParamKey = removeEnclosingParenthesis(resolvedQueryParamValue);
+            String[] dynamicQueryParamValue =
+                    context.getAuthenticationRequest().getRequestQueryParam(inboundQueryParamKey);
+            if (ArrayUtils.isNotEmpty(dynamicQueryParamValue)) {
+                resolvedQueryParamValue = dynamicQueryParamValue[0];
+            } else {
+                // If the dynamic query param value is not sent in the inbound request we are sending an empty
+                // string for the dynamic query value.
+                resolvedQueryParamValue = StringUtils.EMPTY;
+            }
+        }
+        return resolvedQueryParamValue;
+    }
+
+    private String removeEnclosingParenthesis(String queryParamValue) {
+        if (isEnclosedWithParenthesis(queryParamValue)) {
+            return queryParamValue.substring(1, queryParamValue.length() - 1);
+        } else {
+            return queryParamValue;
+        }
+    }
+
+    private boolean isDynamicQueryParam(String queryParamValue) {
+        return isEnclosedWithParenthesis(queryParamValue) && queryParamValue.length() > 2;
+    }
+
+    private boolean isEnclosedWithParenthesis(String queryParamValue) {
+        return StringUtils.startsWith(queryParamValue, "{") && StringUtils.endsWith(queryParamValue, "}");
     }
 
     private void generateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,

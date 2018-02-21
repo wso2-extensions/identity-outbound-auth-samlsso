@@ -19,13 +19,16 @@ package org.wso2.carbon.identity.application.authenticator.samlsso;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.joda.time.DateTimeUtils;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.opensaml.saml2.core.NameIDType;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
@@ -35,8 +38,10 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.A
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
@@ -61,15 +66,18 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doCallRealMethod;
 import static org.powermock.api.mockito.PowerMockito.when;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertEquals;
 
 /**
  * Unit test cases for SAMLSSOAuthenticator
  */
 public class SAMLSSOAuthenticatorTest {
 
+    public static final String INBOUND_QUERY_KEY = "inbound_query_key";
+    public static final String INBOUND_QUERY_VALUE = "inbound_query_value";
+    public static final String DYNAMIC_QUERY_PARAM = "dynamic_query_param";
     @Mock
     private HttpServletRequest mockedHttpServletRequest;
     @Mock
@@ -80,7 +88,7 @@ public class SAMLSSOAuthenticatorTest {
     private HttpServletRequest mockedReturnedHttpServletRequest;
     @Mock
     private HttpServletResponse mockedReturnedHttpServletResponse;
-    @Mock
+    @Spy
     private AuthenticationContext mockedAuthenticationContext;
     @Mock
     private IdentityProvider mockedIdentityProvider;
@@ -308,5 +316,51 @@ public class SAMLSSOAuthenticatorTest {
 
         assertEquals("admin", mockedAuthenticationContext.getSubject().getAuthenticatedSubjectIdentifier(), "Failed " +
                 "retrive the authenticated user from the SAML2 response");
+    }
+
+    @DataProvider(name = "inboundRequestQueryParamProvider")
+    public Object[][] provideDummyData() {
+
+        return new Object[][]{
+                {new String[]{INBOUND_QUERY_VALUE}, INBOUND_QUERY_VALUE},
+                {new String[]{StringUtils.EMPTY}, StringUtils.EMPTY},
+                {null, StringUtils.EMPTY}
+        };
+    }
+
+    @Test(dataProvider = "inboundRequestQueryParamProvider")
+    public void testDynamicQueryParams(String[] inboundQueryParamValues, String exceptedQueryParamValue) throws Exception {
+
+        Map<String, String> authenticatorProperties = new HashMap<>();
+        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
+        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD, SSOConstants.POST);
+        authenticatorProperties.put(FrameworkConstants.QUERY_PARAMS,
+                DYNAMIC_QUERY_PARAM + "={" + INBOUND_QUERY_KEY + "}");
+
+        AuthenticationContext context = new AuthenticationContext();
+        context.setContextIdentifier(TestConstants.RELAY_STATE);
+        context.setAuthenticatorProperties(authenticatorProperties);
+
+        when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
+        context.setExternalIdP(mockedExternalIdPConfig);
+
+        when(mockedAuthenticationRequest.getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))
+                .thenReturn(new String[]{TestConstants.SAML2_POST_REQUEST});
+        when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.TRUE);
+        when(mockedAuthenticationRequest.getRequestQueryParam(INBOUND_QUERY_KEY)).thenReturn(inboundQueryParamValues);
+
+        context.setAuthenticationRequest(mockedAuthenticationRequest);
+
+        PrintWriter out = new PrintWriter("auth-request.txt");
+        when(mockedAuthnHttpServletResponse.getWriter()).thenReturn(out);
+
+        samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse, context);
+        out.flush();
+
+        String resolvedQueryParams = context.getAuthenticatorProperties().get(FrameworkConstants.QUERY_PARAMS);
+        Map<String, String> queryParamMap = SSOUtils.getQueryMap(resolvedQueryParams);
+
+        String resolvedDynamicQueryParamValue = queryParamMap.get(DYNAMIC_QUERY_PARAM);
+        assertEquals(resolvedDynamicQueryParamValue, exceptedQueryParamValue);
     }
 }
