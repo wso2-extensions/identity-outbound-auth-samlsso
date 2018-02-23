@@ -171,10 +171,13 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         String resolvedQueryParamValue = queryParam.getValue();
         if (isDynamicQueryParam(resolvedQueryParamValue)) {
             String inboundQueryParamKey = removeEnclosingParenthesis(resolvedQueryParamValue);
-            String[] dynamicQueryParamValue =
+            String[] originalParamValues =
                     context.getAuthenticationRequest().getRequestQueryParam(inboundQueryParamKey);
-            if (ArrayUtils.isNotEmpty(dynamicQueryParamValue)) {
-                resolvedQueryParamValue = dynamicQueryParamValue[0];
+            String[] currentParamValues = context.getCurrentRequest().getParameterValues(inboundQueryParamKey);
+            if (ArrayUtils.isNotEmpty(originalParamValues)) {
+                resolvedQueryParamValue = originalParamValues[0];
+            } else if (ArrayUtils.isNotEmpty(currentParamValues)) {
+                resolvedQueryParamValue = currentParamValues[0];
             } else {
                 // If the dynamic query param value is not sent in the inbound request we are sending an empty
                 // string for the dynamic query value.
