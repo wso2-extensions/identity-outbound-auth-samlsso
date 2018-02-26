@@ -322,14 +322,16 @@ public class SAMLSSOAuthenticatorTest {
     public Object[][] provideDummyData() {
 
         return new Object[][]{
-                {new String[]{INBOUND_QUERY_VALUE}, INBOUND_QUERY_VALUE},
-                {new String[]{StringUtils.EMPTY}, StringUtils.EMPTY},
-                {null, StringUtils.EMPTY}
+                {new String[]{INBOUND_QUERY_VALUE}, null, INBOUND_QUERY_VALUE},
+                {new String[]{StringUtils.EMPTY}, null, StringUtils.EMPTY},
+                {null, INBOUND_QUERY_VALUE, INBOUND_QUERY_VALUE},
+                {null, null,StringUtils.EMPTY}
         };
     }
 
     @Test(dataProvider = "inboundRequestQueryParamProvider")
-    public void testDynamicQueryParams(String[] inboundQueryParamValues, String exceptedQueryParamValue) throws Exception {
+    public void testDynamicQueryParams(String[] inboundQueryParamValues, String requestQueryParamValue,
+                                       String exceptedQueryParamValue) throws Exception {
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
@@ -348,6 +350,12 @@ public class SAMLSSOAuthenticatorTest {
                 .thenReturn(new String[]{TestConstants.SAML2_POST_REQUEST});
         when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.TRUE);
         when(mockedAuthenticationRequest.getRequestQueryParam(INBOUND_QUERY_KEY)).thenReturn(inboundQueryParamValues);
+
+        if (requestQueryParamValue != null) {
+            when(mockedHttpServletRequest.getParameter(INBOUND_QUERY_KEY)).thenReturn(requestQueryParamValue);
+        } else {
+            when(mockedHttpServletRequest.getParameter(INBOUND_QUERY_KEY)).thenReturn(null);
+        }
 
         context.setAuthenticationRequest(mockedAuthenticationRequest);
 

@@ -105,7 +105,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             }
 
             // Resolves dynamic query parameters from "Additional Query Parameters".
-            resolveDynamicParameter(context);
+            resolveDynamicParameter(request, context);
 
             if (isPost) {
                 sendPostRequest(request, response, false, false, idpURL, context);
@@ -128,33 +128,36 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
     /**
      * Resolves dynamic query parameters from "Additional Query Parameters" string.
      *
+     * @param request servlet request
      * @param context authentication context
      * @throws UnsupportedEncodingException if the character encoding is unsupported
      */
-    private void resolveDynamicParameter(AuthenticationContext context) throws UnsupportedEncodingException {
+    private void resolveDynamicParameter(HttpServletRequest request, AuthenticationContext context) throws
+            UnsupportedEncodingException {
 
         String queryParameters = context.getAuthenticatorProperties().get(FrameworkConstants.QUERY_PARAMS);
         if (queryParameters != null) {
             context.getAuthenticatorProperties()
-                    .put(FrameworkConstants.QUERY_PARAMS, getResolvedQueryParams(context, queryParameters));
+                    .put(FrameworkConstants.QUERY_PARAMS, getResolvedQueryParams(request, context, queryParameters));
         }
     }
 
     /**
      * Checks for any dynamic query parameters and replaces it with the values in the SAML request.
      *
+     * @param request          servlet request
      * @param context          authentication context
      * @param queryParamString query parameters string
      * @return resolved query parameter string
      * @throws UnsupportedEncodingException if the character encoding is unsupported
      */
-    private String getResolvedQueryParams(AuthenticationContext context, String queryParamString)
-            throws UnsupportedEncodingException {
+    private String getResolvedQueryParams(HttpServletRequest request, AuthenticationContext context,
+                                          String queryParamString) throws UnsupportedEncodingException {
 
         Map<String, String> queryMap = SSOUtils.getQueryMap(queryParamString);
         StringBuilder queryBuilder = new StringBuilder();
         for (Map.Entry<String, String> queryParamEntry : queryMap.entrySet()) {
-            String resolvedQueryParamValue = getResolvedQueryParamValue(context, queryParamEntry);
+            String resolvedQueryParamValue = getResolvedQueryParamValue(request, context, queryParamEntry);
 
             if (queryBuilder.length() > 0) {
                 // Add an & if this is not the first query param.
@@ -167,14 +170,18 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         return queryBuilder.toString();
     }
 
-    private String getResolvedQueryParamValue(AuthenticationContext context, Map.Entry<String, String> queryParam) {
+    private String getResolvedQueryParamValue(HttpServletRequest request, AuthenticationContext context,
+                                              Map.Entry<String, String> queryParam) {
         String resolvedQueryParamValue = queryParam.getValue();
         if (isDynamicQueryParam(resolvedQueryParamValue)) {
             String inboundQueryParamKey = removeEnclosingParenthesis(resolvedQueryParamValue);
-            String[] dynamicQueryParamValue =
-                    context.getAuthenticationRequest().getRequestQueryParam(inboundQueryParamKey);
-            if (ArrayUtils.isNotEmpty(dynamicQueryParamValue)) {
-                resolvedQueryParamValue = dynamicQueryParamValue[0];
+            String[] authRequestParamValues = context.getAuthenticationRequest()
+                    .getRequestQueryParam(inboundQueryParamKey);
+            String currentRequestParamValue = request.getParameter(inboundQueryParamKey);
+            if (ArrayUtils.isNotEmpty(authRequestParamValues)) {
+                resolvedQueryParamValue = authRequestParamValues[0];
+            } else if (StringUtils.isNotBlank(currentRequestParamValue)) {
+                resolvedQueryParamValue = currentRequestParamValue;
             } else {
                 // If the dynamic query param value is not sent in the inbound request we are sending an empty
                 // string for the dynamic query value.
