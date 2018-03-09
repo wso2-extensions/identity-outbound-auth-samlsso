@@ -19,9 +19,6 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.xerces.dom.CoreDOMImplementationImpl;
-import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
-import org.apache.xerces.util.SecurityManager;
 import org.mockito.Mock;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.AuthnRequest;
@@ -64,19 +61,22 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathFactory;
 
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.*;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.*;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDOMImplementationRegistry;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDocumentBuilderFactory;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockXPathFactory;
 import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 
 /**
  * Unit test cases for DefaultSAML2SSOManager
  */
 @PrepareForTest({FileBasedConfigurationBuilder.class, IdentityUtil.class, DocumentBuilderFactory.class,
-        KeyStoreManager.class, DOMImplementationRegistry.class})
+        KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class})
 public class DefaultSAML2SSOManagerTest {
 
     @Mock
@@ -265,6 +265,8 @@ public class DefaultSAML2SSOManagerTest {
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
 
+        mockXPathFactory();
+
         RequestData requestData = (RequestData) outboundRequestData;
 
         Map<String, String> authenticatorProperties = new HashMap<>();
@@ -404,6 +406,8 @@ public class DefaultSAML2SSOManagerTest {
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
 
+        mockXPathFactory();
+
         RequestData requestData = (RequestData) outboundRequestData;
 
         Map<String, String> authenticatorProperties = new HashMap<>();
@@ -452,6 +456,8 @@ public class DefaultSAML2SSOManagerTest {
     public void testDoSLO(Object requestData) throws Exception {
 
         DefaultSAML2SSOManager.doBootstrap();
+
+        mockXPathFactory();
 
         String samlRequest = buildSAMLRequest(true, (RequestData) requestData);
         when(mockedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn
@@ -585,20 +591,12 @@ public class DefaultSAML2SSOManagerTest {
         when(mockedAuthenticationContext.getTenantDomain()).thenReturn(SUPER_TENANT_DOMAIN_NAME);
         mockKeyStore();
 
-        mockStatic(DOMImplementationRegistry.class);
-        when(DOMImplementationRegistry.newInstance()).thenReturn(mockedDomImplementationRegistry);
-        when(mockedDomImplementationRegistry.getDOMImplementation("LS")).thenReturn(new CoreDOMImplementationImpl());
-
+        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
     }
 
     private String buildSAMLRequest(boolean isLogout, RequestData requestData) throws Exception {
 
-        DocumentBuilderFactory documentBuilderFactory = getSecuredDocumentBuilderFactory();
-        mockStatic(IdentityUtil.class);
-        when(IdentityUtil.getSecuredDocumentBuilderFactory()).thenReturn(documentBuilderFactory);
-
-        mockStatic(DocumentBuilderFactory.class);
-        when(DocumentBuilderFactory.newInstance()).thenReturn(new DocumentBuilderFactoryImpl());
+        mockDocumentBuilderFactory();
 
         String samlRequest;
         if (!isLogout) {
@@ -625,22 +623,6 @@ public class DefaultSAML2SSOManagerTest {
             authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_CERT,
                     Boolean.FALSE.toString());
         }
-    }
-
-    private DocumentBuilderFactory getSecuredDocumentBuilderFactory() throws ParserConfigurationException {
-
-        DocumentBuilderFactory builderFactory = new DocumentBuilderFactoryImpl();
-        builderFactory.setNamespaceAware(true);
-        builderFactory.setXIncludeAware(false);
-        builderFactory.setExpandEntityReferences(false);
-        builderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        builderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        builderFactory.setFeature("http://javax.xml.XMLConstants/feature/secure-processing", true);
-        SecurityManager securityManager = new SecurityManager();
-        securityManager.setEntityExpansionLimit(0);
-        builderFactory.setAttribute("http://apache.org/xml/properties/security-manager", securityManager);
-        return builderFactory;
     }
 
     private void mockKeyStore() throws Exception {

@@ -24,17 +24,18 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import org.joda.time.DateTimeUtils;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.opensaml.saml2.core.NameIDType;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
-import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
@@ -45,22 +46,25 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserRealm;
-import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.xpath.XPathFactory;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
@@ -69,10 +73,16 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDOMImplementationRegistry;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDocumentBuilderFactory;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockXMLInputFactory;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockXPathFactory;
 
 /**
  * Unit test cases for SAMLSSOAuthenticator
  */
+@PrepareForTest({XPathFactory.class, XMLInputFactory.class, DocumentBuilderFactory.class, IdentityUtil.class,
+        DOMImplementationRegistry.class})
 public class SAMLSSOAuthenticatorTest {
 
     public static final String INBOUND_QUERY_KEY = "inbound_query_key";
@@ -88,7 +98,7 @@ public class SAMLSSOAuthenticatorTest {
     private HttpServletRequest mockedReturnedHttpServletRequest;
     @Mock
     private HttpServletResponse mockedReturnedHttpServletResponse;
-    @Spy
+    @Mock
     private AuthenticationContext mockedAuthenticationContext;
     @Mock
     private IdentityProvider mockedIdentityProvider;
@@ -106,13 +116,15 @@ public class SAMLSSOAuthenticatorTest {
     private UserStoreManager mockedUserStoreManager;
     @Mock
     private RealmConfiguration mockedRealmConfiguration;
+    @Mock
+    private DOMImplementationRegistry mockedDomImplementationRegistry;
 
     private SAMLSSOAuthenticator samlssoAuthenticator = new SAMLSSOAuthenticator();
 
     @BeforeClass
     public void initTest() throws SocketException {
 
-        MockitoAnnotations.initMocks(this);
+        mockXMLInputFactory();
         FileBasedConfigurationBuilder.getInstance(TestUtils.getFilePath("application-authentication.xml"));
     }
 
@@ -132,6 +144,10 @@ public class SAMLSSOAuthenticatorTest {
 
     @Test(priority = 3)
     public void testInitiatePostAuthenticationRequest() throws Exception {
+
+        mockXPathFactory();
+        mockDocumentBuilderFactory();
+        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
@@ -162,6 +178,9 @@ public class SAMLSSOAuthenticatorTest {
     @Test(priority = 4)
     public void testInitiateRedirectAuthenticationRequest() throws Exception {
 
+        mockXPathFactory();
+        mockDocumentBuilderFactory();
+
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
@@ -187,7 +206,11 @@ public class SAMLSSOAuthenticatorTest {
     }
 
     @Test(priority = 5)
-    public void testInitiatePostLogoutRequest() throws LogoutFailedException, IOException {
+    public void testInitiatePostLogoutRequest() throws Exception {
+
+        mockXPathFactory();
+        mockDocumentBuilderFactory();
+        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
@@ -214,7 +237,9 @@ public class SAMLSSOAuthenticatorTest {
     }
 
     @Test(priority = 6)
-    public void testInitiateRedirectLogoutRequest() throws LogoutFailedException, IOException {
+    public void testInitiateRedirectLogoutRequest() throws Exception {
+
+        mockDocumentBuilderFactory();
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL,
@@ -278,8 +303,11 @@ public class SAMLSSOAuthenticatorTest {
     }
 
     @Test
-    public void testProcessAuthenticationResponse() throws AuthenticationFailedException, NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException, UserStoreException {
+    public void testProcessAuthenticationResponse() throws Exception {
+
+        mockXPathFactory();
+        mockDocumentBuilderFactory();
+        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
 
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(mockedRealmService);
 
@@ -325,13 +353,17 @@ public class SAMLSSOAuthenticatorTest {
                 {new String[]{INBOUND_QUERY_VALUE}, null, INBOUND_QUERY_VALUE},
                 {new String[]{StringUtils.EMPTY}, null, StringUtils.EMPTY},
                 {null, INBOUND_QUERY_VALUE, INBOUND_QUERY_VALUE},
-                {null, null,StringUtils.EMPTY}
+                {null, null, StringUtils.EMPTY}
         };
     }
 
     @Test(dataProvider = "inboundRequestQueryParamProvider")
     public void testDynamicQueryParams(String[] inboundQueryParamValues, String requestQueryParamValue,
                                        String exceptedQueryParamValue) throws Exception {
+
+        mockXPathFactory();
+        mockDocumentBuilderFactory();
+        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
@@ -370,5 +402,11 @@ public class SAMLSSOAuthenticatorTest {
 
         String resolvedDynamicQueryParamValue = queryParamMap.get(DYNAMIC_QUERY_PARAM);
         assertEquals(resolvedDynamicQueryParamValue, exceptedQueryParamValue);
+    }
+
+    @ObjectFactory
+    public IObjectFactory getObjectFactory() {
+
+        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 }
