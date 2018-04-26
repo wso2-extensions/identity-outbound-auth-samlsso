@@ -310,13 +310,14 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.8.146</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.11.204</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.0.0, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
         <!-- Carbon Commons -->
         <commons-collections.version>3.2.0.wso2v1</commons-collections.version>
         <commons-codec.wso2.osgi.version.range>[1.4.0,2.0.0)</commons-codec.wso2.osgi.version.range>
         <commons-logging.osgi.version.range>[1.2,2.0)</commons-logging.osgi.version.range>
+        <commons-httpclient.wso2.osgi.version>[3.1.0,4.0.0)</commons-httpclient.wso2.osgi.version>
 
         <!-- OSGi/Equinox versions-->
         <equinox.javax.servlet.version>3.0.0.v201112011016</equinox.javax.servlet.version>

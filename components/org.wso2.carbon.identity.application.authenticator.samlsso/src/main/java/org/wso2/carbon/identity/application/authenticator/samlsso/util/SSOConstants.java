@@ -25,6 +25,7 @@ public class SSOConstants {
 
     public static final String HTTP_POST_PARAM_SAML2_AUTH_REQ = "SAMLRequest";
     public static final String HTTP_POST_PARAM_SAML2_RESP = "SAMLResponse";
+    public static final String HTTP_POST_PARAM_SAML2_ARTIFACT_ID = "SAMLart";
     public static final String IDP_SESSION = "IdPSession";
 
     public static final String HTTP_POST = "POST";
@@ -38,6 +39,12 @@ public class SSOConstants {
     public static final String LOGOUT_USERNAME = "logoutUsername";
     public static final String LOGOUT_SESSION_INDEX = "logoutSessionIndex";
     public static final String AUTHN_CONTEXT_CLASS_REF = "AuthnContextClassRef";
+
+    public static final String SOAP_ACTION_PARAM_KEY = "SOAPAction";
+    public static final String ACCEPT_PARAM_KEY = "Accept";
+    public static final String CONTENT_TYPE_PARAM_KEY = "Content-Type";
+    public static final String PRAGMA_PARAM_KEY = "Pragma";
+    public static final String CACHE_CONTROL_PARAM_KEY = "Cache-Control";
 
     public class StatusCodes {
         private StatusCodes() {
@@ -55,7 +62,11 @@ public class SSOConstants {
 
         public static final String KEY_ALIAS = "Security.KeyStore.KeyAlias";
         public static final String KEY_PASSWORD = "Security.KeyStore.KeyPassword";
+        public static final String SECURITY_KEYSTORE_LOCATION = "Security.KeyStore.Location";
+        public static final String SECURITY_KEYSTORE_TYPE = "Security.KeyStore.Type";
+
         public static final String SAML2_SSO_MANAGER = "SAML2SSOManager";
         public static final String SAML_SSO_ACS_URL = "SAMLSSOAssertionConsumerUrl";
+
     }
 }

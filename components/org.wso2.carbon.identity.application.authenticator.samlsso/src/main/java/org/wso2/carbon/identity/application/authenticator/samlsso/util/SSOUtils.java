@@ -395,6 +395,78 @@ public class SSOUtils {
         return false;
     }
 
+    public static boolean isArtifactResolveReqSigned(Map<String, String> properties) {
+        if (properties != null) {
+            String prop = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED);
+            if (StringUtils.isNotBlank((prop))) {
+                return Boolean.parseBoolean(prop);
+            }
+        }
+        return false;
+    }
+
+    public static boolean isArtifactResponseSigned(Map<String, String> properties) {
+        if (properties != null) {
+            String prop = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED);
+            if (StringUtils.isNotBlank((prop))) {
+                return Boolean.parseBoolean(prop);
+            }
+        }
+        return false;
+    }
+
+    public static String getArtifactResolveUrl(Map<String, String> properties) {
+        String artifactResolveUrl = null;
+        if (properties != null) {
+            artifactResolveUrl = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.ARTIFACT_RESOLVE_URL);
+            if(log.isDebugEnabled()) {
+                log.debug("Artifact Resolution Service Url: " + artifactResolveUrl);
+            }
+        }
+        return artifactResolveUrl;
+    }
+
+    public static String getSignatureAlgorithm(Map<String, String> properties) {
+        String signatureAlgo = null;
+        if (properties != null) {
+            signatureAlgo = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
+        }
+        if (StringUtils.isEmpty(signatureAlgo)) {
+            signatureAlgo = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
+        }
+        signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms().get(signatureAlgo);
+        if(log.isDebugEnabled()) {
+            log.debug("Signature Algorithm: " + signatureAlgo);
+        }
+        return signatureAlgo;
+    }
+
+    public static String getDigestAlgorithm(Map<String, String> properties) {
+        String digestAlgo = null;
+        if (properties != null) {
+            digestAlgo = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
+        }
+        if (StringUtils.isEmpty(digestAlgo)) {
+            digestAlgo = IdentityApplicationConstants.XML.DigestAlgorithm.SHA1;
+        }
+        digestAlgo = IdentityApplicationManagementUtil.getXMLDigestAlgorithms().get(digestAlgo);
+        if(log.isDebugEnabled()) {
+            log.debug("Digest Algorithm: " + digestAlgo);
+        }
+        return digestAlgo;
+    }
+
+    public static String getSPEntityID(Map<String, String> properties) {
+        String spEntityID = null;
+        if (properties != null) {
+            spEntityID = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID);
+            if(log.isDebugEnabled()) {
+                log.debug("SP Entity ID: " + spEntityID);
+            }
+        }
+        return spEntityID;
+    }
+
     public static Map<String, String> getQueryMap(String query) {
 
         Map<String, String> map = new HashMap<>();

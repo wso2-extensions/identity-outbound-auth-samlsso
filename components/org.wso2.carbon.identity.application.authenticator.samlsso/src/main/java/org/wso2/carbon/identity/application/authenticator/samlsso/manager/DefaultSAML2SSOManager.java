@@ -25,10 +25,12 @@ import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
+import org.opensaml.common.SAMLObject;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.common.Extensions;
 import org.opensaml.saml2.common.impl.ExtensionsBuilder;
+import org.opensaml.saml2.core.ArtifactResponse;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
@@ -51,6 +53,8 @@ import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.saml2.core.RequestedAuthnContext;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.SessionIndex;
+import org.opensaml.saml2.core.Status;
+import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
 import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
@@ -59,6 +63,7 @@ import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
 import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
 import org.opensaml.saml2.core.impl.SessionIndexBuilder;
+import org.opensaml.saml2.core.impl.StatusCodeImpl;
 import org.opensaml.saml2.encryption.Decrypter;
 import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.ConfigurationException;
@@ -88,8 +93,9 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOArtifactResolutionService;
+import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
@@ -126,6 +132,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import static org.opensaml.saml2.core.StatusCode.SUCCESS_URI;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
@@ -327,9 +334,58 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     public void processResponse(HttpServletRequest request) throws SAMLSSOException {
 
         doBootstrap();
+        if (isSAMLArtifactResponse(request)) {
+            processArtifactResponse(request);
+        } else {
+            processSAMLResponse(request);
+        }
+    }
+
+    private void processArtifactResponse(HttpServletRequest request) throws SAMLSSOException {
+
+        SAMLSSOArtifactResolutionService artifactResolutionService = new SAMLSSOArtifactResolutionService(properties,
+                tenantDomain);
+        try {
+            String samlResponse = artifactResolutionService.getSAMLArtifactResolveResponse(request.getParameter(
+                    SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID));
+
+            ArtifactResponse artifactResponse = (ArtifactResponse) unmarshall(samlResponse);
+            validateArtifactResponse(artifactResponse);
+
+            String code;
+            for (XMLObject child : artifactResponse.getOrderedChildren()) {
+                if (child instanceof Response || child instanceof LogoutResponse) {
+                    validateResponseFormat(child);
+
+                    for (XMLObject responseElement : child.getOrderedChildren()) {
+                        if (responseElement instanceof Status) {
+                            for (XMLObject statusElement : responseElement.getOrderedChildren()) {
+                                code = getStatusCode(statusElement);
+                                if (SUCCESS_URI.equals(code)) {
+                                    executeSAMLReponse(request, child);
+                                } else {
+                                    throw new SAMLSSOException("Received an error SAML response.");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (ArtifactResolutionException e) {
+            throw new SAMLSSOException("Error when getting the Artifact Response.", e);
+        }
+    }
+
+    private void processSAMLResponse(HttpServletRequest request) throws SAMLSSOException {
+
         String decodedResponse = new String(Base64.decode(request.getParameter(
                 SSOConstants.HTTP_POST_PARAM_SAML2_RESP)));
         XMLObject samlObject = unmarshall(decodedResponse);
+        validateResponseFormat(samlObject);
+        executeSAMLReponse(request, samlObject);
+    }
+
+    private void executeSAMLReponse(HttpServletRequest request, XMLObject samlObject) throws SAMLSSOException {
         if (samlObject instanceof LogoutResponse) {
             //This is a SAML response for a single logout request from the SP
             // TODO need to change the API of this method to prevent unmarshalling twice.
@@ -339,6 +395,21 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } else {
             throw new SAMLSSOException("Unable to process unknown SAML object type.");
         }
+    }
+
+    private String getStatusCode(XMLObject statusCode) {
+        String code;
+        if (statusCode.hasChildren()) {
+            code = ((StatusCodeImpl) statusCode.getOrderedChildren().get(0)).getValue();
+        } else {
+            code = ((StatusCode) statusCode).getValue();
+        }
+        return code;
+    }
+
+    private boolean isSAMLArtifactResponse(HttpServletRequest request) {
+
+        return request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID) != null;
     }
 
     protected AuthnRequest getAuthnRequest(AuthenticationContext context) throws SAMLSSOException {
@@ -356,6 +427,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             } else {
                 xmlObject = unmarshall(SSOUtils.decode(samlRequest));
             }
+            validateResponseFormat(xmlObject);
             if (xmlObject instanceof AuthnRequest) {
                 authnRequest = (AuthnRequest) xmlObject;
             }
@@ -378,6 +450,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 } else {
                     xmlObject = unmarshall(SSOUtils.decode(samlRequest));
                 }
+                validateResponseFormat(xmlObject);
                 if (xmlObject instanceof AuthnRequest) {
                     AuthnRequest authnRequest = (AuthnRequest) xmlObject;
                     Extensions oldExtensions = authnRequest.getExtensions();
@@ -429,6 +502,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             samlObject = unmarshall(new String(Base64.decode(request.getParameter(
                     SSOConstants.HTTP_POST_PARAM_SAML2_RESP))));
         }
+        validateResponseFormat(samlObject);
         if (samlObject instanceof LogoutRequest) {
             LogoutRequest logoutRequest = (LogoutRequest) samlObject;
             String sessionIndex = logoutRequest.getSessionIndexes().get(0).getSessionIndex();
@@ -833,27 +907,27 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             Element element = document.getDocumentElement();
             UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
-            response = unmarshaller.unmarshall(element);
-
-            // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
-            NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
-            if (responseList.getLength() > 0) {
-                log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
-                throw new SAMLSSOException("Error occurred while processing SAML2 response.");
-            }
-
-            // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
-            NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
-            if (assertionList.getLength() > 1) {
-                log.error("Invalid schema for the SAML2 response. Multiple Assertion elements found.");
-                throw new SAMLSSOException("Error occurred while processing SAML2 response.");
-            }
-
-            return response;
+            return unmarshaller.unmarshall(element);
         } catch (ParserConfigurationException | UnmarshallingException | SAXException | IOException e) {
             throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
         }
 
+    }
+
+    private void validateResponseFormat(XMLObject response) throws SAMLSSOException {
+        // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
+        NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
+        if (responseList != null && responseList.getLength() > 0) {
+            log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
+            throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+        }
+
+        // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
+        NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
+        if (assertionList != null && assertionList.getLength() > 1) {
+            log.error("Invalid schema for the SAML2 response. Multiple Assertion elements found.");
+            throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+        }
     }
 
     /**
@@ -1025,6 +1099,45 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }
 
+    /**
+     * Validate SAML2 Artifact Response
+     *
+     * @param artifactResponse SAML2 Artifact Response
+     * @throws SAMLSSOException
+     */
+    private void validateArtifactResponse(ArtifactResponse artifactResponse) throws SAMLSSOException {
+
+        if (artifactResponse == null) {
+            throw new SAMLSSOException("Did not receive an artifact response message.");
+        }
+
+        SAMLObject message = artifactResponse.getMessage();
+        if (message == null) {
+            throw new SAMLSSOException("No inbound message in artifact response message.");
+        }
+
+        validateSignature(artifactResponse);
+    }
+
+    /**
+     * Validate the signature of a SAML2 Artifact Response
+     *
+     * @param artifactResponse SAML2 Artifact Response
+     * @throws SAMLSSOException
+     */
+    private void validateSignature(ArtifactResponse artifactResponse) throws SAMLSSOException {
+
+        if (SSOUtils.isArtifactResponseSigned(properties)) {
+
+            XMLObject signature = artifactResponse.getSignature();
+            if (signature == null) {
+                throw new SAMLSSOException("Artifact Response signing is enabled, but signature element " +
+                        "not found in Artifact Response element.");
+            } else {
+                validateSignature(signature);
+            }
+        }
+    }
 
     /**
      * Validates the XML Signature element
