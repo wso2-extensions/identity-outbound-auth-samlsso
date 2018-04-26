@@ -107,22 +107,10 @@ public class SAMLSSOArtifactResolutionService {
         this.serverConfig = ServerConfiguration.getInstance();
         artifactResolveUrl = authenticatorProperties.get(SSOConstants.ServerConfig.ARTIFACT_RESOLVE_URL);
         artifactResolveIssuer = authenticatorProperties.get(SSOConstants.ServerConfig.ARTIFACT_RESOLVE_ISSUER);
-
-        // get Signature Algorithm
-        String signatureAlgoProp = authenticatorProperties
-                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
-        if (StringUtils.isEmpty(signatureAlgoProp)) {
-            signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
-        }
-        signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms().get(signatureAlgoProp);
-
-        // get Digest Algorithm
-        String digestAlgoProp = authenticatorProperties
-                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
-        if (StringUtils.isEmpty(digestAlgoProp)) {
-            digestAlgoProp = IdentityApplicationConstants.XML.DigestAlgorithm.SHA1;
-        }
-        digestAlgo = IdentityApplicationManagementUtil.getXMLDigestAlgorithms().get(digestAlgoProp);
+        signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms()
+                .get(getSignatureAlgoProperty(authenticatorProperties));
+        digestAlgo = IdentityApplicationManagementUtil.getXMLDigestAlgorithms()
+                .get(getDigestAlogProperty(authenticatorProperties));
     }
 
     /**
@@ -135,16 +123,9 @@ public class SAMLSSOArtifactResolutionService {
      */
     public String getSAMLArtifactResolveResponse(String samlArt) throws ArtifactResolutionException {
 
+        validateArtifactResolveConfig();
         SSLSocketFactory sslSocketFactory = createSSLSocketFactory(serverConfig);
         SAMLSSOSoapMessageService soapMessageService = new SAMLSSOSoapMessageService(sslSocketFactory);
-
-        if (StringUtils.isEmpty(artifactResolveUrl)) {
-            throw new ArtifactResolutionException("Mandatory property artifactResolveUrl is empty");
-        }
-        if (StringUtils.isEmpty(artifactResolveIssuer)) {
-            throw new ArtifactResolutionException("Mandatory property artifactResolveIssuer is empty");
-        }
-
         ArtifactResolve artifactResolve = createArtifactResolveObject(samlArt, artifactResolveIssuer);
         Envelope envelope = soapMessageService.buildSOAPMessage(artifactResolve);
         Element envelopeElement = marshallMessage(envelope);
@@ -153,6 +134,20 @@ public class SAMLSSOArtifactResolutionService {
             log.debug("Writing SOAP Message:\n" + XMLHelper.prettyPrintXML(envelopeElement));
         }
 
+        Proxy proxy = getArtifactResolveProxy();
+        //send the soap message
+        String soapResponse = soapMessageService.sendSOAP(XMLHelper.nodeToString(envelopeElement), artifactResolveUrl, proxy);
+        Pattern p = Pattern.compile("<samlp:ArtifactResponse.+</samlp:ArtifactResponse>", Pattern.DOTALL);
+        Matcher m = p.matcher(soapResponse);
+
+        if (m.find()) {
+            return m.group(0);
+        } else {
+            throw new ArtifactResolutionException("No valid SoapResponse");
+        }
+    }
+
+    private Proxy getArtifactResolveProxy() {
         Proxy proxy = null;
         if (authenticatorConfig != null) {
 
@@ -163,16 +158,15 @@ public class SAMLSSOArtifactResolutionService {
                 proxy = new Proxy(Proxy.Type.HTTP, proxyInet);
             }
         }
+        return proxy;
+    }
 
-        //send the soap message
-        String soapResponse = soapMessageService.sendSOAP(XMLHelper.nodeToString(envelopeElement), artifactResolveUrl, proxy);
-        Pattern p = Pattern.compile("<samlp:ArtifactResponse.+</samlp:ArtifactResponse>", Pattern.DOTALL);
-        Matcher m = p.matcher(soapResponse);
-
-        if (m.find()) {
-            return m.group(0);
-        } else {
-            throw new ArtifactResolutionException("No valid SoapResponse");
+    private void validateArtifactResolveConfig() throws ArtifactResolutionException {
+        if (StringUtils.isEmpty(artifactResolveUrl)) {
+            throw new ArtifactResolutionException("Mandatory property artifactResolveUrl is empty");
+        }
+        if (StringUtils.isEmpty(artifactResolveIssuer)) {
+            throw new ArtifactResolutionException("Mandatory property artifactResolveIssuer is empty");
         }
     }
 
@@ -356,5 +350,25 @@ public class SAMLSSOArtifactResolutionService {
         } catch (MarshallingException e) {
             throw new ArtifactResolutionException("Encountered error marshalling message into its DOM representation", e);
         }
+    }
+
+    private String getSignatureAlgoProperty(Map<String, String> authenticatorProperties) {
+        // get Signature Algorithm
+        String signatureAlgoProp = authenticatorProperties
+                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
+        if (StringUtils.isEmpty(signatureAlgoProp)) {
+            signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
+        }
+        return signatureAlgoProp;
+    }
+
+    private String getDigestAlogProperty(Map<String, String> authenticatorProperties) {
+        // get Digest Algorithm
+        String digestAlgoProp = authenticatorProperties
+                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
+        if (StringUtils.isEmpty(digestAlgoProp)) {
+            digestAlgoProp = IdentityApplicationConstants.XML.DigestAlgorithm.SHA1;
+        }
+        return digestAlgoProp;
     }
 }

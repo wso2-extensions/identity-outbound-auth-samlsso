@@ -84,37 +84,9 @@ public class SAMLSSOSoapMessageService {
     public String sendSOAP(String sMessage, String sUrl, Proxy proxy) throws ArtifactResolutionException
     {
         StringBuilder sb = new StringBuilder();
-        URL url = null;
-        HttpURLConnection connection = null;
-        HttpsURLConnection sslConnection = null;
-
         try {
-            url = new URL(sUrl);
-            if (sslSocketFactory != null && url.getProtocol().equalsIgnoreCase(HTTPS) ) {
-                if (proxy != null) {
-                    sslConnection = (HttpsURLConnection) url.openConnection(proxy);
-                } else {
-                    sslConnection = (HttpsURLConnection) url.openConnection();
-                }
-                sslConnection.setSSLSocketFactory(sslSocketFactory);
-                connection = sslConnection;
-            } else {
-                connection = (HttpURLConnection) url.openConnection();
-            }
-
-            // enable sending to connection
-            connection.setDoOutput(true);
-
-            // set mime headers
-            connection.setRequestProperty("Content-Type", CONTENT_TYPE);
-            connection.setRequestProperty("Accept", CONTENT_TYPE);
-            StringBuilder sbSOAPAction = new StringBuilder("\"");
-            sbSOAPAction.append(sUrl).append("\"");
-            connection.setRequestProperty("SOAPAction", sbSOAPAction.toString());
-            log.info("Send: Url=" + sUrl + " ContentType=" + CONTENT_TYPE + " Action=" + sbSOAPAction);
-
-            connection.setRequestProperty("Pragma", "no-cache");
-            connection.setRequestProperty("Cache-Control", "no-cache, no-store");
+            HttpURLConnection connection = getHttpConnection(sUrl, proxy);
+            setHttpConnectionProperties(sUrl, connection);
             // write message to output
             PrintStream osOutput = new PrintStream((connection).getOutputStream());
             osOutput.println(sMessage);
@@ -139,12 +111,46 @@ public class SAMLSSOSoapMessageService {
             }
         }
         catch (UnknownHostException eUH) {
-            throw new ArtifactResolutionException("Unknown targeted host: " + url.toString() , eUH);
+            throw new ArtifactResolutionException("Unknown targeted host: " + sUrl , eUH);
         }
         catch (IOException eIO) {
-            throw new ArtifactResolutionException("Could not open connection with host:" + url.toString(), eIO);
+            throw new ArtifactResolutionException("Could not open connection with host:" + sUrl, eIO);
         }
         return sb.toString();
+    }
+
+    private void setHttpConnectionProperties(String sUrl, HttpURLConnection connection) {
+        // enable sending to connection
+        connection.setDoOutput(true);
+
+        // set mime headers
+        connection.setRequestProperty("Content-Type", CONTENT_TYPE);
+        connection.setRequestProperty("Accept", CONTENT_TYPE);
+        StringBuilder sbSOAPAction = new StringBuilder("\"");
+        sbSOAPAction.append(sUrl).append("\"");
+        connection.setRequestProperty("SOAPAction", sbSOAPAction.toString());
+        log.info("Send: Url=" + sUrl + " ContentType=" + CONTENT_TYPE + " Action=" + sbSOAPAction);
+
+        connection.setRequestProperty("Pragma", "no-cache");
+        connection.setRequestProperty("Cache-Control", "no-cache, no-store");
+    }
+
+    private HttpURLConnection getHttpConnection(String sUrl, Proxy proxy) throws IOException {
+        URL url = new URL(sUrl);
+        HttpURLConnection connection = null;
+        HttpsURLConnection sslConnection = null;
+        if (sslSocketFactory != null && url.getProtocol().equalsIgnoreCase(HTTPS) ) {
+            if (proxy != null) {
+                sslConnection = (HttpsURLConnection) url.openConnection(proxy);
+            } else {
+                sslConnection = (HttpsURLConnection) url.openConnection();
+            }
+            sslConnection.setSSLSocketFactory(sslSocketFactory);
+            connection = sslConnection;
+        } else {
+            connection = (HttpURLConnection) url.openConnection();
+        }
+        return connection;
     }
 
     /**
