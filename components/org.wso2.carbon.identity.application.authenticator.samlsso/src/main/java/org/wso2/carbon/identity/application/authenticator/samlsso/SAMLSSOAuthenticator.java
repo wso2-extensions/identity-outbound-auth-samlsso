@@ -56,6 +56,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_RESP;
+
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements FederatedApplicationAuthenticator {
 
     private static final long serialVersionUID = -8097512332218044859L;
@@ -72,7 +75,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             log.trace("Inside canHandle()");
         }
 
-        return request.getParameter("SAMLResponse") != null;
+        return request.getParameter(HTTP_POST_PARAM_SAML2_RESP) != null ||
+                request.getParameter(HTTP_POST_PARAM_SAML2_ARTIFACT_ID) != null;
 
     }
 

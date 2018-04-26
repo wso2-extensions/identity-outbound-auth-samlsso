@@ -29,6 +29,7 @@ import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.common.Extensions;
 import org.opensaml.saml2.common.impl.ExtensionsBuilder;
+import org.opensaml.saml2.core.ArtifactResponse;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
@@ -51,6 +52,8 @@ import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.saml2.core.RequestedAuthnContext;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.SessionIndex;
+import org.opensaml.saml2.core.Status;
+import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
 import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
@@ -59,6 +62,7 @@ import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
 import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
 import org.opensaml.saml2.core.impl.SessionIndexBuilder;
+import org.opensaml.saml2.core.impl.StatusCodeImpl;
 import org.opensaml.saml2.encryption.Decrypter;
 import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.ConfigurationException;
@@ -88,8 +92,9 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOArtifactResolutionService;
+import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
@@ -126,6 +131,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import static org.opensaml.saml2.core.StatusCode.AUTHN_FAILED_URI;
+import static org.opensaml.saml2.core.StatusCode.SUCCESS_URI;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
@@ -325,19 +332,57 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     @Override
     public void processResponse(HttpServletRequest request) throws SAMLSSOException {
-
+        String samlArt = request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID);
         doBootstrap();
-        String decodedResponse = new String(Base64.decode(request.getParameter(
-                SSOConstants.HTTP_POST_PARAM_SAML2_RESP)));
-        XMLObject samlObject = unmarshall(decodedResponse);
-        if (samlObject instanceof LogoutResponse) {
-            //This is a SAML response for a single logout request from the SP
-            // TODO need to change the API of this method to prevent unmarshalling twice.
-            doSLO(request);
-        } else if (samlObject instanceof Response) {
-            processSSOResponse(request, (Response) samlObject);
+        if (samlArt != null) {
+            SAMLSSOArtifactResolutionService artifactResolutionService = new SAMLSSOArtifactResolutionService(properties);
+            String samlResponse;
+            try {
+                samlResponse = artifactResolutionService.getSAMLArtifactResolveResponse(samlArt);
+            } catch (ArtifactResolutionException e) {
+                throw new SAMLSSOException("Error when getting the ArtifactResolve response", e);
+            }
+            ArtifactResponse artifactResponse = (ArtifactResponse) unmarshall(samlResponse);
+            String code;
+
+            for (XMLObject child : artifactResponse.getOrderedChildren()) {
+                if (child instanceof Response) {
+                    validateResponseFormat(child);
+                    for (XMLObject status : child.getOrderedChildren()) {
+                        if (status instanceof Status) {
+                            for (XMLObject statusCode : status.getOrderedChildren()) {
+                                if (statusCode.hasChildren()) {
+                                    code = ((StatusCodeImpl) statusCode.getOrderedChildren().get(0)).getValue();
+                                } else {
+                                    code = ((StatusCode) statusCode).getValue();
+                                }
+
+                                if (SUCCESS_URI.equals(code)) {
+                                    processSSOResponse(request, (Response) child);
+                                    return;
+                                } else {
+                                    throw new SAMLSSOException("Received an error SAML SSO response.");
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
         } else {
-            throw new SAMLSSOException("Unable to process unknown SAML object type.");
+            String decodedResponse = new String(Base64.decode(request.getParameter(
+                    SSOConstants.HTTP_POST_PARAM_SAML2_RESP)));
+            XMLObject samlObject = unmarshall(decodedResponse);
+            validateResponseFormat(samlObject);
+            if (samlObject instanceof LogoutResponse) {
+                //This is a SAML response for a single logout request from the SP
+                // TODO need to change the API of this method to prevent unmarshalling twice.
+                doSLO(request);
+            } else if (samlObject instanceof Response) {
+                processSSOResponse(request, (Response) samlObject);
+            } else {
+                throw new SAMLSSOException("Unable to process unknown SAML object type.");
+            }
         }
     }
 
@@ -356,6 +401,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             } else {
                 xmlObject = unmarshall(SSOUtils.decode(samlRequest));
             }
+            validateResponseFormat(xmlObject);
             if (xmlObject instanceof AuthnRequest) {
                 authnRequest = (AuthnRequest) xmlObject;
             }
@@ -378,6 +424,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 } else {
                     xmlObject = unmarshall(SSOUtils.decode(samlRequest));
                 }
+                validateResponseFormat(xmlObject);
                 if (xmlObject instanceof AuthnRequest) {
                     AuthnRequest authnRequest = (AuthnRequest) xmlObject;
                     Extensions oldExtensions = authnRequest.getExtensions();
@@ -429,6 +476,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             samlObject = unmarshall(new String(Base64.decode(request.getParameter(
                     SSOConstants.HTTP_POST_PARAM_SAML2_RESP))));
         }
+        validateResponseFormat(samlObject);
         if (samlObject instanceof LogoutRequest) {
             LogoutRequest logoutRequest = (LogoutRequest) samlObject;
             String sessionIndex = logoutRequest.getSessionIndexes().get(0).getSessionIndex();
@@ -833,27 +881,27 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             Element element = document.getDocumentElement();
             UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
-            response = unmarshaller.unmarshall(element);
-
-            // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
-            NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
-            if (responseList.getLength() > 0) {
-                log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
-                throw new SAMLSSOException("Error occurred while processing SAML2 response.");
-            }
-
-            // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
-            NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
-            if (assertionList.getLength() > 1) {
-                log.error("Invalid schema for the SAML2 response. Multiple Assertion elements found.");
-                throw new SAMLSSOException("Error occurred while processing SAML2 response.");
-            }
-
-            return response;
+            return unmarshaller.unmarshall(element);
         } catch (ParserConfigurationException | UnmarshallingException | SAXException | IOException e) {
             throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
         }
 
+    }
+
+    private void validateResponseFormat(XMLObject response) throws SAMLSSOException {
+        // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
+        NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
+        if (responseList.getLength() > 0) {
+            log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
+            throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+        }
+
+        // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
+        NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
+        if (assertionList.getLength() > 1) {
+            log.error("Invalid schema for the SAML2 response. Multiple Assertion elements found.");
+            throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+        }
     }
 
     /**
