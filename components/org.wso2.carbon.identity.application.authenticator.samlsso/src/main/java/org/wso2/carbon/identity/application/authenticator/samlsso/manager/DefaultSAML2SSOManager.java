@@ -258,7 +258,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return idpUrl;
     }
 
-
     /**
      * @param request
      * @param isLogout
@@ -536,7 +535,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 throw new SAMLSSOException("Single Logout is enabled but IdP Session ID not found in SAML Assertion");
             }
             request.getSession().setAttribute(SSOConstants.IDP_SESSION, sessionId);
-            request.getSession().setAttribute(SSOConstants.LOGOUT_USERNAME, nameQualifier);
+            request.getSession().setAttribute(SSOConstants.NAME_QUALIFIER, nameQualifier);
             request.getSession().setAttribute(SSOConstants.SP_NAME_QUALIFIER, spNameQualifier);
         }
 
@@ -608,7 +607,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         DateTime issueInstant = new DateTime();
 
-		/* Creation of AuthRequestObject */
+        /* Creation of AuthRequestObject */
         AuthnRequestBuilder authRequestBuilder = new AuthnRequestBuilder();
         AuthnRequest authRequest = authRequestBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:protocol",
                 "AuthnRequest", "samlp");
@@ -699,7 +698,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 
     private RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws SAMLSSOException {
-        
+
         /* AuthnContext */
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = null;
         RequestedAuthnContext requestedAuthnContext = null;
@@ -993,7 +992,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }
 
-
     /**
      * Validate the signature of a SAML2 Response and Assertion
      *
@@ -1025,7 +1023,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }
 
-
     /**
      * Validates the XML Signature element
      *
@@ -1033,6 +1030,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @throws SAMLSSOException
      */
     private void validateSignature(XMLObject signature) throws SAMLSSOException {
+
         SignatureImpl signImpl = (SignatureImpl) signature;
         try {
             SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
