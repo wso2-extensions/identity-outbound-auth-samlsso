@@ -212,8 +212,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String sessionIndex = (String) request.getSession().getAttribute(SSOConstants.LOGOUT_SESSION_INDEX);
             String nameQualifier = (String) request.getSession().getAttribute(SSOConstants.NAME_QUALIFIER);
             String spNameQualifier = (String) request.getSession().getAttribute(SSOConstants.SP_NAME_QUALIFIER);
+            String nameIdFormat = (String) request.getSession().getAttribute(SSOConstants.NAME_ID_FORMAT);
 
-            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier);
+            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier, nameIdFormat);
         }
         String idpUrl = null;
         boolean isSignAuth2SAMLUsingSuperTenant = false;
@@ -264,7 +265,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
         return idpUrl;
     }
-
 
     /**
      * @param request
@@ -319,8 +319,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String sessionIndex = (String) request.getSession().getAttribute(SSOConstants.LOGOUT_SESSION_INDEX);
             String nameQualifier = (String) request.getSession().getAttribute(SSOConstants.NAME_QUALIFIER);
             String spNameQualifier = (String) request.getSession().getAttribute(SSOConstants.SP_NAME_QUALIFIER);
+            String nameIdFormat = (String) request.getSession().getAttribute(SSOConstants.NAME_ID_FORMAT);
 
-            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier);
+            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier, nameIdFormat);
             if (SSOUtils.isLogoutRequestSigned(properties)) {
                 SSOUtils.setSignature(requestMessage, signatureAlgo, digestAlgo, includeCert,
                         new X509CredentialImpl(context.getTenantDomain(), null));
@@ -564,6 +565,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String subject = null;
         String nameQualifier = null;
         String spNameQualifier = null;
+        String nameIdFormat = null;
         if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
             subject = assertion.getSubject().getNameID().getValue();
         }
@@ -575,6 +577,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         request.getSession().setAttribute("username", subject); // get the subject
         nameQualifier = assertion.getSubject().getNameID().getNameQualifier();
         spNameQualifier = assertion.getSubject().getNameID().getSPNameQualifier();
+        nameIdFormat = assertion.getSubject().getNameID().getFormat();
 
         request.getSession(false).setAttribute("samlssoAttributes", getAssertionStatements(assertion));
 
@@ -610,13 +613,15 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 throw new SAMLSSOException("Single Logout is enabled but IdP Session ID not found in SAML Assertion");
             }
             request.getSession().setAttribute(SSOConstants.IDP_SESSION, sessionId);
-            request.getSession().setAttribute(SSOConstants.LOGOUT_USERNAME, nameQualifier);
+            request.getSession().setAttribute(SSOConstants.NAME_QUALIFIER, nameQualifier);
             request.getSession().setAttribute(SSOConstants.SP_NAME_QUALIFIER, spNameQualifier);
+            request.getSession().setAttribute(SSOConstants.NAME_ID_FORMAT, nameIdFormat);
         }
 
     }
 
-    private LogoutRequest buildLogoutRequest(String user, String sessionIndexStr, String idpUrl, String nameQualifier, String spNameQualifier)
+    private LogoutRequest buildLogoutRequest(String user, String sessionIndexStr, String idpUrl, String
+            nameQualifier, String spNameQualifier, String nameIdFormat)
             throws SAMLSSOException {
 
         LogoutRequest logoutReq = new LogoutRequestBuilder().buildObject();
@@ -642,11 +647,17 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         logoutReq.setIssuer(issuer);
 
         NameID nameId = new NameIDBuilder().buildObject();
-        String includeNameIDPolicyProp = properties
-                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
-        if (StringUtils.isEmpty(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
-            nameId.setFormat(NameIDType.ENTITY);
+
+        if (StringUtils.isNotBlank(nameIdFormat)) {
+            nameId.setFormat(nameIdFormat);
+        } else {
+            String includeNameIDPolicyProp = properties
+                    .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
+            if (StringUtils.isBlank(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
+                nameId.setFormat(NameIDType.UNSPECIFIED);
+            }
         }
+
         nameId.setValue(user);
         nameId.setNameQualifier(nameQualifier);
         nameId.setSPNameQualifier(spNameQualifier);
@@ -682,7 +693,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         DateTime issueInstant = new DateTime();
 
-		/* Creation of AuthRequestObject */
+        /* Creation of AuthRequestObject */
         AuthnRequestBuilder authRequestBuilder = new AuthnRequestBuilder();
         AuthnRequest authRequest = authRequestBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:protocol",
                 "AuthnRequest", "samlp");
@@ -773,7 +784,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 
     private RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws SAMLSSOException {
-        
+
         /* AuthnContext */
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = null;
         RequestedAuthnContext requestedAuthnContext = null;
@@ -1067,7 +1078,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }
 
-
     /**
      * Validate the signature of a SAML2 Response and Assertion
      *
@@ -1146,6 +1156,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @throws SAMLSSOException
      */
     private void validateSignature(XMLObject signature) throws SAMLSSOException {
+
         SignatureImpl signImpl = (SignatureImpl) signature;
         try {
             SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();

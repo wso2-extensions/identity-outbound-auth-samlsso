@@ -39,6 +39,7 @@ public class SSOConstants {
     public static final String LOGOUT_USERNAME = "logoutUsername";
     public static final String LOGOUT_SESSION_INDEX = "logoutSessionIndex";
     public static final String AUTHN_CONTEXT_CLASS_REF = "AuthnContextClassRef";
+    public static final String NAME_ID_FORMAT = "nameIdFormat";
 
     public static final String SOAP_ACTION_PARAM_KEY = "SOAPAction";
     public static final String ACCEPT_PARAM_KEY = "Accept";
