@@ -205,8 +205,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String sessionIndex = (String) request.getSession().getAttribute(SSOConstants.LOGOUT_SESSION_INDEX);
             String nameQualifier = (String) request.getSession().getAttribute(SSOConstants.NAME_QUALIFIER);
             String spNameQualifier = (String) request.getSession().getAttribute(SSOConstants.SP_NAME_QUALIFIER);
+            String nameIdFormat = (String) request.getSession().getAttribute(SSOConstants.NAME_ID_FORMAT);
 
-            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier);
+            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier, nameIdFormat);
         }
         String idpUrl = null;
         boolean isSignAuth2SAMLUsingSuperTenant = false;
@@ -311,8 +312,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String sessionIndex = (String) request.getSession().getAttribute(SSOConstants.LOGOUT_SESSION_INDEX);
             String nameQualifier = (String) request.getSession().getAttribute(SSOConstants.NAME_QUALIFIER);
             String spNameQualifier = (String) request.getSession().getAttribute(SSOConstants.SP_NAME_QUALIFIER);
+            String nameIdFormat = (String) request.getSession().getAttribute(SSOConstants.NAME_ID_FORMAT);
 
-            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier);
+            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier, nameIdFormat);
             if (SSOUtils.isLogoutRequestSigned(properties)) {
                 SSOUtils.setSignature(requestMessage, signatureAlgo, digestAlgo, includeCert,
                         new X509CredentialImpl(context.getTenantDomain(), null));
@@ -489,6 +491,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String subject = null;
         String nameQualifier = null;
         String spNameQualifier = null;
+        String nameIdFormat = null;
         if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
             subject = assertion.getSubject().getNameID().getValue();
         }
@@ -500,6 +503,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         request.getSession().setAttribute("username", subject); // get the subject
         nameQualifier = assertion.getSubject().getNameID().getNameQualifier();
         spNameQualifier = assertion.getSubject().getNameID().getSPNameQualifier();
+        nameIdFormat = assertion.getSubject().getNameID().getFormat();
 
         request.getSession(false).setAttribute("samlssoAttributes", getAssertionStatements(assertion));
 
@@ -537,11 +541,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             request.getSession().setAttribute(SSOConstants.IDP_SESSION, sessionId);
             request.getSession().setAttribute(SSOConstants.NAME_QUALIFIER, nameQualifier);
             request.getSession().setAttribute(SSOConstants.SP_NAME_QUALIFIER, spNameQualifier);
+            request.getSession().setAttribute(SSOConstants.NAME_ID_FORMAT, nameIdFormat);
         }
 
     }
 
-    private LogoutRequest buildLogoutRequest(String user, String sessionIndexStr, String idpUrl, String nameQualifier, String spNameQualifier)
+    private LogoutRequest buildLogoutRequest(String user, String sessionIndexStr, String idpUrl, String
+            nameQualifier, String spNameQualifier, String nameIdFormat)
             throws SAMLSSOException {
 
         LogoutRequest logoutReq = new LogoutRequestBuilder().buildObject();
@@ -567,11 +573,17 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         logoutReq.setIssuer(issuer);
 
         NameID nameId = new NameIDBuilder().buildObject();
-        String includeNameIDPolicyProp = properties
-                .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
-        if (StringUtils.isEmpty(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
-            nameId.setFormat(NameIDType.ENTITY);
+
+        if (StringUtils.isNotBlank(nameIdFormat)) {
+            nameId.setFormat(nameIdFormat);
+        } else {
+            String includeNameIDPolicyProp = properties
+                    .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
+            if (StringUtils.isBlank(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
+                nameId.setFormat(NameIDType.UNSPECIFIED);
+            }
         }
+
         nameId.setValue(user);
         nameId.setNameQualifier(nameQualifier);
         nameId.setSPNameQualifier(spNameQualifier);
