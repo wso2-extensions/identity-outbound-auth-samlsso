@@ -54,9 +54,8 @@ public class SAMLSSOArtifactResolutionService {
     }
 
     /**
-     * Create a SAML artifactResolveObject based on given samlArt parameter.
-     * This SAML ArtifactResolveObject is wrapped into a soapRequest.
-     * A two sided SSL connection is created and the soapRequest is send to an Artifact Resolve Endpoint.
+     * Create a SAML artifactResolveObject based on given samlArt parameter and wrapped into a soapRequest
+     * Send the soapRequest to the Artifact Resolve Endpoint
      *
      * @param samlArt SAML Artifact reference needed to get the actual data
      * @return ArtifactResponse

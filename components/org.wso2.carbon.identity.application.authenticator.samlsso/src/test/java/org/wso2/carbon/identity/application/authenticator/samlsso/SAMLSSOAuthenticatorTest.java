@@ -135,10 +135,26 @@ public class SAMLSSOAuthenticatorTest {
         assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
     }
 
+    @Test(priority = 1)
+    public void testCanHandleArtifactBinding() {
+
+        when(mockedHttpServletRequest.getParameter(TestConstants.HTTP_POST_PARAM_SAML_ART)).thenReturn(
+                TestConstants.HTTP_POST_PARAM_SAML_ART);
+        assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
+    }
+
     @Test(priority = 2)
     public void testCanHandleFalse() {
 
         when(mockedHttpServletRequest.getParameter("SAMLResponse")).thenReturn(null);
+        assertFalse(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Able to handle for invalid input");
+    }
+
+    @Test(priority = 2)
+    public void testCanHandleArtifactBindingFalse() {
+
+        when(mockedHttpServletRequest.getParameter(TestConstants.HTTP_POST_PARAM_SAML_ART)).thenReturn(null);
+        when(mockedHttpServletRequest.getParameter(TestConstants.HTTP_POST_PARAM_SAML2_RESP)).thenReturn(null);
         assertFalse(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Able to handle for invalid input");
     }
 

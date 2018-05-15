@@ -929,15 +929,15 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
         NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
         if (responseList != null && responseList.getLength() > 0) {
-            log.error("Invalid schema for the SAML2 response. Multiple Response elements found.");
-            throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+            throw new SAMLSSOException("Error occurred while processing SAML2 response. " +
+                    "Invalid schema for the SAML2 response. Multiple Response elements found.");
         }
 
         // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
         NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
         if (assertionList != null && assertionList.getLength() > 1) {
-            log.error("Invalid schema for the SAML2 response. Multiple Assertion elements found.");
-            throw new SAMLSSOException("Error occurred while processing SAML2 response.");
+            throw new SAMLSSOException("Error occurred while processing SAML2 response. " +
+                    "Invalid schema for the SAML2 response. Multiple Assertion elements found.");
         }
     }
 

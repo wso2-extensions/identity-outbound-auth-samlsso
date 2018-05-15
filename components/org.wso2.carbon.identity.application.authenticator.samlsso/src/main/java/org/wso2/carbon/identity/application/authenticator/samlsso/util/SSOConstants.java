@@ -63,11 +63,8 @@ public class SSOConstants {
 
         public static final String KEY_ALIAS = "Security.KeyStore.KeyAlias";
         public static final String KEY_PASSWORD = "Security.KeyStore.KeyPassword";
-        public static final String SECURITY_KEYSTORE_LOCATION = "Security.KeyStore.Location";
-        public static final String SECURITY_KEYSTORE_TYPE = "Security.KeyStore.Type";
 
         public static final String SAML2_SSO_MANAGER = "SAML2SSOManager";
         public static final String SAML_SSO_ACS_URL = "SAMLSSOAssertionConsumerUrl";
-
     }
 }
