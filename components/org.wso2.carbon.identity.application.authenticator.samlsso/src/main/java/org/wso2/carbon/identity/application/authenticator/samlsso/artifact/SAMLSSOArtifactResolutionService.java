@@ -23,12 +23,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
+import org.opensaml.common.SAMLObject;
 import org.opensaml.common.SAMLObjectBuilder;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Artifact;
 import org.opensaml.saml2.core.ArtifactResolve;
+import org.opensaml.saml2.core.ArtifactResponse;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.RequestAbstractType;
+import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.ws.soap.soap11.Envelope;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
@@ -41,6 +44,9 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * This class is used for handling SAML Artifact Binding
+ */
 public class SAMLSSOArtifactResolutionService {
 
     private static Log log = LogFactory.getLog(SAMLSSOArtifactResolutionService.class);
@@ -57,28 +63,28 @@ public class SAMLSSOArtifactResolutionService {
      * Create a SAML artifactResolveObject based on given samlArt parameter and wrapped into a soapRequest
      * Send the soapRequest to the Artifact Resolve Endpoint
      *
-     * @param samlArt SAML Artifact reference needed to get the actual data
+     * @param samlArtReceived SAML Artifact reference needed to get the actual data
      * @return ArtifactResponse
      */
-    public String getSAMLArtifactResolveResponse(String samlArt) throws ArtifactResolutionException {
+    public ArtifactResponse getSAMLArtifactResponse(String samlArtReceived) throws ArtifactResolutionException {
 
         validateArtifactResolveConfig();
-        ArtifactResolve artifactResolve = generateArtifactResolveReq(samlArt);
+        ArtifactResolve artifactResolve = generateArtifactResolveReq(samlArtReceived);
         return sendArtifactResolveRequest(artifactResolve);
     }
 
     /**
      * Create SAML ArtifactResolve Object and sign
      *
-     * @param sReceivedArtifact object reference to actual data
+     * @param samlArtReceived object reference to actual data
      * @return SAML ArtifactResolve Object
      */
-    public ArtifactResolve generateArtifactResolveReq(String sReceivedArtifact) throws ArtifactResolutionException {
+    public ArtifactResolve generateArtifactResolveReq(String samlArtReceived) throws ArtifactResolutionException {
 
-        ArtifactResolve artifactResolve = createArtifactResolveObject(sReceivedArtifact);
-        if (SSOUtils.isArtifactResolveReqSigned(authenticatorProperties)) {
-            if(log.isDebugEnabled()) {
-                log.debug("Signing artifact resolve request.");
+        ArtifactResolve artifactResolve = createArtifactResolveObject(samlArtReceived);
+        if (SSOUtils.isArtifactResolveReqSigningEnabled(authenticatorProperties)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Signing artifact resolve request for the received SAML artifact : " + samlArtReceived);
             }
             signArtifactResolveReq(artifactResolve);
         }
@@ -92,7 +98,7 @@ public class SAMLSSOArtifactResolutionService {
      * @return ArtifactResponse
      * @throws ArtifactResolutionException
      */
-    public String sendArtifactResolveRequest(ArtifactResolve artifactResolve) throws ArtifactResolutionException {
+    public ArtifactResponse sendArtifactResolveRequest(ArtifactResolve artifactResolve) throws ArtifactResolutionException {
 
         SAMLSSOSoapMessageService soapMessageService = new SAMLSSOSoapMessageService();
         Envelope envelope = soapMessageService.buildSOAPMessage(artifactResolve);
@@ -100,26 +106,64 @@ public class SAMLSSOArtifactResolutionService {
         try {
             envelopeElement = SSOUtils.marshall(envelope);
         } catch (SAMLSSOException e) {
-            throw new ArtifactResolutionException("Encountered error marshalling message into its DOM representation", e);
+            throw new ArtifactResolutionException("Encountered error marshalling SOAP message with artifact resolve, " +
+                    "into its DOM representation", e);
         }
 
         if (log.isDebugEnabled()) {
             log.debug("Artifact Resolve Request as a SOAP Message: " + envelopeElement);
         }
 
-        String artifactResponse = soapMessageService.sendSOAP(envelopeElement, SSOUtils.getArtifactResolveUrl
+        String artifactResponseString = soapMessageService.sendSOAP(envelopeElement, SSOUtils.getArtifactResolveUrl
                 (authenticatorProperties));
-        Pattern p = Pattern.compile("<samlp:ArtifactResponse.+</samlp:ArtifactResponse>", Pattern.DOTALL);
-        Matcher m = p.matcher(artifactResponse);
-
-        if (m.find()) {
+        Pattern pattern = Pattern.compile("<samlp:ArtifactResponse.+</samlp:ArtifactResponse>", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(artifactResponseString);
+        if (matcher.find()) {
+            String artifactResponseReceived = matcher.group(0);
             if (log.isDebugEnabled()) {
-                log.debug("Artifact Response: " + m.group(0));
+                log.debug("Artifact Response: " + artifactResponseReceived);
             }
-            return m.group(0);
+            try {
+                ArtifactResponse artifactResponse = (ArtifactResponse) SSOUtils.unmarshall(artifactResponseReceived);
+                if (isArtifactResponseValid(artifactResolve, artifactResponse)) {
+                    return artifactResponse;
+                } else {
+                    throw new ArtifactResolutionException("Artifact Response is not valid.");
+                }
+            } catch (SAMLSSOException e) {
+                throw new ArtifactResolutionException("Encountered error unmarshalling response into SAML2 object", e);
+            }
         } else {
             throw new ArtifactResolutionException("Didn't receive valid artifact response.");
         }
+    }
+
+    private boolean isArtifactResponseValid(ArtifactResolve artifactResolve, ArtifactResponse artifactResponse)
+            throws ArtifactResolutionException {
+
+        if (artifactResponse == null) {
+            throw new ArtifactResolutionException("Did not receive an artifact response message.");
+        }
+
+        String artifactResolveId = artifactResolve.getID();
+        String artifactResponseInResponseTo = artifactResponse.getInResponseTo();
+        if (!artifactResolveId.equals(artifactResponseInResponseTo)) {
+            throw new ArtifactResolutionException("Artifact resolve ID: " + artifactResolveId + " is not equal to " +
+                    "artifact response InResponseTo : " + artifactResponseInResponseTo);
+        }
+
+        String artifactResponseStatus = artifactResponse.getStatus().getStatusCode().getValue();
+        if (!StatusCode.SUCCESS_URI.equals(artifactResponseStatus)) {
+            throw new ArtifactResolutionException("Unsuccessful artifact response with status: " +
+                    artifactResponseStatus);
+        }
+
+        SAMLObject message = artifactResponse.getMessage();
+        if (message == null) {
+            throw new ArtifactResolutionException("No SAML response embedded into the artifact response.");
+        }
+
+        return true;
     }
 
     private void validateArtifactResolveConfig() throws ArtifactResolutionException {
@@ -132,7 +176,7 @@ public class SAMLSSOArtifactResolutionService {
         }
     }
 
-    private ArtifactResolve createArtifactResolveObject(String sReceivedArtifact) {
+    private ArtifactResolve createArtifactResolveObject(String samlArtReceived) {
 
         XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
 
@@ -146,7 +190,7 @@ public class SAMLSSOArtifactResolutionService {
         SAMLObjectBuilder<Artifact> artifactBuilder =
                 (SAMLObjectBuilder<Artifact>) builderFactory.getBuilder(Artifact.DEFAULT_ELEMENT_NAME);
         Artifact artifact = artifactBuilder.buildObject();
-        artifact.setArtifact(sReceivedArtifact);
+        artifact.setArtifact(samlArtReceived);
 
         SAMLObjectBuilder<Issuer> issuerBuilder = (SAMLObjectBuilder<Issuer>) builderFactory.getBuilder(Issuer.DEFAULT_ELEMENT_NAME);
         Issuer issuer = issuerBuilder.buildObject();
@@ -158,8 +202,7 @@ public class SAMLSSOArtifactResolutionService {
         return artifactResolve;
     }
 
-    private void signArtifactResolveReq(RequestAbstractType artifactResolveObj)
-            throws ArtifactResolutionException {
+    private void signArtifactResolveReq(RequestAbstractType artifactResolveObj) throws ArtifactResolutionException {
 
         try {
             String signatureAlgo = SSOUtils.getSignatureAlgorithm(authenticatorProperties);

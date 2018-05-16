@@ -22,7 +22,6 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -165,31 +164,31 @@ public class SSOUtilsTest {
     @Test
     public void testIsArtifactResolveReqSigned() {
 
-        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigned(null), "Returned true for an invalid input");
+        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigningEnabled(null), "Returned true for an invalid input");
 
         Map<String, String> properties = new HashMap<>();
-        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigned(properties), "Returned true for an invalid input");
+        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigningEnabled(properties), "Returned true for an invalid input");
 
         properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED, "false");
-        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigned(properties), "Returned true for an invalid input");
+        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigningEnabled(properties), "Returned true for an invalid input");
 
         properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED, "true");
-        Assert.assertTrue(SSOUtils.isArtifactResolveReqSigned(properties), "Failed to read a valid property");
+        Assert.assertTrue(SSOUtils.isArtifactResolveReqSigningEnabled(properties), "Failed to read a valid property");
     }
 
     @Test
     public void testIsArtifactResponseSigned() {
 
-        Assert.assertFalse(SSOUtils.isArtifactResponseSigned(null), "Returned true for an invalid input");
+        Assert.assertFalse(SSOUtils.isArtifactResponseSigningEnabled(null), "Returned true for an invalid input");
 
         Map<String, String> properties = new HashMap<>();
-        Assert.assertFalse(SSOUtils.isArtifactResponseSigned(properties), "Returned true for an invalid input");
+        Assert.assertFalse(SSOUtils.isArtifactResponseSigningEnabled(properties), "Returned true for an invalid input");
 
         properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED, "false");
-        Assert.assertFalse(SSOUtils.isArtifactResponseSigned(properties), "Returned true for an invalid input");
+        Assert.assertFalse(SSOUtils.isArtifactResponseSigningEnabled(properties), "Returned true for an invalid input");
 
         properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED, "true");
-        Assert.assertTrue(SSOUtils.isArtifactResponseSigned(properties), "Failed to read a valid property");
+        Assert.assertTrue(SSOUtils.isArtifactResponseSigningEnabled(properties), "Failed to read a valid property");
     }
 
     @Test

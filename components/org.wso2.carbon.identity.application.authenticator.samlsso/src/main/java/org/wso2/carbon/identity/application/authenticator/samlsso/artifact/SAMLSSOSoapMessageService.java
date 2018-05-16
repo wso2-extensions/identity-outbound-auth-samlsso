@@ -21,9 +21,11 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.opensaml.common.SAMLObject;
 import org.opensaml.ws.soap.common.SOAPObjectBuilder;
@@ -34,16 +36,15 @@ import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.UnknownHostException;
 
+/**
+ * This class is used for handling SAML SOAP Binding
+ */
 public class SAMLSSOSoapMessageService {
-    private static Log log = LogFactory.getLog(SAMLSSOSoapMessageService.class);
     private static final String CONTENT_TYPE = "text/xml; charset=utf-8";
+    private static Log log = LogFactory.getLog(SAMLSSOSoapMessageService.class);
 
     /**
      * Build a SOAP Message.
@@ -59,7 +60,6 @@ public class SAMLSSOSoapMessageService {
                 Envelope.DEFAULT_ELEMENT_NAME);
         Envelope envelope = envBuilder.buildObject();
 
-        log.info("Adding SAML message to the SOAP message's body");
         SOAPObjectBuilder<Body> bodyBuilder = (SOAPObjectBuilder<Body>) builderFactory.getBuilder(
                 Body.DEFAULT_ELEMENT_NAME);
         Body body = bodyBuilder.buildObject();
@@ -71,77 +71,60 @@ public class SAMLSSOSoapMessageService {
     /**
      * Send SOAP message
      *
-     * @param sMessage message that needs to be send
-     * @param sUrl url that the artifact resolve request should be sent
+     * @param message message that needs to be send
+     * @param url     url that the artifact resolve request should be sent
      * @return response of invoking artifact resolve endpoint
      * @throws ArtifactResolutionException
      */
-    public String sendSOAP(String sMessage, String sUrl) throws ArtifactResolutionException {
+    public String sendSOAP(String message, String url) throws ArtifactResolutionException {
 
         StringBuilder soapResponse = new StringBuilder();
         try {
-            HttpPost httpPost = new HttpPost(sUrl);
-            setRequestProperties(sUrl, sMessage, httpPost);
+            HttpPost httpPost = new HttpPost(url);
+            setRequestProperties(url, message, httpPost);
             DefaultHttpClient httpClient = new DefaultHttpClient();
             HttpResponse httpResponse = httpClient.execute(httpPost);
 
             int responseCode = httpResponse.getStatusLine().getStatusCode();
             if (responseCode != 200) {
-                throw new ArtifactResolutionException("Problem in communicating with: " + sUrl + ". Received response: "
+                throw new ArtifactResolutionException("Problem in communicating with: " + url + ". Received response: "
                         + responseCode);
             } else {
-                log.info("Successful response from the URL: " + sUrl);
-                soapResponse.append(stream2string(httpResponse.getEntity().getContent()));
+                log.info("Successful response from the URL: " + url);
+                soapResponse.append(getResponseBody(httpResponse));
             }
-        }
-        catch (UnknownHostException eUH) {
-            throw new ArtifactResolutionException("Unknown targeted host: " + sUrl , eUH);
-        }
-        catch (IOException eIO) {
-            throw new ArtifactResolutionException("Could not open connection with host: " + sUrl, eIO);
+        } catch (UnknownHostException e1) {
+            throw new ArtifactResolutionException("Unknown targeted host: " + url, e1);
+        } catch (IOException e2) {
+            throw new ArtifactResolutionException("Could not open connection with host: " + url, e2);
         }
         return soapResponse.toString();
     }
 
-    private void setRequestProperties(String sUrl, String sMessage, HttpPost httpPost) {
+    private void setRequestProperties(String url, String message, HttpPost httpPost) {
+
         httpPost.addHeader(SSOConstants.CONTENT_TYPE_PARAM_KEY, CONTENT_TYPE);
         httpPost.addHeader(SSOConstants.ACCEPT_PARAM_KEY, CONTENT_TYPE);
-        StringBuilder sbSOAPAction = new StringBuilder("\"");
-        sbSOAPAction.append(sUrl).append("\"");
-        httpPost.addHeader(SSOConstants.SOAP_ACTION_PARAM_KEY, sbSOAPAction.toString());
+        String sbSOAPAction = "\"" + url + "\"";
+        httpPost.addHeader(SSOConstants.SOAP_ACTION_PARAM_KEY, sbSOAPAction);
         httpPost.addHeader(SSOConstants.PRAGMA_PARAM_KEY, "no-cache");
         httpPost.addHeader(SSOConstants.CACHE_CONTROL_PARAM_KEY, "no-cache, no-store");
 
-        httpPost.setEntity(new StringEntity(sMessage, ContentType.create(CONTENT_TYPE)));
+        httpPost.setEntity(new StringEntity(message, ContentType.create(CONTENT_TYPE)));
     }
 
-    /**
-     * Read bytes from input stream till empty and convert to string based on supplied charset encoding.
-     *
-     * @param is The inputstream to read from.
-     * @param enc The character encoding to use in conversion.
-     * @return String containing the data from the inputstream
-     * @throws IOException Signals that an I/O exception has occurred
-     *
-     */
-    private static String stream2string(InputStream is, String enc)
-            throws IOException {
+    private static String getResponseBody(HttpResponse response) throws ArtifactResolutionException {
 
-        int xRead;
-        byte[] ba = new byte[512];
-        DataInputStream isInput = new DataInputStream(new BufferedInputStream(is));
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        // Retrieve message as bytes and put them in a string
-        while ((xRead = isInput.read(ba)) != -1) {
-            bos.write(ba, 0, xRead);
+        ResponseHandler<String> responseHandler = new BasicResponseHandler();
+        String responseBody;
+        try {
+            responseBody = responseHandler.handleResponse(response);
+        } catch (IOException e) {
+            throw new ArtifactResolutionException("Error when retrieving the HTTP response body.", e);
         }
-        return bos.toString(enc);
+        if (log.isDebugEnabled()) {
+            log.debug("Response Body:" + responseBody);
+        }
+        return responseBody;
     }
-
-    private static String stream2string(InputStream is)
-            throws IOException {
-
-        return stream2string(is, "UTF-8");
-    }
-
 }

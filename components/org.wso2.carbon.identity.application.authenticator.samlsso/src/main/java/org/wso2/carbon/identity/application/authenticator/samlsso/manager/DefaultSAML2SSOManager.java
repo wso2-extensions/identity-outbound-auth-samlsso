@@ -71,9 +71,6 @@ import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.encryption.EncryptedKey;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallingException;
-import org.opensaml.xml.io.Unmarshaller;
-import org.opensaml.xml.io.UnmarshallerFactory;
-import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.security.keyinfo.KeyInfoCredentialResolver;
@@ -84,7 +81,6 @@ import org.opensaml.xml.signature.impl.SignatureImpl;
 import org.opensaml.xml.util.Base64;
 import org.opensaml.xml.util.XMLHelper;
 import org.opensaml.xml.validation.ValidationException;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -107,9 +103,9 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
+import javax.crypto.SecretKey;
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -122,15 +118,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-import javax.crypto.SecretKey;
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 import static org.opensaml.saml2.core.StatusCode.SUCCESS_URI;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
@@ -347,11 +334,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         SAMLSSOArtifactResolutionService artifactResolutionService = new SAMLSSOArtifactResolutionService(properties,
                 tenantDomain);
         try {
-            String samlResponse = artifactResolutionService.getSAMLArtifactResolveResponse(request.getParameter(
+            ArtifactResponse artifactResponse = artifactResolutionService.getSAMLArtifactResponse(request.getParameter(
                     SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID));
-
-            ArtifactResponse artifactResponse = (ArtifactResponse) unmarshall(samlResponse);
-            validateArtifactResponse(artifactResponse);
+            validateSignature(artifactResponse);
 
             String code;
             for (XMLObject child : artifactResponse.getOrderedChildren()) {
@@ -381,7 +366,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         String decodedResponse = new String(Base64.decode(request.getParameter(
                 SSOConstants.HTTP_POST_PARAM_SAML2_RESP)));
-        XMLObject samlObject = unmarshall(decodedResponse);
+        XMLObject samlObject = SSOUtils.unmarshall(decodedResponse);
         validateResponseFormat(samlObject);
         executeSAMLReponse(request, samlObject);
     }
@@ -399,6 +384,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 
     private String getStatusCode(XMLObject statusCode) {
+
         String code;
         if (statusCode.hasChildren()) {
             code = ((StatusCodeImpl) statusCode.getOrderedChildren().get(0)).getValue();
@@ -424,9 +410,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             samlRequest = samlRequestParams[0];
             XMLObject xmlObject;
             if (authenticationRequest.isPost()) {
-                xmlObject = unmarshall(SSOUtils.decodeForPost(samlRequest));
+                xmlObject = SSOUtils.unmarshall(SSOUtils.decodeForPost(samlRequest));
             } else {
-                xmlObject = unmarshall(SSOUtils.decode(samlRequest));
+                xmlObject = SSOUtils.unmarshall(SSOUtils.decode(samlRequest));
             }
             validateResponseFormat(xmlObject);
             if (xmlObject instanceof AuthnRequest) {
@@ -447,9 +433,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             if (samlRequest != null) {
                 XMLObject xmlObject;
                 if (SSOConstants.HTTP_POST.equals(request.getMethod())) {
-                    xmlObject = unmarshall(SSOUtils.decodeForPost(samlRequest));
+                    xmlObject = SSOUtils.unmarshall(SSOUtils.decodeForPost(samlRequest));
                 } else {
-                    xmlObject = unmarshall(SSOUtils.decode(samlRequest));
+                    xmlObject = SSOUtils.unmarshall(SSOUtils.decode(samlRequest));
                 }
                 validateResponseFormat(xmlObject);
                 if (xmlObject instanceof AuthnRequest) {
@@ -496,11 +482,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         doBootstrap();
         XMLObject samlObject = null;
         if (request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ) != null) {
-            samlObject = unmarshall(new String(Base64.decode(request.getParameter(
+            samlObject = SSOUtils.unmarshall(new String(Base64.decode(request.getParameter(
                     SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))));
         }
         if (samlObject == null) {
-            samlObject = unmarshall(new String(Base64.decode(request.getParameter(
+            samlObject = SSOUtils.unmarshall(new String(Base64.decode(request.getParameter(
                     SSOConstants.HTTP_POST_PARAM_SAML2_RESP))));
         }
         validateResponseFormat(samlObject);
@@ -904,28 +890,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }
 
-    private XMLObject unmarshall(String samlString) throws SAMLSSOException {
-
-        XMLObject response;
-        try {
-            DocumentBuilderFactory documentBuilderFactory = IdentityUtil.getSecuredDocumentBuilderFactory();
-            documentBuilderFactory.setIgnoringComments(true);
-            Document document = getDocument(documentBuilderFactory, samlString);
-            if (isSignedWithComments(document)) {
-                documentBuilderFactory.setIgnoringComments(false);
-                document = getDocument(documentBuilderFactory, samlString);
-            }
-            Element element = document.getDocumentElement();
-            UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
-            Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
-            return unmarshaller.unmarshall(element);
-        } catch (ParserConfigurationException | UnmarshallingException | SAXException | IOException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
-        }
-
-    }
-
     private void validateResponseFormat(XMLObject response) throws SAMLSSOException {
+
         // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
         NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
         if (responseList != null && responseList.getLength() > 0) {
@@ -939,53 +905,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             throw new SAMLSSOException("Error occurred while processing SAML2 response. " +
                     "Invalid schema for the SAML2 response. Multiple Assertion elements found.");
         }
-    }
-
-    /**
-     * Return whether SAML Assertion has the canonicalization method
-     * set to 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments'.
-     *
-     * @param document
-     * @return true if canonicalization method equals to 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments'
-     */
-    private boolean isSignedWithComments(Document document) {
-
-        XPath xPath = XPathFactory.newInstance().newXPath();
-        try {
-            String assertionId = (String) xPath.compile("//*[local-name()='Assertion']/@ID")
-                    .evaluate(document, XPathConstants.STRING);
-
-            if (StringUtils.isBlank(assertionId)) {
-                return false;
-            }
-
-            NodeList nodeList = ((NodeList) xPath.compile(
-                    "//*[local-name()='Assertion']" +
-                            "/*[local-name()='Signature']" +
-                            "/*[local-name()='SignedInfo']" +
-                            "/*[local-name()='Reference'][@URI='#" + assertionId + "']" +
-                            "/*[local-name()='Transforms']" +
-                            "/*[local-name()='Transform']" +
-                            "[@Algorithm='http://www.w3.org/2001/10/xml-exc-c14n#WithComments']")
-                    .evaluate(document, XPathConstants.NODESET));
-            return nodeList != null && nodeList.getLength() > 0;
-        } catch (XPathExpressionException e) {
-            String message = "Failed to find the canonicalization algorithm of the assertion. Defaulting to: " +
-                    "http://www.w3.org/2001/10/xml-exc-c14n#";
-            log.warn(message);
-            if (log.isDebugEnabled()) {
-                log.debug(message, e);
-            }
-            return false;
-        }
-    }
-
-    private Document getDocument(DocumentBuilderFactory documentBuilderFactory, String samlString)
-            throws IOException, SAXException, ParserConfigurationException {
-
-        DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(samlString.getBytes());
-        return docBuilder.parse(inputStream);
     }
 
     /*
@@ -1110,26 +1029,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 
     /**
-     * Validate SAML2 Artifact Response
-     *
-     * @param artifactResponse SAML2 Artifact Response
-     * @throws SAMLSSOException
-     */
-    private void validateArtifactResponse(ArtifactResponse artifactResponse) throws SAMLSSOException {
-
-        if (artifactResponse == null) {
-            throw new SAMLSSOException("Did not receive an artifact response message.");
-        }
-
-        SAMLObject message = artifactResponse.getMessage();
-        if (message == null) {
-            throw new SAMLSSOException("No inbound message in artifact response message.");
-        }
-
-        validateSignature(artifactResponse);
-    }
-
-    /**
      * Validate the signature of a SAML2 Artifact Response
      *
      * @param artifactResponse SAML2 Artifact Response
@@ -1137,7 +1036,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      */
     private void validateSignature(ArtifactResponse artifactResponse) throws SAMLSSOException {
 
-        if (SSOUtils.isArtifactResponseSigned(properties)) {
+        if (SSOUtils.isArtifactResponseSigningEnabled(properties)) {
 
             XMLObject signature = artifactResponse.getSignature();
             if (signature == null) {
