@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xml.security.c14n.Canonicalizer;
+import org.opensaml.Configuration;
 import org.opensaml.common.impl.SAMLObjectContentReference;
 import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
 import org.opensaml.saml2.core.RequestAbstractType;
@@ -29,6 +30,9 @@ import org.opensaml.xml.XMLObjectBuilder;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.io.MarshallingException;
+import org.opensaml.xml.io.Unmarshaller;
+import org.opensaml.xml.io.UnmarshallerFactory;
+import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.security.SigningUtil;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.opensaml.xml.signature.KeyInfo;
@@ -37,7 +41,9 @@ import org.opensaml.xml.signature.SignatureException;
 import org.opensaml.xml.signature.Signer;
 import org.opensaml.xml.signature.X509Data;
 import org.opensaml.xml.util.Base64;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
@@ -45,8 +51,17 @@ import org.w3c.dom.ls.LSSerializer;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -59,7 +74,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
@@ -325,6 +339,33 @@ public class SSOUtils {
     }
 
     /**
+     * Unmarshalling a String into a SAML2 object
+     *
+     * @param samlString marshalled String
+     * @return unmarshalled object
+     * @throws SAMLSSOException
+     */
+    public static XMLObject unmarshall(String samlString) throws SAMLSSOException {
+
+        try {
+            DocumentBuilderFactory documentBuilderFactory = IdentityUtil.getSecuredDocumentBuilderFactory();
+            documentBuilderFactory.setIgnoringComments(true);
+            Document document = getDocument(documentBuilderFactory, samlString);
+            if (isSignedWithComments(document)) {
+                documentBuilderFactory.setIgnoringComments(false);
+                document = getDocument(documentBuilderFactory, samlString);
+            }
+            Element element = document.getDocumentElement();
+            UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
+            Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
+            return unmarshaller.unmarshall(element);
+        } catch (ParserConfigurationException | UnmarshallingException | SAXException | IOException e) {
+            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
+        }
+
+    }
+
+    /**
      * Encoding the response
      *
      * @param xmlString String to be encoded
@@ -395,6 +436,84 @@ public class SSOUtils {
         return false;
     }
 
+    public static boolean isArtifactResolveReqSigningEnabled(Map<String, String> properties) {
+
+        if (properties != null) {
+            String prop = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED);
+            if (StringUtils.isNotBlank((prop))) {
+                return Boolean.parseBoolean(prop);
+            }
+        }
+        return false;
+    }
+
+    public static boolean isArtifactResponseSigningEnabled(Map<String, String> properties) {
+
+        if (properties != null) {
+            String prop = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED);
+            if (StringUtils.isNotBlank((prop))) {
+                return Boolean.parseBoolean(prop);
+            }
+        }
+        return false;
+    }
+
+    public static String getArtifactResolveUrl(Map<String, String> properties) {
+
+        String artifactResolveUrl = null;
+        if (properties != null) {
+            artifactResolveUrl = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.ARTIFACT_RESOLVE_URL);
+            if (log.isDebugEnabled()) {
+                log.debug("Artifact Resolution Service Url: " + artifactResolveUrl);
+            }
+        }
+        return artifactResolveUrl;
+    }
+
+    public static String getSignatureAlgorithm(Map<String, String> properties) {
+
+        String signatureAlgo = null;
+        if (properties != null) {
+            signatureAlgo = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
+        }
+        if (StringUtils.isEmpty(signatureAlgo)) {
+            signatureAlgo = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
+        }
+        signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms().get(signatureAlgo);
+        if (log.isDebugEnabled()) {
+            log.debug("Signature Algorithm: " + signatureAlgo);
+        }
+        return signatureAlgo;
+    }
+
+    public static String getDigestAlgorithm(Map<String, String> properties) {
+
+        String digestAlgo = null;
+        if (properties != null) {
+            digestAlgo = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
+        }
+        if (StringUtils.isEmpty(digestAlgo)) {
+            digestAlgo = IdentityApplicationConstants.XML.DigestAlgorithm.SHA1;
+        }
+        digestAlgo = IdentityApplicationManagementUtil.getXMLDigestAlgorithms().get(digestAlgo);
+        if (log.isDebugEnabled()) {
+            log.debug("Digest Algorithm: " + digestAlgo);
+        }
+        return digestAlgo;
+    }
+
+    public static String getSPEntityID(Map<String, String> properties) {
+
+        String spEntityID = null;
+        if (properties != null) {
+            spEntityID = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID);
+            if (log.isDebugEnabled()) {
+                log.debug("SP Entity ID: " + spEntityID);
+            }
+        }
+        return spEntityID;
+    }
+
     public static Map<String, String> getQueryMap(String query) {
 
         Map<String, String> map = new HashMap<>();
@@ -411,5 +530,52 @@ public class SSOUtils {
             }
         }
         return map;
+    }
+
+    /**
+     * Return whether SAML Assertion has the canonicalization method
+     * set to 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments'.
+     *
+     * @param document
+     * @return true if canonicalization method equals to 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments'
+     */
+    private static boolean isSignedWithComments(Document document) {
+
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        try {
+            String assertionId = (String) xPath.compile("//*[local-name()='Assertion']/@ID")
+                    .evaluate(document, XPathConstants.STRING);
+
+            if (StringUtils.isBlank(assertionId)) {
+                return false;
+            }
+
+            NodeList nodeList = ((NodeList) xPath.compile(
+                    "//*[local-name()='Assertion']" +
+                            "/*[local-name()='Signature']" +
+                            "/*[local-name()='SignedInfo']" +
+                            "/*[local-name()='Reference'][@URI='#" + assertionId + "']" +
+                            "/*[local-name()='Transforms']" +
+                            "/*[local-name()='Transform']" +
+                            "[@Algorithm='http://www.w3.org/2001/10/xml-exc-c14n#WithComments']")
+                    .evaluate(document, XPathConstants.NODESET));
+            return nodeList != null && nodeList.getLength() > 0;
+        } catch (XPathExpressionException e) {
+            String message = "Failed to find the canonicalization algorithm of the assertion. Defaulting to: " +
+                    "http://www.w3.org/2001/10/xml-exc-c14n#";
+            log.warn(message);
+            if (log.isDebugEnabled()) {
+                log.debug(message, e);
+            }
+            return false;
+        }
+    }
+
+    private static Document getDocument(DocumentBuilderFactory documentBuilderFactory, String samlString)
+            throws IOException, SAXException, ParserConfigurationException {
+
+        DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(samlString.getBytes());
+        return docBuilder.parse(inputStream);
     }
 }

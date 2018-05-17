@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.base.api.ServerConfigurationService;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
@@ -37,6 +38,10 @@ import java.util.Scanner;
  * interface="org.wso2.carbon.user.core.service.RealmService"
  * cardinality="1..1" policy="dynamic" bind="setRealmService"
  * unbind="unsetRealmService"
+ * @scr.reference name="server.configuration.service"
+ * interface="org.wso2.carbon.base.api.ServerConfigurationService"
+ * cardinality="1..1" policy="dynamic" bind="setServerConfigurationService"
+ * unbind="unsetServerConfigurationService"
  * @scr.component name="identity.application.authenticator.samlsso.component" immediate="true"
  */
 
@@ -96,5 +101,19 @@ public class SAMLSSOAuthenticatorServiceComponent {
             log.debug("RealmService is unset in the SAML2 SSO Authenticator bundle");
         }
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(null);
+    }
+
+    protected void setServerConfigurationService(ServerConfigurationService serverConfigurationService) {
+        if (log.isDebugEnabled()) {
+            log.debug("Set the ServerConfiguration Service");
+        }
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setServerConfigurationService(serverConfigurationService);
+    }
+
+    protected void unsetServerConfigurationService(ServerConfigurationService serverConfigurationService) {
+        if (log.isDebugEnabled()) {
+            log.debug("Unset the ServerConfiguration Service");
+        }
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setServerConfigurationService(null);
     }
 }

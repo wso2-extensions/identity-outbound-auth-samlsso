@@ -69,6 +69,10 @@
             <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.application.common</artifactId>
         </dependency>

@@ -329,6 +329,8 @@ public final class TestConstants {
 
     public static final String HTTP_POST_PARAM_SAML2_RESP = "SAMLResponse";
 
+    public static final String HTTP_POST_PARAM_SAML_ART = "SAMLart";
+
     public static final String INBOUND_SP_ENTITY_ID = "sample.com";
 
     public static final String INBOUND_SESSION_INDEX = "123456789";
@@ -346,6 +348,22 @@ public final class TestConstants {
     public static final String ACS_INDEX = "123456789";
 
     public static final String IDP_URL = "https://localhost:9444/samlsso";
+
+    public static final String SUPER_TENANT_DOMAIN = "carbon.super";
+
+    public static final String SAML_ART = "AAQAAM1OZiCJt3Va5A1W4dyuSepX9Q6clxUTA4vGKbi/bFCqu6Vm+NTZMDE=";
+
+    public static final String SAML_ARTIFACT_RESOLVE_SERVICE = "";
+
+    public static final String SIGNATURE_ALGO = "SignatureAlgorithm";
+    public static final String SIGNATURE_ALGO_SHA256 = "RSA with SHA256";
+    public static final String SIGNATURE_ALGO_XML_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+    public static final String SIGNATURE_ALGO_XML_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
+
+    public static final String DIGEST_ALGO = "DigestAlgorithm";
+    public static final String DIGEST_ALGO_SHA256 = "SHA256";
+    public static final String DIGEST_ALGO_XML_SHA256 = "http://www.w3.org/2001/04/xmlenc#sha256";
+    public static final String DIGEST_ALGO_XML_SHA1 = "http://www.w3.org/2000/09/xmldsig#sha1";
 
     public enum InboundRequestData {
 

@@ -162,6 +162,96 @@ public class SSOUtilsTest {
     }
 
     @Test
+    public void testIsArtifactResolveReqSigned() {
+
+        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigningEnabled(null), "Returned true for an invalid input");
+
+        Map<String, String> properties = new HashMap<>();
+        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigningEnabled(properties), "Returned true for an invalid input");
+
+        properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED, "false");
+        Assert.assertFalse(SSOUtils.isArtifactResolveReqSigningEnabled(properties), "Returned true for an invalid input");
+
+        properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED, "true");
+        Assert.assertTrue(SSOUtils.isArtifactResolveReqSigningEnabled(properties), "Failed to read a valid property");
+    }
+
+    @Test
+    public void testIsArtifactResponseSigned() {
+
+        Assert.assertFalse(SSOUtils.isArtifactResponseSigningEnabled(null), "Returned true for an invalid input");
+
+        Map<String, String> properties = new HashMap<>();
+        Assert.assertFalse(SSOUtils.isArtifactResponseSigningEnabled(properties), "Returned true for an invalid input");
+
+        properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED, "false");
+        Assert.assertFalse(SSOUtils.isArtifactResponseSigningEnabled(properties), "Returned true for an invalid input");
+
+        properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED, "true");
+        Assert.assertTrue(SSOUtils.isArtifactResponseSigningEnabled(properties), "Failed to read a valid property");
+    }
+
+    @Test
+    public void testGetArtifactResolveUrl() {
+
+        Assert.assertNull(SSOUtils.getArtifactResolveUrl(null), "Returned invalid output");
+
+        Map<String, String> properties = new HashMap<>();
+        Assert.assertNull(SSOUtils.getArtifactResolveUrl(properties), "Returned invalid output");
+
+        properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.ARTIFACT_RESOLVE_URL,
+                TestConstants.SAML_ARTIFACT_RESOLVE_SERVICE);
+        Assert.assertNotNull(SSOUtils.getArtifactResolveUrl(properties), "Returned invalid output");
+        Assert.assertEquals(SSOUtils.getArtifactResolveUrl(properties), TestConstants.SAML_ARTIFACT_RESOLVE_SERVICE,
+                "Returned invalid output");
+    }
+
+    @Test
+    public void testGetSignatureAlgorithm() {
+
+        Assert.assertEquals(SSOUtils.getSignatureAlgorithm(null), TestConstants.SIGNATURE_ALGO_XML_SHA1,
+                "Returned invalid output");
+
+        Map<String, String> properties = new HashMap<>();
+        Assert.assertEquals(SSOUtils.getSignatureAlgorithm(properties), TestConstants.SIGNATURE_ALGO_XML_SHA1,
+                "Returned invalid output");
+
+        properties.put(TestConstants.SIGNATURE_ALGO, TestConstants.SIGNATURE_ALGO_SHA256);
+        Assert.assertNotNull(SSOUtils.getSignatureAlgorithm(properties), "Returned invalid output");
+        Assert.assertEquals(SSOUtils.getSignatureAlgorithm(properties), TestConstants.SIGNATURE_ALGO_XML_SHA256,
+                "Returned invalid output");
+    }
+
+    @Test
+    public void testGetDigestAlgorithm() {
+
+        Assert.assertEquals(SSOUtils.getDigestAlgorithm(null), TestConstants.DIGEST_ALGO_XML_SHA1, "Returned invalid output");
+
+        Map<String, String> properties = new HashMap<>();
+        Assert.assertEquals(SSOUtils.getDigestAlgorithm(properties), TestConstants.DIGEST_ALGO_XML_SHA1,
+                "Returned invalid output");
+
+        properties.put(TestConstants.DIGEST_ALGO, TestConstants.DIGEST_ALGO_SHA256);
+        Assert.assertNotNull(SSOUtils.getDigestAlgorithm(properties), "Returned invalid output");
+        Assert.assertEquals(SSOUtils.getDigestAlgorithm(properties), TestConstants.DIGEST_ALGO_XML_SHA256,
+                "Returned invalid output");
+    }
+
+    @Test
+    public void testGetSPEntityID() {
+
+        Assert.assertNull(SSOUtils.getSPEntityID(null), "Returned invalid output");
+
+        Map<String, String> properties = new HashMap<>();
+        Assert.assertNull(SSOUtils.getSPEntityID(properties), "Returned invalid output");
+
+        properties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID, TestConstants.SP_ENTITY_ID);
+        Assert.assertNotNull(SSOUtils.getSPEntityID(properties), "Returned invalid output");
+        Assert.assertEquals(SSOUtils.getSPEntityID(properties), TestConstants.SP_ENTITY_ID,
+                "Returned invalid output");
+    }
+
+    @Test
     public void testGetQueryMap() {
 
         Assert.assertTrue(SSOUtils.getQueryMap("").isEmpty());
