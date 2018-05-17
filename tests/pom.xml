@@ -22,7 +22,7 @@
         <groupId>org.wso2.carbon.identity.authenticator.outbound.saml2sso</groupId>
         <artifactId>identity-auth-outbound-saml2sso</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>6.0.0</version>
+        <version>6.0.1-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
