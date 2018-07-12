@@ -19,13 +19,13 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
+import org.opensaml.common.SAMLObject;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.common.Extensions;
@@ -95,7 +95,6 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAML
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
-import org.wso2.carbon.identity.application.common.model.CertificateInfo;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
@@ -105,6 +104,8 @@ import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
+import javax.crypto.SecretKey;
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -117,8 +118,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-import javax.crypto.SecretKey;
-import javax.servlet.http.HttpServletRequest;
 
 import static org.opensaml.saml2.core.StatusCode.SUCCESS_URI;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
@@ -132,8 +131,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private static String DEFAULT_MULTI_ATTRIBUTE_SEPARATOR = ",";
     private static String MULTI_ATTRIBUTE_SEPARATOR = "MultiAttributeSeparator";
     private static final String VERIFY_ASSERTION_ISSUER = "VerifyAssertionIssuer";
-    private static final String BEGIN_CERTIFICATE = "-----BEGIN CERTIFICATE-----";
-    private static final String END_CERTIFICATE = "-----END CERTIFICATE-----";
     private IdentityProvider identityProvider = null;
     private Map<String, String> properties;
     private String tenantDomain;
@@ -1060,9 +1057,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private void validateSignature(XMLObject signature) throws SAMLSSOException {
 
         SignatureImpl signImpl = (SignatureImpl) signature;
-        CertificateInfo[] certificateInfos;
-        boolean isExceptionThrown = false;
-        ValidationException validationException = null;
         try {
             SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
             signatureProfileValidator.validate(signImpl);
@@ -1073,39 +1067,16 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             throw new SAMLSSOException(logMsg, ex);
         }
 
-        if (ArrayUtils.isEmpty(identityProvider.getCertificateInfoArray())) {
+        if (identityProvider.getCertificate() == null || identityProvider.getCertificate().isEmpty()) {
             throw new SAMLSSOException("Signature validation is enabled, but IdP doesn't have a certificate");
         }
 
-        certificateInfos = identityProvider.getCertificateInfoArray();
-        if (log.isDebugEnabled()) {
-            log.debug("The number of certificates has been found is: " + certificateInfos.length);
-        }
-        int index = 0;
-        for (CertificateInfo certificateInfo : certificateInfos) {
-            String certVal = certificateInfo.getCertValue();
-            X509Credential credential = new X509CredentialImpl(tenantDomain, certVal);
+        try {
+            X509Credential credential = new X509CredentialImpl(tenantDomain, identityProvider.getCertificate());
             SignatureValidator validator = new SignatureValidator(credential);
-            try {
-                if (log.isDebugEnabled()) {
-                    log.debug("Validating the SAML signature with certificate at index: " + index);
-                }
-                validator.validate(signImpl);
-                isExceptionThrown = false;
-                break;
-            } catch (ValidationException e) {
-                isExceptionThrown = true;
-                if (validationException == null) {
-                    validationException = e;
-                } else {
-                    validationException.addSuppressed(e);
-                }
-            }
-            index++;
-        }
-        // If all the certification validation fails, then throw the exception.
-        if (isExceptionThrown) {
-            throw new SAMLSSOException("Signature validation failed for SAML Response", validationException);
+            validator.validate(signImpl);
+        } catch (ValidationException e) {
+            throw new SAMLSSOException("Signature validation failed for SAML Response", e);
         }
     }
 
