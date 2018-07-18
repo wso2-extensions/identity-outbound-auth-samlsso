@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 
 import org.opensaml.saml2.core.ArtifactResolve;
+import org.opensaml.saml2.core.ArtifactResponse;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
@@ -34,6 +35,7 @@ import static org.testng.Assert.assertNotNull;
 public class SAMLSSOArtifactResolutionServiceTest {
 
     private static ArtifactResolve artifactResolve;
+    private static ArtifactResponse artifactResponse;
 
     @BeforeClass
     public void initTest() throws Exception {
@@ -67,5 +69,23 @@ public class SAMLSSOArtifactResolutionServiceTest {
                 authenticatorProperties, TestConstants.SUPER_TENANT_DOMAIN);
         artifactResolve = artifactResolutionService.generateArtifactResolveReq(TestConstants.SAML_ART);
         assertNotNull(artifactResolve.getSignature(), "Artifact Resolve request is not signed.");
+    }
+
+    @Test(priority = 3)
+    public void testExtractArtifactResponse() throws ArtifactResolutionException {
+
+        Map<String, String> authenticatorProperties = new HashMap<>();
+        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID,
+                TestConstants.SP_ENTITY_ID);
+        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED,
+                "true");
+        SAMLSSOArtifactResolutionService artifactResolutionService = new SAMLSSOArtifactResolutionService(
+                authenticatorProperties, TestConstants.SUPER_TENANT_DOMAIN);
+        artifactResponse = artifactResolutionService.extractArtifactResponse(TestConstants.SAML_ART_RESPONSE);
+
+        assertNotNull(artifactResolve, "Artifact Response Object could not be retrieved.");
+        assertEquals(artifactResponse.getIssuer().getValue(), "localhost");
+        assertEquals(artifactResponse.getID(), "f594faf3-537b-4d64-9b0e-3b34652d4ba3");
+        assertEquals(artifactResponse.getIssueInstant(), "2018-07-20T14:32:24.382Z");
     }
 }

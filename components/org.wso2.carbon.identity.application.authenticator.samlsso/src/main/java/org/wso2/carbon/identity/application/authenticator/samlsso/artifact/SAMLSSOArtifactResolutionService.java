@@ -26,6 +26,7 @@ import org.opensaml.Configuration;
 import org.opensaml.common.SAMLObject;
 import org.opensaml.common.SAMLObjectBuilder;
 import org.opensaml.common.SAMLVersion;
+import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.Artifact;
 import org.opensaml.saml2.core.ArtifactResolve;
 import org.opensaml.saml2.core.ArtifactResponse;
@@ -39,10 +40,24 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAML
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.MimeHeaders;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPBodyElement;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 /**
  * This class is used for handling SAML Artifact Binding
@@ -98,7 +113,8 @@ public class SAMLSSOArtifactResolutionService {
      * @return ArtifactResponse
      * @throws ArtifactResolutionException
      */
-    public ArtifactResponse sendArtifactResolveRequest(ArtifactResolve artifactResolve) throws ArtifactResolutionException {
+    public ArtifactResponse sendArtifactResolveRequest(ArtifactResolve artifactResolve)
+            throws ArtifactResolutionException {
 
         SAMLSSOSoapMessageService soapMessageService = new SAMLSSOSoapMessageService();
         Envelope envelope = soapMessageService.buildSOAPMessage(artifactResolve);
@@ -106,8 +122,8 @@ public class SAMLSSOArtifactResolutionService {
         try {
             envelopeElement = SSOUtils.marshall(envelope);
         } catch (SAMLSSOException e) {
-            throw new ArtifactResolutionException("Encountered error marshalling SOAP message with artifact resolve, " +
-                    "into its DOM representation", e);
+            throw new ArtifactResolutionException("Encountered error marshalling SOAP message with artifact " +
+                    "resolve, into its DOM representation", e);
         }
 
         if (log.isDebugEnabled()) {
@@ -116,26 +132,55 @@ public class SAMLSSOArtifactResolutionService {
 
         String artifactResponseString = soapMessageService.sendSOAP(envelopeElement, SSOUtils.getArtifactResolveUrl
                 (authenticatorProperties));
-        Pattern pattern = Pattern.compile("<samlp:ArtifactResponse.+</samlp:ArtifactResponse>", Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(artifactResponseString);
-        if (matcher.find()) {
-            String artifactResponseReceived = matcher.group(0);
-            if (log.isDebugEnabled()) {
-                log.debug("Artifact Response: " + artifactResponseReceived);
-            }
-            try {
-                ArtifactResponse artifactResponse = (ArtifactResponse) SSOUtils.unmarshall(artifactResponseReceived);
-                if (isArtifactResponseValid(artifactResolve, artifactResponse)) {
-                    return artifactResponse;
-                } else {
-                    throw new ArtifactResolutionException("Artifact Response is not valid.");
-                }
-            } catch (SAMLSSOException e) {
-                throw new ArtifactResolutionException("Encountered error unmarshalling response into SAML2 object", e);
-            }
+        ArtifactResponse artifactResponse = extractArtifactResponse(artifactResponseString);
+
+        if (artifactResponse != null && isArtifactResponseValid(artifactResolve, artifactResponse)) {
+            return artifactResponse;
         } else {
-            throw new ArtifactResolutionException("Didn't receive valid artifact response.");
+            throw new ArtifactResolutionException("Artifact Response is not valid.");
         }
+    }
+
+    /**
+     * Extract Artifact response object from soap message string. Return null if fail.
+     *
+     * @param artifactResponseString Response string from artifact resolver.
+     * @return Extracted artifact response object.
+     * @throws ArtifactResolutionException
+     */
+    public ArtifactResponse extractArtifactResponse(String artifactResponseString)
+            throws ArtifactResolutionException {
+
+        ArtifactResponse artifactResponse = null;
+        InputStream stream = new ByteArrayInputStream(artifactResponseString.getBytes(StandardCharsets.UTF_8));
+        try {
+            MessageFactory messageFactory = MessageFactory.newInstance();
+            SOAPMessage soapMessage = messageFactory.createMessage(new MimeHeaders(), stream);
+            SOAPBody soapBody = soapMessage.getSOAPBody();
+            Iterator iterator = soapBody.getChildElements();
+
+            while (iterator.hasNext()) {
+                SOAPBodyElement artifactResponseElement = (SOAPBodyElement) iterator.next();
+
+                if (StringUtils.equals(SAMLConstants.SAML20P_NS, artifactResponseElement.getNamespaceURI()) &&
+                        StringUtils.equals(ArtifactResponse.DEFAULT_ELEMENT_LOCAL_NAME,
+                                artifactResponseElement.getLocalName())) {
+
+                    DOMSource source = new DOMSource(artifactResponseElement);
+                    StringWriter stringResult = new StringWriter();
+                    TransformerFactory.newInstance().newTransformer().transform(
+                            source, new StreamResult(stringResult));
+                    artifactResponse = (ArtifactResponse) SSOUtils.unmarshall(stringResult.toString());
+                } else {
+                    throw new ArtifactResolutionException("Didn't receive valid artifact response.");
+                }
+            }
+        } catch (SOAPException | IOException | TransformerException e) {
+            throw new ArtifactResolutionException("Didn't receive valid artifact response.", e);
+        } catch (SAMLSSOException e) {
+            throw new ArtifactResolutionException("Encountered error unmarshalling response into SAML2 object", e);
+        }
+        return artifactResponse;
     }
 
     private boolean isArtifactResponseValid(ArtifactResolve artifactResolve, ArtifactResponse artifactResponse)

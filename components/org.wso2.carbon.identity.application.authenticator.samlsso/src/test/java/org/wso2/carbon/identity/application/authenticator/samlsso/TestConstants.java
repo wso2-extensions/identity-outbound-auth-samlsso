@@ -353,6 +353,77 @@ public final class TestConstants {
 
     public static final String SAML_ART = "AAQAAM1OZiCJt3Va5A1W4dyuSepX9Q6clxUTA4vGKbi/bFCqu6Vm+NTZMDE=";
 
+    public static final String SAML_ART_RESPONSE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<soap11:Envelope xmlns:soap11=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap11:Body><saml2p:ArtifactResponse ID=\"f594faf3-537b-4d64-9b0e-3b34652d4ba3\" InResponseTo=\"44a2e930-77af-42d5-9ebd-8a47b92de9b3\" IssueInstant=\"2018-07-20T14:32:24.382Z\" Version=\"2.0\" xmlns:saml2p=\"urn:oasis:names:tc:SAML:2.0:protocol\"><saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">localhost</saml2:Issuer><saml2p:Status><saml2p:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/></saml2p:Status><saml2p:Response Destination=\"https://localhost:9443/commonauth\" ID=\"_62707d8ac80e8590db29c8926a6f915d\" InResponseTo=\"_ffb07d938c8458cffa9c9465102c1a6a\" IssueInstant=\"2018-07-20T14:32:22.034Z\" Version=\"2.0\" xmlns:saml2p=\"urn:oasis:names:tc:SAML:2.0:protocol\"><saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">localhost</saml2:Issuer><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "<ds:SignedInfo>\n" +
+            "<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "<ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/>\n" +
+            "<ds:Reference URI=\"#_62707d8ac80e8590db29c8926a6f915d\">\n" +
+            "<ds:Transforms>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "</ds:Transforms>\n" +
+            "<ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>\n" +
+            "<ds:DigestValue>S6+Wk/kVDuScs+nghcr24AWIIt4=</ds:DigestValue>\n" +
+            "</ds:Reference>\n" +
+            "</ds:SignedInfo>\n" +
+            "<ds:SignatureValue>\n" +
+            "YsYS3tyYqnVXV5YISasB1Y09hTH+jrw3p1NbAxXyhrLJBwyiz/C4qFEIOIKi6cRj1FZItuicr0dm\n" +
+            "EpUkRu88eeGfiZmsjtSMda5E1xtT+JrR4+ryGoleIyPVnI1vA3E7be9SSGkvoGzpHC3NrDhVnxPp\n" +
+            "XeIXi0+6DbsKT318ZDM/qsy9ZN44I0hsngSme66WiOupVz3o/sZ7JB8EkpWSLj7pwVHpvSDnrNnJ\n" +
+            "OoEI6nt4OZtsk9pGHbfF3Ko2ixsLzxOWi+/CngCi7oVUbZjZxrGXvWNc5mN/g9HcZVcZWO5XHvYI\n" +
+            "z8DxOgPdNEIpeRxosp/RggqTYpzljQKoVPq1Bw==\n" +
+            "</ds:SignatureValue>\n" +
+            "<ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIDSTCCAjGgAwIBAgIEAoLQ/TANBgkqhkiG9w0BAQsFADBVMQswCQYDVQQGEwJVUzELMAkGA1UE\n" +
+            "CBMCQ0ExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxDTALBgNVBAoTBFdTTzIxEjAQBgNVBAMTCWxv\n" +
+            "Y2FsaG9zdDAeFw0xNzA3MTkwNjUyNTFaFw0yNzA3MTcwNjUyNTFaMFUxCzAJBgNVBAYTAlVTMQsw\n" +
+            "CQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzENMAsGA1UEChMEV1NPMjESMBAGA1UE\n" +
+            "AxMJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAluZFdW1ynitztkWL\n" +
+            "C6xKegbRWxky+5P0p4ShYEOkHs30QI2VCuR6Qo4Bz5rTgLBrky03W1GAVrZxuvKRGj9V9+PmjdGt\n" +
+            "au4CTXu9pLLcqnruaczoSdvBYA3lS9a7zgFU0+s6kMl2EhB+rk7gXluEep7lIOenzfl2f6IoTKa2\n" +
+            "fVgVd3YKiSGsyL4tztS70vmmX121qm0sTJdKWP4HxXyqK9neolXI9fYyHOYILVNZ69z/73OOVhkh\n" +
+            "/mvTmWZLM7GM6sApmyLX6OXUp8z0pkY+vT/9+zRxxQs7GurC4/C1nK3rI/0ySUgGEafO1atNjYml\n" +
+            "FN+M3tZX6nEcA6g94IavyQIDAQABoyEwHzAdBgNVHQ4EFgQUtS8kIYxQ8UVvVrZSdgyide9OHxUw\n" +
+            "DQYJKoZIhvcNAQELBQADggEBABfk5mqsVUrpFCYTZZhOxTRRpGXqoW1G05bOxHxs42Paxw8rAJ06\n" +
+            "Pty9jqM1CgRPpqvZa2lPQBQqZrHkdDE06q4NG0DqMH8NT+tNkXBe9YTre3EJCSfsvswtLVDZ7GDv\n" +
+            "THKojJjQvdVCzRj6XH5Truwefb4BJz9APtnlyJIvjHk1hdozqyOniVZd0QOxLAbcdt946chNdQvC\n" +
+            "m6aUOputp8Xogr0KBnEy3U8es2cAfNZaEkPU8Va5bU6Xjny8zGQnXCXxPKp7sMpgO93nPBt/liX1\n" +
+            "qfyXM7xEotWoxmm6HZx8oWQ8U5aiXjZ5RKDWCCq4ZuXl6wVsUz1iE61suO5yWi8=</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature><saml2p:Status><saml2p:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/></saml2p:Status><saml2:Assertion ID=\"_5a5a2e237a2292b339aaa5e5befd561c\" IssueInstant=\"2018-07-20T14:32:24.513Z\" Version=\"2.0\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\">localhost</saml2:Issuer><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "<ds:SignedInfo>\n" +
+            "<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "<ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/>\n" +
+            "<ds:Reference URI=\"#_5a5a2e237a2292b339aaa5e5befd561c\">\n" +
+            "<ds:Transforms>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "</ds:Transforms>\n" +
+            "<ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>\n" +
+            "<ds:DigestValue>43r4bVTP+1BSDEV43uTVL4dpp4M=</ds:DigestValue>\n" +
+            "</ds:Reference>\n" +
+            "</ds:SignedInfo>\n" +
+            "<ds:SignatureValue>\n" +
+            "VQ+2lYqkKX0z5uE+lqvYrID97MIv7qUdKpWurzZQml9MomsA4F5dtbpVl08D3+LjgcNP7znwisvk\n" +
+            "PeQIk/sZKXm3Gc8jClhu5olUmnyl3zn+c4xn6x2P/IniKXxt6nnf0OimWHlaKeZF/YZnT6Dbv4GI\n" +
+            "LMmVXVHG8wH3EnaQov2mbB8iv/XfF5dBZ7laccvOewFNaxDk0bYe99CFxhOqLl2l7Via4Raf53JV\n" +
+            "SwTF2naq1WH5d/hDxMe4c7gh9NIYV/pMsZLDz8QTbB+VA3WkaKgL6poh1H7DSeWYBMKlrkGzjmKP\n" +
+            "lgiOiEYfJgtS1SJITYoOkOwpaTdCLMIo5L2JGQ==\n" +
+            "</ds:SignatureValue>\n" +
+            "<ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIDSTCCAjGgAwIBAgIEAoLQ/TANBgkqhkiG9w0BAQsFADBVMQswCQYDVQQGEwJVUzELMAkGA1UE\n" +
+            "CBMCQ0ExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxDTALBgNVBAoTBFdTTzIxEjAQBgNVBAMTCWxv\n" +
+            "Y2FsaG9zdDAeFw0xNzA3MTkwNjUyNTFaFw0yNzA3MTcwNjUyNTFaMFUxCzAJBgNVBAYTAlVTMQsw\n" +
+            "CQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzENMAsGA1UEChMEV1NPMjESMBAGA1UE\n" +
+            "AxMJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAluZFdW1ynitztkWL\n" +
+            "C6xKegbRWxky+5P0p4ShYEOkHs30QI2VCuR6Qo4Bz5rTgLBrky03W1GAVrZxuvKRGj9V9+PmjdGt\n" +
+            "au4CTXu9pLLcqnruaczoSdvBYA3lS9a7zgFU0+s6kMl2EhB+rk7gXluEep7lIOenzfl2f6IoTKa2\n" +
+            "fVgVd3YKiSGsyL4tztS70vmmX121qm0sTJdKWP4HxXyqK9neolXI9fYyHOYILVNZ69z/73OOVhkh\n" +
+            "/mvTmWZLM7GM6sApmyLX6OXUp8z0pkY+vT/9+zRxxQs7GurC4/C1nK3rI/0ySUgGEafO1atNjYml\n" +
+            "FN+M3tZX6nEcA6g94IavyQIDAQABoyEwHzAdBgNVHQ4EFgQUtS8kIYxQ8UVvVrZSdgyide9OHxUw\n" +
+            "DQYJKoZIhvcNAQELBQADggEBABfk5mqsVUrpFCYTZZhOxTRRpGXqoW1G05bOxHxs42Paxw8rAJ06\n" +
+            "Pty9jqM1CgRPpqvZa2lPQBQqZrHkdDE06q4NG0DqMH8NT+tNkXBe9YTre3EJCSfsvswtLVDZ7GDv\n" +
+            "THKojJjQvdVCzRj6XH5Truwefb4BJz9APtnlyJIvjHk1hdozqyOniVZd0QOxLAbcdt946chNdQvC\n" +
+            "m6aUOputp8Xogr0KBnEy3U8es2cAfNZaEkPU8Va5bU6Xjny8zGQnXCXxPKp7sMpgO93nPBt/liX1\n" +
+            "qfyXM7xEotWoxmm6HZx8oWQ8U5aiXjZ5RKDWCCq4ZuXl6wVsUz1iE61suO5yWi8=</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\">admin</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData InResponseTo=\"_ffb07d938c8458cffa9c9465102c1a6a\" NotOnOrAfter=\"2018-07-20T14:37:22.034Z\" Recipient=\"https://localhost:9443/commonauth\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2018-07-20T14:32:24.513Z\" NotOnOrAfter=\"2018-07-20T14:37:22.034Z\"><saml2:AudienceRestriction><saml2:Audience>Primary</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AuthnStatement AuthnInstant=\"2018-07-20T14:32:24.513Z\" SessionIndex=\"dba8288f-08bb-4e0a-8bbb-7af412e38457\"><saml2:AuthnContext><saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext></saml2:AuthnStatement></saml2:Assertion></saml2p:Response></saml2p:ArtifactResponse></soap11:Body></soap11:Envelope>";
+
     public static final String SAML_ARTIFACT_RESOLVE_SERVICE = "";
 
     public static final String SIGNATURE_ALGO = "SignatureAlgorithm";
