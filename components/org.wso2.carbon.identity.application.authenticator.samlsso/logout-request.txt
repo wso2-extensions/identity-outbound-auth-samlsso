@@ -1,0 +1,15 @@
+<html>
+<body>
+<p>You are now redirected to https://localhost:9444/samlsso
+ If the redirection fails, please click the post button.</p>
+<form method='post' action='https://localhost:9444/samlsso'>
+<p>
+<input type='hidden' name='SAMLRequest' value='PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNhbWxwOkxvZ291dFJlcXVlc3QgRGVzdGluYXRpb249Imh0dHBzOi8vbG9jYWxob3N0Ojk0NDQvc2FtbHNzbyIgSUQ9Il9mMmFiMDkyYjQzNmVlZDI4MTlmYWNiN2Y1OGVmOTYxYiIgSXNzdWVJbnN0YW50PSIyMDE4LTA3LTIwVDE0OjQ4OjAxLjQ5M1oiIE5vdE9uT3JBZnRlcj0iMjAxOC0wNy0yMFQxNDo1MzowMS40OTNaIiBSZWFzb249IlNpbmdsZSBMb2dvdXQiIFZlcnNpb249IjIuMCIgeG1sbnM6c2FtbHA9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDpwcm90b2NvbCI+PHNhbWw6SXNzdWVyIHhtbG5zOnNhbWw9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDphc3NlcnRpb24iPmNhcmJvblNlcnZlcjwvc2FtbDpJc3N1ZXI+PHNhbWw6TmFtZUlEIEZvcm1hdD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6MS4xOm5hbWVpZC1mb3JtYXQ6dW5zcGVjaWZpZWQiIE5hbWVRdWFsaWZpZXI9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjEuMTpuYW1laWQtZm9ybWF0OnVuc3BlY2lmaWVkIiBTUE5hbWVRdWFsaWZpZXI9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjEuMTpuYW1laWQtZm9ybWF0OnVuc3BlY2lmaWVkIiB4bWxuczpzYW1sPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6YXNzZXJ0aW9uIj5Tb21lVXNlcjwvc2FtbDpOYW1lSUQ+PHNhbWxwOlNlc3Npb25JbmRleD4xMjM0NTY3ODk8L3NhbWxwOlNlc3Npb25JbmRleD48L3NhbWxwOkxvZ291dFJlcXVlc3Q+'><input type='hidden' name='RelayState' value='123456789'>
+<button type='submit'>POST</button>
+</p>
+</form>
+<script type='text/javascript'>
+document.forms[0].submit();
+</script>
+</body>
+</html>
