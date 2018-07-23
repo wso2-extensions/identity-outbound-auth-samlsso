@@ -24,6 +24,8 @@
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticatorTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImplTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManagerTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOArtifactResolutionServiceTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOSoapMessageServiceTest"/>
         </classes>
     </test>
 </suite>

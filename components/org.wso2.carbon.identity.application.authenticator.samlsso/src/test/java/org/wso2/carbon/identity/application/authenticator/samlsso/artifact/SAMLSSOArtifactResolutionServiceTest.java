@@ -18,7 +18,14 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 
+import org.opensaml.Configuration;
+import org.opensaml.saml2.binding.artifact.SAML2ArtifactBuilderFactory;
+import org.opensaml.saml2.core.Artifact;
 import org.opensaml.saml2.core.ArtifactResolve;
+import org.opensaml.saml2.core.Issuer;
+import org.opensaml.saml2.core.impl.ArtifactBuilder;
+import org.opensaml.saml2.core.impl.ArtifactResolveBuilder;
+import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
@@ -29,7 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 public class SAMLSSOArtifactResolutionServiceTest {
 
@@ -38,6 +44,13 @@ public class SAMLSSOArtifactResolutionServiceTest {
     @BeforeClass
     public void initTest() throws Exception {
 
+        Configuration.setSAML2ArtifactBuilderFactory(new SAML2ArtifactBuilderFactory());
+        Configuration.getBuilderFactory().registerBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME,
+                new ArtifactResolveBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME,
+                new ArtifactBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Issuer.DEFAULT_ELEMENT_NAME,
+                new IssuerBuilder());
     }
 
     @Test(priority = 1)
@@ -49,23 +62,9 @@ public class SAMLSSOArtifactResolutionServiceTest {
         SAMLSSOArtifactResolutionService artifactResolutionService = new SAMLSSOArtifactResolutionService(
                 authenticatorProperties, TestConstants.SUPER_TENANT_DOMAIN);
         artifactResolve = artifactResolutionService.generateArtifactResolveReq(TestConstants.SAML_ART);
-        assertEquals(artifactResolve.getIssuer(), TestConstants.SP_ENTITY_ID,
+        assertEquals(artifactResolve.getIssuer().getValue(), TestConstants.SP_ENTITY_ID,
                 "Issuer is not properly set in artifact resolve object.");
         assertEquals(artifactResolve.getArtifact().getArtifact(), TestConstants.SAML_ART,
                 "Artifact is not properly set in artifact resolve object.");
-    }
-
-    @Test(priority = 2)
-    public void testGenerateArtifactResolveSignedReq() throws ArtifactResolutionException {
-
-        Map<String, String> authenticatorProperties = new HashMap<>();
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID,
-                TestConstants.SP_ENTITY_ID);
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED,
-                "true");
-        SAMLSSOArtifactResolutionService artifactResolutionService = new SAMLSSOArtifactResolutionService(
-                authenticatorProperties, TestConstants.SUPER_TENANT_DOMAIN);
-        artifactResolve = artifactResolutionService.generateArtifactResolveReq(TestConstants.SAML_ART);
-        assertNotNull(artifactResolve.getSignature(), "Artifact Resolve request is not signed.");
     }
 }
