@@ -18,8 +18,18 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 
+import org.opensaml.Configuration;
+import org.opensaml.saml2.binding.artifact.SAML2ArtifactBuilderFactory;
+import org.opensaml.saml2.core.Artifact;
 import org.opensaml.saml2.core.ArtifactResolve;
+import org.opensaml.saml2.core.Issuer;
+import org.opensaml.saml2.core.impl.ArtifactBuilder;
+import org.opensaml.saml2.core.impl.ArtifactResolveBuilder;
+import org.opensaml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.ws.soap.soap11.Body;
 import org.opensaml.ws.soap.soap11.Envelope;
+import org.opensaml.ws.soap.soap11.impl.BodyBuilder;
+import org.opensaml.ws.soap.soap11.impl.EnvelopeBuilder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
@@ -43,6 +53,17 @@ public class SAMLSSOSoapMessageServiceTest {
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID,
                 TestConstants.SP_ENTITY_ID);
+
+        Configuration.setSAML2ArtifactBuilderFactory(new SAML2ArtifactBuilderFactory());
+        Configuration.getBuilderFactory().registerBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME,
+                new ArtifactResolveBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME,
+                new ArtifactBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Issuer.DEFAULT_ELEMENT_NAME,
+                new IssuerBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Envelope.DEFAULT_ELEMENT_NAME, new EnvelopeBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Body.DEFAULT_ELEMENT_NAME, new BodyBuilder());
+
         SAMLSSOArtifactResolutionService artifactResolutionService = new SAMLSSOArtifactResolutionService(
                 authenticatorProperties, TestConstants.SUPER_TENANT_DOMAIN);
         artifactResolve = artifactResolutionService.generateArtifactResolveReq(TestConstants.SAML_ART);
