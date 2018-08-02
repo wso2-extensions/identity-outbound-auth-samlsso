@@ -24,6 +24,7 @@ import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.security.x509.X509Credential;
+import org.opensaml.xml.signature.impl.SignatureImpl;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
@@ -51,6 +52,8 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.security.Key;
 import java.security.KeyStore;
@@ -66,6 +69,7 @@ import javax.xml.xpath.XPathFactory;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.*;
+import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.*;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDOMImplementationRegistry;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDocumentBuilderFactory;
@@ -109,6 +113,9 @@ public class DefaultSAML2SSOManagerTest {
     @Mock
     private DOMImplementationRegistry mockedDomImplementationRegistry;
 
+    @Mock
+    private SignatureImpl mockedSignatureImpl;
+
     private KeyStore keyStore;
 
     private Key key;
@@ -119,7 +126,6 @@ public class DefaultSAML2SSOManagerTest {
 
     @BeforeClass
     public void initTest() throws Exception {
-
     }
 
     @Test
@@ -671,4 +677,21 @@ public class DefaultSAML2SSOManagerTest {
         byte[] base64DecodedByteArray = base64Decoder.decode(xmlBytes);
         return new String(base64DecodedByteArray, "UTF-8");
     }
+
+    @Test
+    public void validateSignatureExceptionTest() throws Exception {
+
+        Class<?> clazz = DefaultSAML2SSOManager.class;
+        Object defaultSAML2SSOManager = clazz.newInstance();
+        Method validateSignature = defaultSAML2SSOManager.getClass().getDeclaredMethod("validateSignature",
+                XMLObject.class);
+        validateSignature.setAccessible(true);
+        try {
+            validateSignature.invoke(defaultSAML2SSOManager, mockedSignatureImpl);
+            fail("IllegalAccessException or InvocationTargetException should have been thrown");
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            assertTrue(true);
+        }
+    }
+
 }
