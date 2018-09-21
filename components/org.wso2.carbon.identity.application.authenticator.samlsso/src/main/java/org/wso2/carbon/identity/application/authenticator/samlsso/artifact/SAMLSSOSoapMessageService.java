@@ -38,18 +38,13 @@ import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.utils.CarbonUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 
@@ -156,7 +151,7 @@ public class SAMLSSOSoapMessageService {
 
             sslContext = SSLContext.getInstance("TLS");
             keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
-            keyStore = loadKeystoreFromResource(keyStorePath, keyStorePassword, keyStoreType);
+            keyStore = SSOUtils.loadKeyStoreFromFileSystem(keyStorePath, keyStorePassword, keyStoreType);
             keyManagerFactory.init(keyStore, kspassphrase);
             sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
 
@@ -167,22 +162,6 @@ public class SAMLSSOSoapMessageService {
         }
 
         return sslContext;
-    }
-
-    private KeyStore loadKeystoreFromResource(String keyStorePath, String password, String type)
-            throws ArtifactResolutionException {
-
-        try (InputStream is = Files.newInputStream(Paths.get(keyStorePath))) {
-            KeyStore keystore = KeyStore.getInstance(type);
-            keystore.load(is, password.toCharArray());
-            return keystore;
-        } catch (KeyStoreException e1) {
-            throw new ArtifactResolutionException("Could not get a keystore instance of type: " + type + ": " + e1);
-        } catch (IOException e2) {
-            throw new ArtifactResolutionException("Could not open keystore in path: " + keyStorePath + ": " + e2);
-        } catch (CertificateException | NoSuchAlgorithmException e3) {
-            throw new ArtifactResolutionException("Error in loading keystore in path: " + keyStorePath + ": " + e3);
-        }
     }
 
     private void setRequestProperties(String url, String message, HttpPost httpPost) {

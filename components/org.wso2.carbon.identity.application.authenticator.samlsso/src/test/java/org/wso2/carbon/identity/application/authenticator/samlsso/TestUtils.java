@@ -96,18 +96,6 @@ public class TestUtils {
         return null;
     }
 
-    public static KeyStore loadKeyStoreFromFileSystem(String keyStorePath, String password, String type) {
-
-        try (FileInputStream inputStream = new FileInputStream(keyStorePath)) {
-            KeyStore keyStore = KeyStore.getInstance(type);
-            keyStore.load(inputStream, password.toCharArray());
-            return keyStore;
-        } catch (Exception e) {
-            String errorMsg = "Error loading the key store from the given location.";
-            throw new SecurityException(errorMsg, e);
-        }
-    }
-
     public static String buildRequest(boolean isLogout, RequestData requestData) throws IOException, MarshallingException {
 
         RequestAbstractType requestMessage;

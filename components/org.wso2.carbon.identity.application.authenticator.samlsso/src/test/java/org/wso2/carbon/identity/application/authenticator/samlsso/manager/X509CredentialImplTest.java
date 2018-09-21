@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
@@ -85,7 +86,7 @@ public class X509CredentialImplTest {
         when(tenantManager.getTenantId(TestConstants.SAMPLE_TENANT_DOMAIN_NAME))
                 .thenReturn(TestConstants.SAMPLE_TENANT_ID);
 
-        keyStore = TestUtils.loadKeyStoreFromFileSystem(TestUtils.getFilePath("wso2carbon.jks"),
+        keyStore = SSOUtils.loadKeyStoreFromFileSystem(TestUtils.getFilePath("wso2carbon.jks"),
                 TestConstants.KEY_STORE_PASSWORD, "JKS");
         key = keyStore.getKey(TestConstants.KEY_ALIAS, TestConstants.KEY_PASSWORD.toCharArray());
         certificate = keyStore.getCertificate(TestConstants.KEY_ALIAS);

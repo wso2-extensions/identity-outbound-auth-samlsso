@@ -48,6 +48,7 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
+import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
@@ -64,12 +65,17 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -577,5 +583,28 @@ public class SSOUtils {
         DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
         ByteArrayInputStream inputStream = new ByteArrayInputStream(samlString.getBytes());
         return docBuilder.parse(inputStream);
+    }
+
+    /**
+     * Load a keystore from a given path.
+     *
+     * @param keyStorePath Path to the keystore file.
+     * @param password     Password of the keystore.
+     * @param type         Type of the keystore.
+     * @return
+     */
+    public static KeyStore loadKeyStoreFromFileSystem(String keyStorePath, String password, String type) {
+
+        try (FileInputStream inputStream = new FileInputStream(keyStorePath)) {
+            KeyStore keyStore = KeyStore.getInstance(type);
+            keyStore.load(inputStream, password.toCharArray());
+            return keyStore;
+        } catch (KeyStoreException e1) {
+            throw new SecurityException("Could not get a keystore instance of type: " + type + ": " + e1);
+        } catch (IOException e2) {
+            throw new SecurityException("Could not open keystore in path: " + keyStorePath + ": " + e2);
+        } catch (CertificateException | NoSuchAlgorithmException e3) {
+            throw new SecurityException("Error in loading keystore in path: " + keyStorePath + ": " + e3);
+        }
     }
 }
