@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLObject;
@@ -38,6 +39,7 @@ import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 
 import java.io.ByteArrayInputStream;
@@ -130,8 +132,20 @@ public class SAMLSSOArtifactResolutionService {
             log.debug("Artifact Resolve Request as a SOAP Message: " + envelopeElement);
         }
 
+        HttpHost proxy = null;
+
+        if (StringUtils.isNotEmpty(System.getenv(SSOConstants.ServerConfig.HTTPS_PROXY_HOST))) {
+            String proxyHost = System.getenv(SSOConstants.ServerConfig.HTTPS_PROXY_HOST);
+            int proxyPort = Integer.parseInt(System.getenv(SSOConstants.ServerConfig.HTTPS_PROXY_PORT));
+            proxy = new HttpHost(proxyHost, proxyPort);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Configured proxyHost: " + proxyHost + ", ProxyPort: " + proxyPort);
+            }
+        }
+
         String artifactResponseString = soapMessageService.sendSOAP(envelopeElement, SSOUtils.getArtifactResolveUrl
-                (authenticatorProperties));
+                (authenticatorProperties), proxy);
         ArtifactResponse artifactResponse = extractArtifactResponse(artifactResponseString);
 
         validateArtifactResponse(artifactResolve, artifactResponse);
