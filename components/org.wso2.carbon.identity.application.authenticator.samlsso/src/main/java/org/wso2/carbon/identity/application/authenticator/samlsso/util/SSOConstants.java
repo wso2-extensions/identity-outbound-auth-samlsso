@@ -47,6 +47,9 @@ public class SSOConstants {
     public static final String PRAGMA_PARAM_KEY = "Pragma";
     public static final String CACHE_CONTROL_PARAM_KEY = "Cache-Control";
 
+    public static final String SECURITY_KEYSTORE_LOCATION = "Security.KeyStore.Location";
+    public static final String SECURITY_KEYSTORE_TYPE = "Security.KeyStore.Type";
+
     public class StatusCodes {
         private StatusCodes() {
 
@@ -66,5 +69,8 @@ public class SSOConstants {
 
         public static final String SAML2_SSO_MANAGER = "SAML2SSOManager";
         public static final String SAML_SSO_ACS_URL = "SAMLSSOAssertionConsumerUrl";
+
+        public static final String HTTPS_PROXY_HOST = "HTTPS_PROXY_HOST";
+        public static final String HTTPS_PROXY_PORT = "HTTPS_PROXY_PORT";
     }
 }

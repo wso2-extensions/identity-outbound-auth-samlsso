@@ -20,24 +20,33 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.opensaml.common.SAMLObject;
 import org.opensaml.ws.soap.common.SOAPObjectBuilder;
 import org.opensaml.ws.soap.soap11.Body;
 import org.opensaml.ws.soap.soap11.Envelope;
 import org.opensaml.xml.Configuration;
 import org.opensaml.xml.XMLObjectBuilderFactory;
+import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
+import org.wso2.carbon.utils.CarbonUtils;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 
 /**
  * This class is used for handling SAML SOAP Binding
@@ -73,16 +82,29 @@ public class SAMLSSOSoapMessageService {
      *
      * @param message message that needs to be send
      * @param url     url that the artifact resolve request should be sent
+     * @param proxy   HttpHost proxy if configured in carbon.xml
      * @return response of invoking artifact resolve endpoint
      * @throws ArtifactResolutionException
      */
-    public String sendSOAP(String message, String url) throws ArtifactResolutionException {
+    public String sendSOAP(String message, String url, HttpHost proxy) throws ArtifactResolutionException {
 
         StringBuilder soapResponse = new StringBuilder();
         try {
             HttpPost httpPost = new HttpPost(url);
             setRequestProperties(url, message, httpPost);
-            DefaultHttpClient httpClient = new DefaultHttpClient();
+
+            HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+            SSLContext sslContext = getSSLContext(CarbonUtils.getServerConfiguration());
+
+            if (sslContext != null) {
+                httpClientBuilder.setSslcontext(sslContext);
+
+                if (proxy != null) {
+                    httpClientBuilder.setProxy(proxy);
+                }
+            }
+
+            CloseableHttpClient httpClient = httpClientBuilder.build();
             HttpResponse httpResponse = httpClient.execute(httpPost);
 
             int responseCode = httpResponse.getStatusLine().getStatusCode();
@@ -97,8 +119,49 @@ public class SAMLSSOSoapMessageService {
             throw new ArtifactResolutionException("Unknown targeted host: " + url, e1);
         } catch (IOException e2) {
             throw new ArtifactResolutionException("Could not open connection with host: " + url, e2);
+        } catch (GeneralSecurityException e3) {
+            throw new ArtifactResolutionException("Error in creating SSL context: " + e3);
         }
         return soapResponse.toString();
+    }
+
+    /**
+     * Create an SSLContext object by parsing the Keystore configured in carbon.xml file.
+     *
+     * @param serverConfig serverConfig Object that contains properties configured in carbon.xml.
+     * @return SSLContext or null if creation failed.
+     * @throws GeneralSecurityException
+     */
+    private SSLContext getSSLContext(final ServerConfiguration serverConfig)
+            throws GeneralSecurityException, ArtifactResolutionException {
+
+        SSLContext sslContext = null;
+        KeyManagerFactory keyManagerFactory;
+        KeyStore keyStore;
+        String keyStorePath;
+        String keyStorePassword;
+        String keyStoreType;
+
+        if (serverConfig != null) {
+            keyStorePath = serverConfig.getFirstProperty(SSOConstants.SECURITY_KEYSTORE_LOCATION);
+            keyStorePassword = serverConfig.getFirstProperty(SSOConstants.ServerConfig.KEY_PASSWORD);
+            keyStoreType = serverConfig.getFirstProperty(SSOConstants.SECURITY_KEYSTORE_TYPE);
+
+            char[] kspassphrase = keyStorePassword.toCharArray();
+
+            sslContext = SSLContext.getInstance("TLS");
+            keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+            keyStore = SSOUtils.loadKeyStoreFromFileSystem(keyStorePath, keyStorePassword, keyStoreType);
+            keyManagerFactory.init(keyStore, kspassphrase);
+            sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Created SSL Context using keystore: " + keyStorePath + " and keyStorePassword: " +
+                        keyStorePassword);
+            }
+        }
+
+        return sslContext;
     }
 
     private void setRequestProperties(String url, String message, HttpPost httpPost) {

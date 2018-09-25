@@ -640,7 +640,7 @@ public class DefaultSAML2SSOManagerTest {
         when(mockedTenantManager.getTenantId(TestConstants.SAMPLE_TENANT_DOMAIN_NAME))
                 .thenReturn(TestConstants.SAMPLE_TENANT_ID);
 
-        keyStore = TestUtils.loadKeyStoreFromFileSystem(TestUtils.getFilePath("wso2carbon.jks"),
+        keyStore = SSOUtils.loadKeyStoreFromFileSystem(TestUtils.getFilePath("wso2carbon.jks"),
                 TestConstants.KEY_STORE_PASSWORD, "JKS");
         key = keyStore.getKey(TestConstants.KEY_ALIAS, TestConstants.KEY_PASSWORD.toCharArray());
         certificate = keyStore.getCertificate(TestConstants.KEY_ALIAS);

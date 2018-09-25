@@ -19,7 +19,6 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 
 import org.opensaml.Configuration;
-import org.opensaml.saml2.binding.artifact.SAML2ArtifactBuilderFactory;
 import org.opensaml.saml2.core.Artifact;
 import org.opensaml.saml2.core.ArtifactResolve;
 import org.opensaml.saml2.core.Issuer;
@@ -44,13 +43,10 @@ public class SAMLSSOArtifactResolutionServiceTest {
     @BeforeClass
     public void initTest() throws Exception {
 
-        Configuration.setSAML2ArtifactBuilderFactory(new SAML2ArtifactBuilderFactory());
         Configuration.getBuilderFactory().registerBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME,
                 new ArtifactResolveBuilder());
-        Configuration.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME,
-                new ArtifactBuilder());
-        Configuration.getBuilderFactory().registerBuilder(Issuer.DEFAULT_ELEMENT_NAME,
-                new IssuerBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME, new ArtifactBuilder());
+        Configuration.getBuilderFactory().registerBuilder(Issuer.DEFAULT_ELEMENT_NAME, new IssuerBuilder());
     }
 
     @Test(priority = 1)
