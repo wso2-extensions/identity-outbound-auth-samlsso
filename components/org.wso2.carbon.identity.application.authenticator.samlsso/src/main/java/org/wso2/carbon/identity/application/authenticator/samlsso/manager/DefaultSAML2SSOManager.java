@@ -89,6 +89,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOArtifactResolutionService;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
@@ -204,7 +205,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String spNameQualifier = (String) request.getSession().getAttribute(SSOConstants.SP_NAME_QUALIFIER);
             String nameIdFormat = (String) request.getSession().getAttribute(SSOConstants.NAME_ID_FORMAT);
 
-            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier, nameIdFormat);
+            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier,
+                    nameIdFormat, context);
         }
         String idpUrl = null;
         boolean isSignAuth2SAMLUsingSuperTenant = false;
@@ -311,7 +313,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String spNameQualifier = (String) request.getSession().getAttribute(SSOConstants.SP_NAME_QUALIFIER);
             String nameIdFormat = (String) request.getSession().getAttribute(SSOConstants.NAME_ID_FORMAT);
 
-            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier, nameIdFormat);
+            requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier,
+                    nameIdFormat, context);
             if (SSOUtils.isLogoutRequestSigned(properties)) {
                 SSOUtils.setSignature(requestMessage, signatureAlgo, digestAlgo, includeCert,
                         new X509CredentialImpl(context.getTenantDomain(), null));
@@ -543,10 +546,14 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         // validate the assertion validity period
         validateAssertionValidityPeriod(assertion);
+        
+        // this request attribute is populated in processAuthenticationResponse of SAMLSSOAuthenticator
+        AuthenticationContext context = (AuthenticationContext) request
+                .getAttribute(SAMLSSOAuthenticator.AUTHENTICATION_CONTEXT);
 
         // validate audience restriction
-        validateAudienceRestriction(assertion);
-
+        validateAudienceRestriction(assertion, getIssuer(context));
+        
         // validate signature this SP only looking for assertion signature
         validateSignature(samlResponse, assertion);
 
@@ -609,9 +616,22 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     }
 
-    private LogoutRequest buildLogoutRequest(String user, String sessionIndexStr, String idpUrl, String
-            nameQualifier, String spNameQualifier, String nameIdFormat)
-            throws SAMLSSOException {
+    /**
+     * this method builds the SAML logout request corresponding to the federated identity provider.
+     * override this method to customize the SAML request.
+     * 
+     * @param user
+     * @param sessionIndexStr
+     * @param idpUrl
+     * @param nameQualifier
+     * @param spNameQualifier
+     * @param nameIdFormat
+     * @param context
+     * @return
+     * @throws SAMLSSOException
+     */
+    protected LogoutRequest buildLogoutRequest(String user, String sessionIndexStr, String idpUrl, String nameQualifier,
+            String spNameQualifier, String nameIdFormat, AuthenticationContext context) throws SAMLSSOException {
 
         LogoutRequest logoutReq = new LogoutRequestBuilder().buildObject();
 
@@ -625,7 +645,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         IssuerBuilder issuerBuilder = new IssuerBuilder();
         Issuer issuer = issuerBuilder.buildObject();
 
-        String spEntityId = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID);
+        String spEntityId = getIssuer(context);
 
         if (spEntityId != null && !spEntityId.isEmpty()) {
             issuer.setValue(spEntityId);
@@ -666,13 +686,24 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return logoutReq;
     }
 
-    private AuthnRequest buildAuthnRequest(HttpServletRequest request,
-                                           boolean isPassive, String idpUrl, AuthenticationContext context) throws SAMLSSOException {
+    /**
+     * this method builds the SAML request corresponding to the federated identity provider.
+     * override this method to customize the SAML request.
+     * 
+     * @param request
+     * @param isPassive
+     * @param idpUrl
+     * @param context
+     * @return
+     * @throws SAMLSSOException
+     */
+    protected AuthnRequest buildAuthnRequest(HttpServletRequest request, boolean isPassive, String idpUrl,
+            AuthenticationContext context) throws SAMLSSOException {
 
         IssuerBuilder issuerBuilder = new IssuerBuilder();
         Issuer issuer = issuerBuilder.buildObject("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer", "samlp");
 
-        String spEntityId = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID);
+        String spEntityId = getIssuer(context);
 
         if (spEntityId != null && !spEntityId.isEmpty()) {
             issuer.setValue(spEntityId);
@@ -965,9 +996,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * Validate the AudienceRestriction of SAML2 Response
      *
      * @param assertion SAML2 Assertion
-     * @return validity
+     * @param issuer Issuer of the SAML2 Assertion
      */
-    private void validateAudienceRestriction(Assertion assertion) throws SAMLSSOException {
+    private void validateAudienceRestriction(Assertion assertion, String issuer) throws SAMLSSOException {
 
         if (assertion != null) {
             Conditions conditions = assertion.getConditions();
@@ -978,8 +1009,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                         if (CollectionUtils.isNotEmpty(audienceRestriction.getAudiences())) {
                             boolean audienceFound = false;
                             for (Audience audience : audienceRestriction.getAudiences()) {
-                                if (properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID)
-                                        .equals(audience.getAudienceURI())) {
+                                if (issuer != null && issuer.equals(audience.getAudienceURI())) {
                                     audienceFound = true;
                                     break;
                                 }
@@ -1187,6 +1217,18 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             }
         }
         return false;
+    }
+    
+    /**
+     * finds the issuer of the SAML request. this is used at the time we build the request and also
+     * at the time we validate the audience in the SAML response.
+     * 
+     * @param context
+     * @return
+     */
+    protected String getIssuer(AuthenticationContext context) {
+        // this is the issuer from the SAML federated authenticator.
+        return properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID);
     }
 
 }

@@ -21,7 +21,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
+import org.joda.time.DateTimeZone;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.opensaml.saml2.core.NameIDType;
@@ -336,8 +338,8 @@ public class SAMLSSOAuthenticatorTest {
         when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
         when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
 
-        String notOnOrAfter = DateFormatUtils.format(DateTimeUtils.currentTimeMillis() + 5 * 60 * 1000L,
-                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        DateTime issueInstant = new DateTime();
+        DateTime notOnOrAfter = issueInstant.toDateTime(DateTimeZone.UTC).plusMillis(5 * 60 * 1000);
         String samlResponse = TestConstants.SAML_RESPONSE.replace("NotOnOrAfter=\"2017-10-06T14:18:59.302Z\"",
                 "NotOnOrAfter=\"" + notOnOrAfter + "\"");
         when(mockedReturnedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_RESP))
