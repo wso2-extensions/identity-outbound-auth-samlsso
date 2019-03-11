@@ -63,6 +63,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
     private static final long serialVersionUID = -8097512332218044859L;
     public static final String AS_REQUEST = "AS_REQUEST";
+    public static final String AUTHENTICATION_CONTEXT = "AUTHENTICATION_CONTEXT";
 
     private static final String AS_RESPONSE = "AS_RESPONSE";
 
@@ -249,6 +250,11 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
             saml2SSOManager.init(context.getTenantDomain(), context.getAuthenticatorProperties(),
                     context.getExternalIdP().getIdentityProvider());
+            // unfortunately the SAML2SSOManager interface does not allow passing authentication
+            // context. this is required to support to build context aware SAML requests - and then
+            // to validate the corresponding SAML response.this is a workaround not to break the
+            // interface - and we remove this request attribute in the finally block of this method.
+            request.setAttribute(AUTHENTICATION_CONTEXT, context);
             saml2SSOManager.processResponse(request);
             Map<ClaimMapping, String> receivedClaims = (Map<ClaimMapping, String>) request
                     .getSession(false).getAttribute("samlssoAttributes");
@@ -323,6 +329,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             // whenever the code reaches here the subject identifier will be null. Therefore we can't pass
             // AuthenticatedUser object with the exception.
             throw new AuthenticationFailedException(e.getMessage(), e);
+        } finally {
+            // this is not needed - remove it.
+            request.removeAttribute(AUTHENTICATION_CONTEXT);
         }
     }
 
