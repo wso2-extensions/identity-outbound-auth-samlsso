@@ -81,6 +81,17 @@
                 <enabled>false</enabled>
             </releases>
         </repository>
+
+        <repository>
+            <id>smslib.releases</id>
+            <name>smslib Repository</name>
+            <url>https://maven.wso2.org/nexus/content/repositories/thirdparty/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+        </repository>
     </repositories>
 
     <pluginRepositories>
