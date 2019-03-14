@@ -348,7 +348,7 @@
 
         <!-- Orbit versions-->
         <opensaml.version>2.6.4</opensaml.version>
-        <opensaml2.wso2.version>2.6.4.wso2v3</opensaml2.wso2.version>
+        <opensaml2.wso2.version>2.6.4.wso2v5</opensaml2.wso2.version>
         <opensaml2.wso2.osgi.version.range>[2.6.0,3.0.0)</opensaml2.wso2.osgi.version.range>
         <httpcomponents-httpclient.wso2.version>4.3.1.wso2v2</httpcomponents-httpclient.wso2.version>
 
