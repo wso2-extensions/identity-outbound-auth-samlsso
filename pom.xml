@@ -352,8 +352,8 @@
         <opensaml2.wso2.osgi.version.range>[2.6.0,3.0.0)</opensaml2.wso2.osgi.version.range>
         <httpcomponents-httpclient.wso2.version>4.3.1.wso2v2</httpcomponents-httpclient.wso2.version>
 
-        <joda.version>2.8.2</joda.version>
-        <joda.wso2.version>2.8.2.wso2v1</joda.wso2.version>
+        <joda.version>2.9.4</joda.version>
+        <joda.wso2.version>2.9.4.wso2v1</joda.wso2.version>
         <joda.wso2.osgi.version.range>[2.8.2,3.0.0)</joda.wso2.osgi.version.range>
 
         <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
