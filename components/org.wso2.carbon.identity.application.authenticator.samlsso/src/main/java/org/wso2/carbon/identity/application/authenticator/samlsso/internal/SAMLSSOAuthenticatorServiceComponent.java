@@ -15,7 +15,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 
 import org.apache.commons.logging.Log;
@@ -27,11 +26,16 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthent
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.CarbonUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 /**
  * @scr.reference name="user.realmservice.default"
@@ -42,12 +46,14 @@ import java.util.Scanner;
  * interface="org.wso2.carbon.base.api.ServerConfigurationService"
  * cardinality="1..1" policy="dynamic" bind="setServerConfigurationService"
  * unbind="unsetServerConfigurationService"
- * @scr.component name="identity.application.authenticator.samlsso.component" immediate="true"
  */
-
+@Component(
+         name = "identity.application.authenticator.samlsso.component", 
+         immediate = true)
 public class SAMLSSOAuthenticatorServiceComponent {
 
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
+
     private static String postPage = null;
 
     protected void setRealmService(RealmService realmService) {
@@ -61,15 +67,14 @@ public class SAMLSSOAuthenticatorServiceComponent {
         return postPage;
     }
 
+    @Activate
     protected void activate(ComponentContext ctxt) {
         String postPagePath = null;
         FileInputStream fis = null;
         try {
             SAMLSSOAuthenticator samlSSOAuthenticator = new SAMLSSOAuthenticator();
             ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), samlSSOAuthenticator, null);
-            postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository"
-                    + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File
-                    .separator + "samlsso_federate.html";
+            postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository" + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File.separator + "samlsso_federate.html";
             fis = new FileInputStream(new File(postPagePath));
             postPage = new Scanner(fis, "UTF-8").useDelimiter("\\A").next();
             if (log.isDebugEnabled()) {
@@ -77,7 +82,7 @@ public class SAMLSSOAuthenticatorServiceComponent {
             }
         } catch (FileNotFoundException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Failed to find SAMLSSO POST page for federation in "+ postPagePath);
+                log.debug("Failed to find SAMLSSO POST page for federation in " + postPagePath);
             }
         } catch (Throwable e) {
             if (log.isDebugEnabled()) {
@@ -86,10 +91,9 @@ public class SAMLSSOAuthenticatorServiceComponent {
         } finally {
             IdentityIOStreamUtils.closeInputStream(fis);
         }
-
-
     }
 
+    @Deactivate
     protected void deactivate(ComponentContext context) {
         if (log.isDebugEnabled()) {
             log.info("SAML2 SSO Authenticator bundle is deactivated");
@@ -117,3 +121,4 @@ public class SAMLSSOAuthenticatorServiceComponent {
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setServerConfigurationService(null);
     }
 }
+
