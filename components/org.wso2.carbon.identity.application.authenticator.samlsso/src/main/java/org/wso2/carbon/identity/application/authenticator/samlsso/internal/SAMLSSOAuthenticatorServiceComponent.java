@@ -20,22 +20,23 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.base.api.ServerConfigurationService;
-import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
-import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
-import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.CarbonUtils;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.base.api.ServerConfigurationService;
+import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
+import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
+import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.CarbonUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 /**
  * @scr.reference name="user.realmservice.default"
@@ -55,17 +56,6 @@ public class SAMLSSOAuthenticatorServiceComponent {
     private static Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
 
     private static String postPage = null;
-
-    protected void setRealmService(RealmService realmService) {
-        if (log.isDebugEnabled()) {
-            log.debug("RealmService is set in the SAML2 SSO Authenticator bundle");
-        }
-        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(realmService);
-    }
-
-    public static String getPostPage() {
-        return postPage;
-    }
 
     @Activate
     protected void activate(ComponentContext ctxt) {
@@ -100,6 +90,19 @@ public class SAMLSSOAuthenticatorServiceComponent {
         }
     }
 
+    @Reference(
+            name = "RealmService",
+            service = org.wso2.carbon.user.core.service.RealmService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetRealmService")
+    protected void setRealmService(RealmService realmService) {
+        if (log.isDebugEnabled()) {
+            log.debug("RealmService is set in the SAML2 SSO Authenticator bundle");
+        }
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(realmService);
+    }
+
     protected void unsetRealmService(RealmService realmService) {
         if (log.isDebugEnabled()) {
             log.debug("RealmService is unset in the SAML2 SSO Authenticator bundle");
@@ -107,6 +110,12 @@ public class SAMLSSOAuthenticatorServiceComponent {
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(null);
     }
 
+    @Reference(
+            name = "ServerConfigurationService",
+            service = org.wso2.carbon.base.api.ServerConfigurationService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetServerConfigurationService")
     protected void setServerConfigurationService(ServerConfigurationService serverConfigurationService) {
         if (log.isDebugEnabled()) {
             log.debug("Set the ServerConfiguration Service");
@@ -119,6 +128,10 @@ public class SAMLSSOAuthenticatorServiceComponent {
             log.debug("Unset the ServerConfiguration Service");
         }
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setServerConfigurationService(null);
+    }
+
+    public static String getPostPage() {
+        return postPage;
     }
 }
 
