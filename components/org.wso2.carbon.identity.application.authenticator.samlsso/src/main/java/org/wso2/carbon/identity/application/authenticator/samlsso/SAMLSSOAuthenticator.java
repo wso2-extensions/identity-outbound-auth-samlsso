@@ -448,8 +448,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 throw new LogoutFailedException(e.getMessage(), e);
             }
         } else {
-            // Fixed issue #5707 - Proper error message is needed when logout is not enabled with SAML2 Federated Authenticator
-            throw new UnsupportedOperationException("Logout operation not enabled with SAML2 Federated Authenticator");
+            // Fixed issue #5707 - Proper error message is needed when logout is not enabled in SAML Federated Authenticator
+            throw new UnsupportedOperationException("Logout operation is not enabled in SAML Federated Authenticator");
         }
     }
 
