@@ -128,7 +128,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     private static final String SIGN_AUTH2_SAML_USING_SUPER_TENANT = "SignAuth2SAMLUsingSuperTenant";
     private static final String NAME_ID_TYPE = "NameIDType";
-    private static Log log = LogFactory.getLog(DefaultSAML2SSOManager.class);
+    private static final Log log = LogFactory.getLog(DefaultSAML2SSOManager.class);
     private static boolean bootStrapped = false;
     private static String DEFAULT_MULTI_ATTRIBUTE_SEPARATOR = ",";
     private static String MULTI_ATTRIBUTE_SEPARATOR = "MultiAttributeSeparator";

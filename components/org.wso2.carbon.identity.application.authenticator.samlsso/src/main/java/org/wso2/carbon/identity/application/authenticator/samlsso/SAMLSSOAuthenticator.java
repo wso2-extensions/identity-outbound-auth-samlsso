@@ -67,7 +67,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
     private static final String AS_RESPONSE = "AS_RESPONSE";
 
-    private static Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
+    private static final Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
 
     @Override
     public boolean canHandle(HttpServletRequest request) {

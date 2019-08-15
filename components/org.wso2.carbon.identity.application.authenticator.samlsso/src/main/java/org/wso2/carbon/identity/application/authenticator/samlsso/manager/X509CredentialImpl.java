@@ -64,7 +64,7 @@ public class X509CredentialImpl implements X509Credential {
     private X509Certificate entityCertificate = null;
 
     private static KeyStore superTenantSignKeyStore = null;
-    private static Log log = LogFactory.getLog(X509CredentialImpl.class);
+    private static final Log log = LogFactory.getLog(X509CredentialImpl.class);
 
     public static final String SECURITY_SAML_SIGN_KEY_STORE_LOCATION = "Security.SAMLSignKeyStore.Location";
     public static final String SECURITY_SAML_SIGN_KEY_STORE_TYPE = "Security.SAMLSignKeyStore.Type";
