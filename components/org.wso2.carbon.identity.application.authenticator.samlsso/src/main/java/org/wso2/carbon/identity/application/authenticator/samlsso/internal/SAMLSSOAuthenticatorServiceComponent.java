@@ -53,7 +53,7 @@ import java.util.Scanner;
          immediate = true)
 public class SAMLSSOAuthenticatorServiceComponent {
 
-    private static Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
+    private static final Log log = LogFactory.getLog(SAMLSSOAuthenticatorServiceComponent.class);
 
     private static String postPage = null;
 

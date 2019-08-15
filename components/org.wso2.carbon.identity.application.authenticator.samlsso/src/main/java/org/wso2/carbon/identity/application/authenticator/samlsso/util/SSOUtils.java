@@ -89,7 +89,7 @@ public class SSOUtils {
 
     }
 
-    private static Log log = LogFactory.getLog(SSOUtils.class);
+    private static final Log log = LogFactory.getLog(SSOUtils.class);
 
     /**
      * Generates a unique Id for Authentication Requests
