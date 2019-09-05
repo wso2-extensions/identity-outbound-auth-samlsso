@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.application.authentication.framework.model.Authe
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationContextProperty;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.application.authenticator.samlsso.dao.SessionDetailsDAO;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManager;
@@ -49,15 +50,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_RESP;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.*;
 
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements FederatedApplicationAuthenticator {
 
@@ -293,6 +290,11 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             stateInfoDO.setNameQualifier(nameQualifier);
             stateInfoDO.setSpNameQualifier(spNameQualifier);
             context.setStateInfo(stateInfoDO);
+
+            //include the saml index with federated idp as a property map to the context
+            Map<String, Object> authenticatorProperties = new HashMap<>();
+            context.setProperties(authenticatorProperties);
+            context.setProperty(context.getExternalIdP().getIdentityProvider().getIdentityProviderName(), sessionIndexObj);
 
             // Add AuthnContextClassRefs received with SAML2 Response to AuthenticationContext
             if (AS_RESPONSE.equalsIgnoreCase(context.getAuthenticatorProperties()
