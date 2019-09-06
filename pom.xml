@@ -21,13 +21,13 @@
     <parent>
         <groupId>org.wso2</groupId>
         <artifactId>wso2</artifactId>
-        <version>1</version>
+        <version>1.2</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.carbon.identity.outbound.auth.saml2</groupId>
     <artifactId>identity-application-auth-samlsso</artifactId>
-    <version>5.2.3-SNAPSHOT</version>
+    <version>5.2.6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - SAML SSO Application Authenticator Feature Aggregator Module</name>
     <description> WSO2 Carbon - Identity Application Authentication SAMLSSO</description>
@@ -249,10 +249,15 @@
                 <artifactId>powermock-api-mockito</artifactId>
                 <version>${powermock-module-testng.version}</version>
             </dependency>
-        <dependency>
+            <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
                 <version>${apache.felix.scr.ds.annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.logging</groupId>
+                <artifactId>pax-logging-api</artifactId>
+                <version>${pax.logging.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -286,16 +291,22 @@
                         </instructions>
                     </configuration>
                 </plugin>
-            <plugin>
-                    <groupId>org.apache.felix</groupId>
-                    <artifactId>maven-scr-plugin</artifactId>
-                    <version>${maven.scr.plugin.version}</version>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <source>1.8</source>
+                    </configuration>
                     <executions>
                         <execution>
-                            <id>generate-scr-scrdescriptor</id>
+                            <id>attach-javadocs</id>
                             <goals>
-                                <goal>scr</goal>
+                                <goal>jar</goal>
                             </goals>
+                            <configuration>
+                                <!--This parameter disables doclint-->
+                                <doclint>none</doclint>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -316,15 +327,6 @@
                 <artifactId>maven-deploy-plugin</artifactId>
             </plugin>
             <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <inherited>true</inherited>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
                 <version>${maven.buildnumber.plugin.version}</version>
@@ -341,6 +343,7 @@
 
         <!--Carbon Kernel Version-->
         <carbon.kernel.version>4.5.0-m1</carbon.kernel.version>
+        <carbon.kernel.feature.version>4.5.0</carbon.kernel.feature.version>
         <carbon.kernel.imp.pkg.version.range>[4.4.0, 5.0.0)</carbon.kernel.imp.pkg.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
@@ -383,7 +386,7 @@
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
         <maven.scr.plugin.version>1.26.0</maven.scr.plugin.version>
-        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
         <maven.buildnumber.plugin.version>1.4</maven.buildnumber.plugin.version>
 
         <!-- Unit test versions -->
@@ -393,6 +396,8 @@
         <slf4j.api.version>1.7.12</slf4j.api.version>
         <powermock-module-testng.version>1.6.6</powermock-module-testng.version>
     <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
+        <pax.logging.version>1.11.0</pax.logging.version>
+        <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>
     </properties>
 
 </project>

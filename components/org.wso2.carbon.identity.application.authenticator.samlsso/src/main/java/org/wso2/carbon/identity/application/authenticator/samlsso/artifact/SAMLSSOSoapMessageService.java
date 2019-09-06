@@ -53,7 +53,7 @@ import javax.net.ssl.SSLContext;
  */
 public class SAMLSSOSoapMessageService {
     private static final String CONTENT_TYPE = "text/xml; charset=utf-8";
-    private static Log log = LogFactory.getLog(SAMLSSOSoapMessageService.class);
+    private static final Log log = LogFactory.getLog(SAMLSSOSoapMessageService.class);
 
     /**
      * Build a SOAP Message.
