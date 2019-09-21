@@ -259,6 +259,11 @@
                 <artifactId>pax-logging-api</artifactId>
                 <version>${pax.logging.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${com.google.guava.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -348,8 +353,8 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.13.6</carbon.identity.framework.version>
-        <carbon.identity.framework.imp.pkg.version.range>[5.0.0, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
+        <carbon.identity.framework.version>5.14.78-SNAPSHOT</carbon.identity.framework.version>
+        <carbon.identity.framework.imp.pkg.version.range>[5.14.67, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
         <!-- Carbon Commons -->
         <commons-collections.version>3.2.0.wso2v1</commons-collections.version>
@@ -369,9 +374,12 @@
         <axis2.wso2.version>1.6.1-wso2v37</axis2.wso2.version>
 
         <!-- Orbit versions-->
-        <opensaml.version>2.6.6</opensaml.version>
-        <opensaml2.wso2.version>2.6.6.wso2v3</opensaml2.wso2.version>
-        <opensaml2.wso2.osgi.version.range>[2.6.0,3.0.0)</opensaml2.wso2.osgi.version.range>
+        <!--<opensaml.version>2.6.6</opensaml.version>-->
+        <!--<opensaml2.wso2.version>2.6.6.wso2v3</opensaml2.wso2.version>-->
+        <!--<opensaml2.wso2.osgi.version.range>[2.6.0,3.0.0)</opensaml2.wso2.osgi.version.range>-->
+        <opensaml.version>3.1.1</opensaml.version>
+        <opensaml2.wso2.version>3.3.1.wso2v1</opensaml2.wso2.version>
+        <opensaml2.wso2.osgi.version.range>[3.3.1,4.0.0)</opensaml2.wso2.osgi.version.range>
         <httpcomponents-httpclient.wso2.version>4.3.1.wso2v2</httpcomponents-httpclient.wso2.version>
 
         <joda.version>2.9.4</joda.version>
@@ -395,9 +403,10 @@
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <slf4j.api.version>1.7.12</slf4j.api.version>
         <powermock-module-testng.version>1.6.6</powermock-module-testng.version>
-    <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
+        <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <pax.logging.version>1.11.0</pax.logging.version>
         <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>
+        <com.google.guava.version>27.0-jre</com.google.guava.version>
     </properties>
 
 </project>

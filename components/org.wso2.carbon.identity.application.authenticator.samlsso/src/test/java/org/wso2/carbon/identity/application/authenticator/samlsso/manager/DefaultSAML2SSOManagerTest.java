@@ -20,11 +20,11 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.security.x509.X509Credential;
-import org.opensaml.xml.signature.impl.SignatureImpl;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.signature.impl.SignatureImpl;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;

@@ -18,16 +18,19 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 
-import org.opensaml.Configuration;
-import org.opensaml.saml2.core.Artifact;
-import org.opensaml.saml2.core.ArtifactResolve;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.impl.ArtifactBuilder;
-import org.opensaml.saml2.core.impl.ArtifactResolveBuilder;
-import org.opensaml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.core.config.InitializationException;
+import org.opensaml.core.config.InitializationService;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.saml2.core.Artifact;
+import org.opensaml.saml.saml2.core.ArtifactResolve;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.impl.ArtifactBuilder;
+import org.opensaml.saml.saml2.core.impl.ArtifactResolveBuilder;
+import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.TestUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
@@ -42,11 +45,11 @@ public class SAMLSSOArtifactResolutionServiceTest {
 
     @BeforeClass
     public void initTest() throws Exception {
-
-        Configuration.getBuilderFactory().registerBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME,
+        TestUtils.doBootstrap();
+        XMLObjectProviderRegistrySupport.getBuilderFactory().registerBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME,
                 new ArtifactResolveBuilder());
-        Configuration.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME, new ArtifactBuilder());
-        Configuration.getBuilderFactory().registerBuilder(Issuer.DEFAULT_ELEMENT_NAME, new IssuerBuilder());
+        XMLObjectProviderRegistrySupport.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME, new ArtifactBuilder());
+        XMLObjectProviderRegistrySupport.getBuilderFactory().registerBuilder(Issuer.DEFAULT_ELEMENT_NAME, new IssuerBuilder());
     }
 
     @Test(priority = 1)

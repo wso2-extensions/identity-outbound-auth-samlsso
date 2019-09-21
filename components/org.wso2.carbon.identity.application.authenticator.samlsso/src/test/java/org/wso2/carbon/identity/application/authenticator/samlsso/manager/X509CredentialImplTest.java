@@ -19,7 +19,7 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.mockito.Mock;
-import org.opensaml.xml.security.x509.X509Credential;
+import org.opensaml.security.x509.X509Credential;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
@@ -202,9 +202,9 @@ public class X509CredentialImplTest {
     }
 
     @Test(priority = 10)
-    public void getCredentalContextSet() {
+    public void getCredentialContextSet() {
 
-        assertNull(x509CredentialImpl.getCredentalContextSet(), "Need to implement the unit test.");
+        assertNull(x509CredentialImpl.getCredentialContextSet(), "Need to implement the unit test.");
     }
 
     @Test(priority = 11)

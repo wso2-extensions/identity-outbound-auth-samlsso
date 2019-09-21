@@ -21,26 +21,29 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xml.security.c14n.Canonicalizer;
-import org.opensaml.Configuration;
-import org.opensaml.common.impl.SAMLObjectContentReference;
-import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
-import org.opensaml.saml2.core.RequestAbstractType;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.XMLObjectBuilder;
-import org.opensaml.xml.io.Marshaller;
-import org.opensaml.xml.io.MarshallerFactory;
-import org.opensaml.xml.io.MarshallingException;
-import org.opensaml.xml.io.Unmarshaller;
-import org.opensaml.xml.io.UnmarshallerFactory;
-import org.opensaml.xml.io.UnmarshallingException;
-import org.opensaml.xml.security.SigningUtil;
-import org.opensaml.xml.security.x509.X509Credential;
-import org.opensaml.xml.signature.KeyInfo;
-import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.SignatureException;
-import org.opensaml.xml.signature.Signer;
-import org.opensaml.xml.signature.X509Data;
-import org.opensaml.xml.util.Base64;
+import org.opensaml.core.config.InitializationException;
+import org.opensaml.core.config.InitializationService;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.common.SAMLObjectContentReference;
+import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
+import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.XMLObjectBuilder;
+import org.opensaml.core.xml.io.Marshaller;
+import org.opensaml.core.xml.io.MarshallerFactory;
+import org.opensaml.core.xml.io.MarshallingException;
+import org.opensaml.core.xml.io.Unmarshaller;
+import org.opensaml.core.xml.io.UnmarshallerFactory;
+import org.opensaml.core.xml.io.UnmarshallingException;
+import org.opensaml.security.SecurityException;
+import org.opensaml.xmlsec.crypto.XMLSigningUtil;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.signature.KeyInfo;
+import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.Signer;
+import org.opensaml.xmlsec.signature.X509Data;
+import net.shibboleth.utilities.java.support.codec.Base64Support;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -48,7 +51,6 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
-import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
@@ -66,7 +68,6 @@ import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -98,15 +99,8 @@ public class SSOUtils {
      */
 
     public static String createID() {
-
-        try {
-            SecureRandomIdentifierGenerator generator = new SecureRandomIdentifierGenerator();
-            return generator.generateIdentifier();
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error while building Secure Random ID", e);
-            //TODO : throw exception and break the flow
-        }
-        return null;
+        RandomIdentifierGenerationStrategy generator = new RandomIdentifierGenerationStrategy();
+        return generator.generateIdentifier();
     }
 
     /**
@@ -116,7 +110,7 @@ public class SSOUtils {
      * @param signatureAlgorithm
      * @param digestAlgorithm
      * @param includeCert
-     * @param credential
+     * @param x509Credential
      * @return
      * @throws SAMLSSOException
      */
@@ -152,7 +146,7 @@ public class SSOUtils {
         if (includeCert) {
                 KeyInfo keyInfo = (KeyInfo) buildXMLObject(KeyInfo.DEFAULT_ELEMENT_NAME);
                 X509Data data = (X509Data) buildXMLObject(X509Data.DEFAULT_ELEMENT_NAME);
-                org.opensaml.xml.signature.X509Certificate cert = (org.opensaml.xml.signature.X509Certificate) buildXMLObject(org.opensaml.xml.signature.X509Certificate.DEFAULT_ELEMENT_NAME);
+                org.opensaml.xmlsec.signature.X509Certificate cert = (org.opensaml.xmlsec.signature.X509Certificate) buildXMLObject(org.opensaml.xmlsec.signature.X509Certificate.DEFAULT_ELEMENT_NAME);
                 String value = null;
                 try {
                     value = org.apache.xml.security.utils.Base64.encode(x509Credential
@@ -174,8 +168,7 @@ public class SSOUtils {
         signatureList.add(signature);
 
         // Marshall and Sign
-        MarshallerFactory marshallerFactory =
-                org.opensaml.xml.Configuration.getMarshallerFactory();
+        MarshallerFactory marshallerFactory = XMLObjectProviderRegistrySupport.getMarshallerFactory();
         Marshaller marshaller = marshallerFactory.getMarshaller(request);
         try {
             marshaller.marshall(request);
@@ -198,10 +191,10 @@ public class SSOUtils {
             httpQueryString
                     .append(URLEncoder.encode(signatureAlgorithmURI, "UTF-8").trim());
 
-            byte[] rawSignature = SigningUtil.signWithURI(credential, signatureAlgorithmURI,
+            byte[] rawSignature = XMLSigningUtil.signWithURI(credential, signatureAlgorithmURI,
                     httpQueryString.toString().getBytes("UTF-8"));
 
-            String base64Signature = Base64.encodeBytes(rawSignature, Base64.DONT_BREAK_LINES);
+            String base64Signature = Base64Support.encode(rawSignature, Base64Support.UNCHUNKED);
 
             if (log.isDebugEnabled()) {
                 log.debug("Generated digital signature value (base64-encoded) {} " + base64Signature);
@@ -209,13 +202,13 @@ public class SSOUtils {
 
             httpQueryString.append("&Signature=" + URLEncoder.encode(base64Signature, "UTF-8").trim());
 
-        } catch (org.opensaml.xml.security.SecurityException e) {
+        } catch (SecurityException e) {
             throw new SAMLSSOException("Unable to sign query string", e);
         } catch (UnsupportedEncodingException e) {
             // UTF-8 encoding is required to be supported by all JVMs
             throw new SAMLSSOException("Error while adding signature to HTTP query string", e);
         }
-    }
+  }
 
     /**
      * Builds SAML Elements
@@ -225,8 +218,7 @@ public class SSOUtils {
      * @throws SAMLSSOException
      */
     private static XMLObject buildXMLObject(QName objectQName) throws SAMLSSOException {
-        XMLObjectBuilder builder =
-                org.opensaml.xml.Configuration.getBuilderFactory()
+        XMLObjectBuilder builder = XMLObjectProviderRegistrySupport.getBuilderFactory()
                         .getBuilder(objectQName);
         if (builder == null) {
             throw new SAMLSSOException("Unable to retrieve builder for object QName " +
@@ -325,8 +317,7 @@ public class SSOUtils {
             System.setProperty("javax.xml.parsers.DocumentBuilderFactory",
                     "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
 
-            MarshallerFactory marshallerFactory = org.opensaml.xml.Configuration
-                    .getMarshallerFactory();
+            MarshallerFactory marshallerFactory = XMLObjectProviderRegistrySupport.getMarshallerFactory();
             Marshaller marshaller = marshallerFactory.getMarshaller(xmlObject);
             Element element = marshaller.marshall(xmlObject);
 
@@ -353,6 +344,32 @@ public class SSOUtils {
      */
     public static XMLObject unmarshall(String samlString) throws SAMLSSOException {
 
+        Thread thread = Thread.currentThread();
+        ClassLoader loader = thread.getContextClassLoader();
+        thread.setContextClassLoader(InitializationService.class.getClassLoader());
+
+        try {
+            InitializationService.initialize();
+
+
+            org.opensaml.saml.config.SAMLConfigurationInitializer initializer_1 = new org.opensaml.saml.config.SAMLConfigurationInitializer();
+            initializer_1.init();
+
+            org.opensaml.saml.config.XMLObjectProviderInitializer initializer_2 = new org.opensaml.saml.config.XMLObjectProviderInitializer();
+            initializer_2.init();
+
+            org.opensaml.core.xml.config.XMLObjectProviderInitializer initializer_3 = new org.opensaml.core.xml.config.XMLObjectProviderInitializer();
+            initializer_3.init();
+
+            org.opensaml.core.xml.config.GlobalParserPoolInitializer initializer_4 = new org.opensaml.core.xml.config.GlobalParserPoolInitializer();
+            initializer_4.init();
+
+        } catch (InitializationException e) {
+            e.printStackTrace();
+        } finally {
+            thread.setContextClassLoader(loader);
+        }
+
         try {
             DocumentBuilderFactory documentBuilderFactory = IdentityUtil.getSecuredDocumentBuilderFactory();
             documentBuilderFactory.setIgnoringComments(true);
@@ -362,7 +379,7 @@ public class SSOUtils {
                 document = getDocument(documentBuilderFactory, samlString);
             }
             Element element = document.getDocumentElement();
-            UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
+            UnmarshallerFactory unmarshallerFactory = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
             return unmarshaller.unmarshall(element);
         } catch (ParserConfigurationException | UnmarshallingException | SAXException | IOException e) {
@@ -378,7 +395,8 @@ public class SSOUtils {
      * @return encoded String
      */
     public static String encode(String xmlString) {
-        String encodedRequestMessage = Base64.encodeBytes(xmlString.getBytes(), Base64.DONT_BREAK_LINES);
+//        String encodedRequestMessage = Base64Support.encode(xmlString.getBytes(), Base64Support.UNCHUNKED);
+        String encodedRequestMessage = new String(org.apache.commons.codec.binary.Base64.encodeBase64(xmlString.getBytes(), false));
         return encodedRequestMessage.trim();
     }
 
@@ -600,11 +618,11 @@ public class SSOUtils {
             keyStore.load(inputStream, password.toCharArray());
             return keyStore;
         } catch (KeyStoreException e1) {
-            throw new SecurityException("Could not get a keystore instance of type: " + type + ": " + e1);
+            throw new java.lang.SecurityException("Could not get a keystore instance of type: " + type + ": " + e1);
         } catch (IOException e2) {
-            throw new SecurityException("Could not open keystore in path: " + keyStorePath + ": " + e2);
+            throw new java.lang.SecurityException("Could not open keystore in path: " + keyStorePath + ": " + e2);
         } catch (CertificateException | NoSuchAlgorithmException e3) {
-            throw new SecurityException("Error in loading keystore in path: " + keyStorePath + ": " + e3);
+            throw new java.lang.SecurityException("Error in loading keystore in path: " + keyStorePath + ": " + e3);
         }
     }
 }
