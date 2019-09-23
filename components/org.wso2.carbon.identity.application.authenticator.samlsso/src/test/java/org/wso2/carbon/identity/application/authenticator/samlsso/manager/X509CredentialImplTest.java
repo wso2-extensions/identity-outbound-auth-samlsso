@@ -28,6 +28,7 @@ import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.core.util.KeyStoreManager;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
@@ -45,6 +46,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 
 import static org.mockito.Matchers.anyString;
+import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
@@ -53,7 +55,7 @@ import static org.testng.Assert.assertNull;
 /**
  * Unit tests for X509CredentialImpl.
  */
-@PrepareForTest(KeyStoreManager.class)
+@PrepareForTest({KeyStoreManager.class, FrameworkUtils.class})
 public class X509CredentialImplTest {
 
     @Mock
@@ -98,6 +100,8 @@ public class X509CredentialImplTest {
     @Test(priority = 1)
     public void testX509CredentialImplForSuperTenant() throws Exception {
 
+        mockStatic(FrameworkUtils.class);
+        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
         mockStatic(KeyStoreManager.class);
         when(KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID)).thenReturn(superTenantKeyStoreManager);
         when(superTenantKeyStoreManager.getDefaultPrivateKey()).thenReturn((PrivateKey) key);
@@ -114,6 +118,10 @@ public class X509CredentialImplTest {
 
     @Test(priority = 2)
     public void testX509CredentialImplForATenant() throws Exception {
+
+        mockStatic(FrameworkUtils.class);
+        doNothing().when(FrameworkUtils.class, TestConstants.START_TENANT_FLOW, TestConstants.SAMPLE_TENANT_DOMAIN_NAME);
+        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
 
         mockStatic(KeyStoreManager.class);
         when(KeyStoreManager.getInstance(TestConstants.SAMPLE_TENANT_ID)).thenReturn(tenantKeyStoreManager);
@@ -159,6 +167,9 @@ public class X509CredentialImplTest {
     @Test(priority = 6, expectedExceptions = Exception.class)
     public void testX509CredentialImplWhenFailedToGetKeyStore() throws Exception {
 
+        mockStatic(FrameworkUtils.class);
+        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
+
         mockStatic(KeyStoreManager.class);
         when(KeyStoreManager.getInstance(TestConstants.SAMPLE_TENANT_ID)).thenReturn(tenantKeyStoreManager);
         when(tenantKeyStoreManager.getPrivateKey(anyString(), anyString())).thenReturn(key);
@@ -178,6 +189,9 @@ public class X509CredentialImplTest {
 
     @Test(priority = 7, dataProvider = "exceptionGeneratingData", expectedExceptions = SAMLSSOException.class)
     public void testX509CredentialImplWhenKeyOrCertNull(Key key, Certificate certificate) throws Exception {
+
+        mockStatic(FrameworkUtils.class);
+        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
 
         mockStatic(KeyStoreManager.class);
         when(KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID)).thenReturn(superTenantKeyStoreManager);

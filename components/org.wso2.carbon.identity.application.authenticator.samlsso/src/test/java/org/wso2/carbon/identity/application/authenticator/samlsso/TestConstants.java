@@ -253,6 +253,10 @@ public final class TestConstants {
 
     public static final String SAMPLE_TENANT_DOMAIN_NAME = "wso2";
 
+    public static final String START_TENANT_FLOW = "startTenantFlow";
+
+    public static final String END_TENANT_FLOW = "endTenantFlow";
+
     public static final String INVALID_TENANT_DOMAIN = "invalid_tenant_domain";
 
     public static final int SAMPLE_TENANT_ID = 1;
