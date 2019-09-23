@@ -29,6 +29,7 @@ import org.opensaml.xml.security.x509.X509Credential;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.core.util.KeyStoreManager;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
@@ -119,6 +120,7 @@ public class X509CredentialImpl implements X509Credential {
                  * Get the private key and the cert for the respective tenant domain.
                  */
                 if (!tenantDomain.equals(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+                    FrameworkUtils.startTenantFlow(tenantDomain);
                     // derive key store name
                     String ksName = tenantDomain.trim().replace(".", "-");
                     // derive JKS name
@@ -193,6 +195,8 @@ public class X509CredentialImpl implements X509Credential {
                 throw new SAMLSSOException(
                         "Error retrieving private key and the certificate for tenant " +
                                 tenantDomain, e);
+            } finally {
+                FrameworkUtils.endTenantFlow();
             }
 
             if (key == null) {
