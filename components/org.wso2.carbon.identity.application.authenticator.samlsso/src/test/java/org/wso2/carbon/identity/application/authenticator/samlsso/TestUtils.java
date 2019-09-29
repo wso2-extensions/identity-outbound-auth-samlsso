@@ -182,12 +182,7 @@ public class TestUtils {
         Marshaller marshaller = XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(requestMessage);
         Element authDOM;
         authDOM = marshaller.marshall(requestMessage);
-        OutputStream rspWrt = new OutputStream() {
-            @Override
-            public void write(int b) throws IOException {
-
-            }
-        };
+        OutputStream rspWrt = new ByteArrayOutputStream();
         SerializeSupport.writeNode(authDOM, rspWrt);
         if (SAMLConstants.SAML2_REDIRECT_BINDING_URI.equals(binding)) {
             //Compress the message, Base 64 encode and URL encode

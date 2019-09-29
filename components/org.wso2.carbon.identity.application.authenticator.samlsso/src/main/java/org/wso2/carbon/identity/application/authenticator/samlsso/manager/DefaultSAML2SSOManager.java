@@ -929,7 +929,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             deflaterOutputStream.close();
 
             /* Encoding the compressed message */
-            String encodedRequestMessage = Base64Support.encode(byteArrayOutputStream.toByteArray(), Base64Support.UNCHUNKED);
+//            String encodedRequestMessage = Base64Support.encode(byteArrayOutputStream.toByteArray(), Base64Support.UNCHUNKED);
+            String encodedRequestMessage = new String(org.apache.commons.codec.binary.Base64.encodeBase64(byteArrayOutputStream.toByteArray(), false));
 
             byteArrayOutputStream.write(byteArrayOutputStream.toByteArray());
             byteArrayOutputStream.toString();
