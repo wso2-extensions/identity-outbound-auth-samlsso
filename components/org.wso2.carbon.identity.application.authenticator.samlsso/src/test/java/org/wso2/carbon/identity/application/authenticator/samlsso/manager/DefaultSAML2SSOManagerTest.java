@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
@@ -66,6 +67,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPathFactory;
 
+import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.*;
@@ -80,7 +82,7 @@ import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENA
  * Unit test cases for DefaultSAML2SSOManager
  */
 @PrepareForTest({FileBasedConfigurationBuilder.class, IdentityUtil.class, DocumentBuilderFactory.class,
-        KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class})
+        KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class, FrameworkUtils.class})
 public class DefaultSAML2SSOManagerTest {
 
     @Mock
@@ -271,6 +273,9 @@ public class DefaultSAML2SSOManagerTest {
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
 
+        mockStatic(FrameworkUtils.class);
+        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
+
         mockXPathFactory();
 
         RequestData requestData = (RequestData) outboundRequestData;
@@ -408,6 +413,9 @@ public class DefaultSAML2SSOManagerTest {
     @Test(dataProvider = "postRequestBuilderDataProvider")
     public void buildPostRequest(boolean isLogout, String tenantDomain, Object inboundRequestData,
                                  Object outboundRequestData) throws Exception {
+
+        mockStatic(FrameworkUtils.class);
+        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
 
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
