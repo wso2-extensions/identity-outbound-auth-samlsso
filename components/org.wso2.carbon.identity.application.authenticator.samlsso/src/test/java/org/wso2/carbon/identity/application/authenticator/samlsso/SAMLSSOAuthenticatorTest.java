@@ -25,6 +25,7 @@ import org.joda.time.DateTimeZone;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.opensaml.saml.saml2.core.NameIDType;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
@@ -79,6 +80,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.util.Mo
 /**
  * Unit test cases for SAMLSSOAuthenticator
  */
+@PowerMockIgnore({"javax.xml.datatype.*"})
 @PrepareForTest({XPathFactory.class, XMLInputFactory.class, DocumentBuilderFactory.class, IdentityUtil.class,
         DOMImplementationRegistry.class})
 public class SAMLSSOAuthenticatorTest {

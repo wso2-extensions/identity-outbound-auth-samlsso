@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -78,7 +79,6 @@ import org.opensaml.xmlsec.keyinfo.impl.StaticKeyInfoCredentialResolver;
 import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.opensaml.xmlsec.signature.impl.SignatureImpl;
-import net.shibboleth.utilities.java.support.codec.Base64Support;
 import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 
@@ -518,12 +518,12 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         doBootstrap();
         XMLObject samlObject = null;
         if (request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ) != null) {
-            samlObject = SSOUtils.unmarshall(new String(Base64Support.decode(request.getParameter(
-                    SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))));
+            samlObject = SSOUtils.unmarshall(new String(Base64.decodeBase64(request.getParameter(
+                    SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ).getBytes())));
         }
         if (samlObject == null) {
-            samlObject = SSOUtils.unmarshall(new String(Base64Support.decode(request.getParameter(
-                    SSOConstants.HTTP_POST_PARAM_SAML2_RESP))));
+            samlObject = SSOUtils.unmarshall(new String(Base64.decodeBase64(request.getParameter(
+                    SSOConstants.HTTP_POST_PARAM_SAML2_RESP).getBytes())));
         }
         validateResponseFormat(samlObject);
         if (samlObject instanceof LogoutRequest) {

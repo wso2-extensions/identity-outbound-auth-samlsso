@@ -17,6 +17,7 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso.util;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,9 +42,9 @@ import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.signature.KeyInfo;
 import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureValidationProvider;
 import org.opensaml.xmlsec.signature.support.Signer;
 import org.opensaml.xmlsec.signature.X509Data;
-import net.shibboleth.utilities.java.support.codec.Base64Support;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -177,10 +178,15 @@ public class SSOUtils {
         }
 
         org.apache.xml.security.Init.init();
+        Thread thread = Thread.currentThread();
+        ClassLoader loader = thread.getContextClassLoader();
+        thread.setContextClassLoader(SignatureValidationProvider.class.getClassLoader());
         try {
             Signer.signObjects(signatureList);
         } catch (SignatureException e) {
             throw new SAMLSSOException("Error while signing the SAML Request", e);
+        } finally {
+            thread.setContextClassLoader(loader);
         }
     }
 
@@ -194,7 +200,7 @@ public class SSOUtils {
             byte[] rawSignature = XMLSigningUtil.signWithURI(credential, signatureAlgorithmURI,
                     httpQueryString.toString().getBytes("UTF-8"));
 
-            String base64Signature = Base64Support.encode(rawSignature, Base64Support.UNCHUNKED);
+            String base64Signature = new String(Base64.encodeBase64(rawSignature, false));
 
             if (log.isDebugEnabled()) {
                 log.debug("Generated digital signature value (base64-encoded) {} " + base64Signature);

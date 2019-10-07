@@ -192,11 +192,15 @@ public class TestUtils {
                     (byteArrayOutputStream, deflater);
             deflaterOutputStream.write(rspWrt.toString().getBytes(Charset.forName("UTF-8")));
             deflaterOutputStream.close();
-            return Base64Support.encode(byteArrayOutputStream.toByteArray(), Base64Support.UNCHUNKED);
+            return new String(org.apache.commons.codec.binary.Base64.encodeBase64(byteArrayOutputStream.toByteArray(), false));
+//            return Base64Support.encode(byteArrayOutputStream.toByteArray(), Base64Support.UNCHUNKED);
         } else if (SAMLConstants.SAML2_POST_BINDING_URI.equals(binding)) {
-            return Base64Support.encode(rspWrt.toString().getBytes(), Base64Support.UNCHUNKED);
+            return new String(org.apache.commons.codec.binary.Base64.encodeBase64(rspWrt.toString().getBytes(), false));
+//            return Base64.getEncoder().encodeToString(rspWrt.toString().getBytes());
+//            return Base64Support.encode(rspWrt.toString().getBytes(), Base64Support.UNCHUNKED);
         } else {
-            return Base64Support.encode(rspWrt.toString().getBytes(), Base64Support.UNCHUNKED);
+            return new String(org.apache.commons.codec.binary.Base64.encodeBase64(rspWrt.toString().getBytes(), false));
+//            return Base64Support.encode(rspWrt.toString().getBytes(), Base64Support.UNCHUNKED);
         }
     }
 
