@@ -415,7 +415,6 @@ public class SSOUtils {
      * @return encoded String
      */
     public static String encode(String xmlString) {
-//        String encodedRequestMessage = Base64Support.encode(xmlString.getBytes(), Base64Support.UNCHUNKED);
         String encodedRequestMessage = new String(org.apache.commons.codec.binary.Base64.encodeBase64(xmlString.getBytes(), false));
         return encodedRequestMessage.trim();
     }

@@ -48,7 +48,6 @@ import org.opensaml.core.xml.io.Marshaller;
 import org.opensaml.core.xml.io.MarshallingException;
 import org.opensaml.core.xml.io.Unmarshaller;
 import org.opensaml.core.xml.io.UnmarshallerFactory;
-import net.shibboleth.utilities.java.support.codec.Base64Support;
 import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -193,14 +192,10 @@ public class TestUtils {
             deflaterOutputStream.write(rspWrt.toString().getBytes(Charset.forName("UTF-8")));
             deflaterOutputStream.close();
             return new String(org.apache.commons.codec.binary.Base64.encodeBase64(byteArrayOutputStream.toByteArray(), false));
-//            return Base64Support.encode(byteArrayOutputStream.toByteArray(), Base64Support.UNCHUNKED);
         } else if (SAMLConstants.SAML2_POST_BINDING_URI.equals(binding)) {
             return new String(org.apache.commons.codec.binary.Base64.encodeBase64(rspWrt.toString().getBytes(), false));
-//            return Base64.getEncoder().encodeToString(rspWrt.toString().getBytes());
-//            return Base64Support.encode(rspWrt.toString().getBytes(), Base64Support.UNCHUNKED);
         } else {
             return new String(org.apache.commons.codec.binary.Base64.encodeBase64(rspWrt.toString().getBytes(), false));
-//            return Base64Support.encode(rspWrt.toString().getBytes(), Base64Support.UNCHUNKED);
         }
     }
 
