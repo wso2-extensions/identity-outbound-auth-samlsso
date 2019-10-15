@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.core.config.InitializationException;
-import org.opensaml.core.config.InitializationService;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.core.Extensions;
@@ -103,13 +102,13 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.core.util.SAMLInitializer;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -121,7 +120,6 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.bind.ValidationException;
 
 import static org.opensaml.saml.saml2.core.StatusCode.SUCCESS;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
@@ -145,44 +143,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         /* Initializing the OpenSAML library */
         if (!bootStrapped) {
-            Thread thread = Thread.currentThread();
-            ClassLoader loader = thread.getContextClassLoader();
-            thread.setContextClassLoader(InitializationService.class.getClassLoader());
             try {
-                InitializationService.initialize();
-
-                org.opensaml.saml.config.SAMLConfigurationInitializer initializer_1 = new org.opensaml.saml.config.SAMLConfigurationInitializer();
-                initializer_1.init();
-
-                org.opensaml.saml.config.XMLObjectProviderInitializer initializer_2 = new org.opensaml.saml.config.XMLObjectProviderInitializer();
-                initializer_2.init();
-
-                org.opensaml.core.xml.config.XMLObjectProviderInitializer initializer_3 = new org.opensaml.core.xml.config.XMLObjectProviderInitializer();
-                initializer_3.init();
-
-                org.opensaml.core.xml.config.GlobalParserPoolInitializer initializer_4 = new org.opensaml.core.xml.config.GlobalParserPoolInitializer();
-                initializer_4.init();
-
-                org.opensaml.xmlsec.config.JavaCryptoValidationInitializer initializer_5 = new org.opensaml.xmlsec.config.JavaCryptoValidationInitializer();
-                initializer_5.init();
-
-                org.opensaml.xmlsec.config.XMLObjectProviderInitializer initializer_6 = new org.opensaml.xmlsec.config.XMLObjectProviderInitializer();
-                initializer_6.init();
-
-                org.opensaml.xmlsec.config.ApacheXMLSecurityInitializer initializer_7 = new org.opensaml.xmlsec.config.ApacheXMLSecurityInitializer();
-                initializer_7.init();
-
-                org.opensaml.xmlsec.config.GlobalSecurityConfigurationInitializer initializer_8 = new org.opensaml.xmlsec.config.GlobalSecurityConfigurationInitializer();
-                initializer_8.init();
-
-                org.opensaml.xmlsec.config.GlobalAlgorithmRegistryInitializer initializer_9 = new org.opensaml.xmlsec.config.GlobalAlgorithmRegistryInitializer();
-                initializer_9.init();
-
+                SAMLInitializer.doBootstrap();
                 bootStrapped = true;
             } catch (InitializationException e) {
-                log.error("Error in bootstrapping the OpenSAML2 library", e);
-            } finally {
-                thread.setContextClassLoader(loader);
+                log.error("Error in bootstrapping the OpenSAML3 library", e);
             }
         }
     }

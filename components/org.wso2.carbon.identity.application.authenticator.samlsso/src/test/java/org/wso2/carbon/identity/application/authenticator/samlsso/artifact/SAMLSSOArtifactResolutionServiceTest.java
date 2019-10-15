@@ -28,9 +28,9 @@ import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
-import org.wso2.carbon.identity.application.authenticator.samlsso.TestUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.util.SAMLInitializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,7 +43,7 @@ public class SAMLSSOArtifactResolutionServiceTest {
 
     @BeforeClass
     public void initTest() throws Exception {
-        TestUtils.doBootstrap();
+        SAMLInitializer.doBootstrap();
         XMLObjectProviderRegistrySupport.getBuilderFactory().registerBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME,
                 new ArtifactResolveBuilder());
         XMLObjectProviderRegistrySupport.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME, new ArtifactBuilder());

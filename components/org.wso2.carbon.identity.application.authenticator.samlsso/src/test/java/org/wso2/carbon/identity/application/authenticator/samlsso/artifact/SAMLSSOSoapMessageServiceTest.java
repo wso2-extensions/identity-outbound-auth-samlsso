@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.artifact;
 
+import org.opensaml.core.config.InitializationException;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.saml.saml2.core.Artifact;
 import org.opensaml.saml.saml2.core.ArtifactResolve;
@@ -32,9 +33,9 @@ import org.opensaml.soap.soap11.impl.EnvelopeBuilder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
-import org.wso2.carbon.identity.application.authenticator.samlsso.TestUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.util.SAMLInitializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,8 +49,8 @@ public class SAMLSSOSoapMessageServiceTest {
     Envelope soapEnvelope;
 
     @BeforeClass
-    public void initTest() throws ArtifactResolutionException {
-        TestUtils.doBootstrap();
+    public void initTest() throws ArtifactResolutionException, InitializationException {
+        SAMLInitializer.doBootstrap();
         XMLObjectProviderRegistrySupport.getBuilderFactory().registerBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME,
                 new ArtifactResolveBuilder());
         XMLObjectProviderRegistrySupport.getBuilderFactory().registerBuilder(Artifact.DEFAULT_ELEMENT_NAME, new ArtifactBuilder());
