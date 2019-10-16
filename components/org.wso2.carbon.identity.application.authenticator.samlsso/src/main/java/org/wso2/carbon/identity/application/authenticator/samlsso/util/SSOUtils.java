@@ -35,11 +35,7 @@ import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.security.SigningUtil;
 import org.opensaml.xml.security.x509.X509Credential;
-import org.opensaml.xml.signature.KeyInfo;
-import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.SignatureException;
-import org.opensaml.xml.signature.Signer;
-import org.opensaml.xml.signature.X509Data;
+import org.opensaml.xml.signature.*;
 import org.opensaml.xml.util.Base64;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -116,12 +112,11 @@ public class SSOUtils {
      * @param signatureAlgorithm
      * @param digestAlgorithm
      * @param includeCert
-     * @param credential
      * @return
      * @throws SAMLSSOException
      */
-    public static void setSignature(RequestAbstractType request, String signatureAlgorithm,
-            String digestAlgorithm, boolean includeCert, X509Credential x509Credential)
+    public static void setSignature(SignableXMLObject request, String signatureAlgorithm,
+                                    String digestAlgorithm, boolean includeCert, X509Credential x509Credential)
             throws SAMLSSOException {
         
         if (request == null) {
