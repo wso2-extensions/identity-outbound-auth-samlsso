@@ -196,7 +196,9 @@ public class X509CredentialImpl implements X509Credential {
                         "Error retrieving private key and the certificate for tenant " +
                                 tenantDomain, e);
             } finally {
-                FrameworkUtils.endTenantFlow();
+                if (!tenantDomain.equals(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+                    FrameworkUtils.endTenantFlow();
+                }
             }
 
             if (key == null) {
