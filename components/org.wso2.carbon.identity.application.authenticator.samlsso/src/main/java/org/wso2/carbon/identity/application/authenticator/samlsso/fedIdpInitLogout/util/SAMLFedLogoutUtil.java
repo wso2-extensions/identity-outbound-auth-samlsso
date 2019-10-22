@@ -134,7 +134,6 @@ public class SAMLFedLogoutUtil extends InboundUtil {
             return generator.generateIdentifier();
         } catch (NoSuchAlgorithmException e) {
             throw new IdentityException("Error while building Secure Random ID", e);
-
         }
     }
 

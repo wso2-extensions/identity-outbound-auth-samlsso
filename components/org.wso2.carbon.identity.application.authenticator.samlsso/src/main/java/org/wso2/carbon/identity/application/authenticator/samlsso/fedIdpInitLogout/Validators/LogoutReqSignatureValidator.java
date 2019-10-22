@@ -56,7 +56,6 @@ public class LogoutReqSignatureValidator {
 
     private static final Log log = LogFactory.getLog(LogoutReqSignatureValidator.class);
 
-
     /**
      * Validates the signature of the given SAML request against tge given certificate.
      *
