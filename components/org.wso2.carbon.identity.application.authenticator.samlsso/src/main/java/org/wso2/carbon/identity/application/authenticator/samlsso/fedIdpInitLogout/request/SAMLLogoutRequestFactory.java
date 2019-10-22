@@ -68,5 +68,5 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
         super.create(builder, request, response);
         builder.isPost(StringUtils.isBlank(request.getQueryString()));
     }
-
 }
+

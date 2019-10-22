@@ -78,5 +78,5 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
     public int getPriority() {
         return 1;
     }
-
 }
+

@@ -64,7 +64,8 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_LOGOUT_REQ_SIGNED;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
+    SAML2SSO.IS_LOGOUT_REQ_SIGNED;
 
 /**
  * This class is responsible for doing the actual processing of the logout request.
@@ -165,7 +166,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @return
      */
     protected FrameworkLogoutResponse.FrameworkLogoutResponseBuilder buildResponseForFrameworkLogout
-        (SAMLMessageContext context) {
+    (SAMLMessageContext context) {
 
         IdentityRequest identityRequest = context.getRequest();
         Map<String, String[]> parameterMap = identityRequest.getParameterMap();
@@ -386,5 +387,5 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     public String getRelyingPartyId(IdentityMessageContext context) {
         return null;
     }
-
 }
+

@@ -50,9 +50,7 @@ public class SessionDetailsDAO {
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-
             preparedStatement.setString(1, sessionIndex);
-
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     sessionDetails.put("sessionID", resultSet.getString("SESSION_ID"));
@@ -63,6 +61,6 @@ public class SessionDetailsDAO {
             throw new SQLException("Unable to read session details from the database with saml id: " + sessionIndex, e);
         }
         return sessionDetails;
-
     }
 }
+

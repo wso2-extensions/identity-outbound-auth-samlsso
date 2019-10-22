@@ -60,5 +60,5 @@ public class SAMLLogoutRequest extends IdentityRequest {
             return new SAMLLogoutRequest(this);
         }
     }
-
 }
+

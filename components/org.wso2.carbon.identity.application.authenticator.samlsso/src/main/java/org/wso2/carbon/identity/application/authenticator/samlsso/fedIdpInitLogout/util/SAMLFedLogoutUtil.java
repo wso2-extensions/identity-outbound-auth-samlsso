@@ -62,7 +62,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
     SAML2SSO.SP_ENTITY_ID;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
@@ -73,8 +72,6 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
     SAML2SSO.INCLUDE_CERT;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
     SAML2SSO.IS_LOGOUT_REQ_SIGNED;
-
-
 
 /**
  * A Utility which provides functionality to handle federated idp initiated saml logout requests.
@@ -199,7 +196,6 @@ public class SAMLFedLogoutUtil extends InboundUtil {
                                                String statusCode, String statusMsg) throws SAMLIdentityException {
 
         try {
-
             doBootstrap();
             String issuerId = (String) context.getFedIdpConfigs().get(SP_ENTITY_ID);
             String acsUrl = (String) context.getFedIdpConfigs().get(SSO_URL);
@@ -219,7 +215,6 @@ public class SAMLFedLogoutUtil extends InboundUtil {
             logoutResp.setStatus(buildStatus(statusCode, statusMsg));
             logoutResp.setIssueInstant(new DateTime());
             logoutResp.setDestination(acsUrl);
-
 
             if (isResSigned.equals("true") && SSOConstants.StatusCodes.SUCCESS_CODE.equals(statusCode)) {
                 SSOUtils.setSignature(logoutResp, null, null, includeCert,
@@ -287,5 +282,4 @@ public class SAMLFedLogoutUtil extends InboundUtil {
         }
         samlMessageContext.setIdpCertificate(x509Certificate);
     }
-
 }

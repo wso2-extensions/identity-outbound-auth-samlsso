@@ -294,7 +294,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             stateInfoDO.setSpNameQualifier(spNameQualifier);
             context.setStateInfo(stateInfoDO);
 
-            //include the saml index with federated idp  in the context
+            //include the saml index with the federated idp in the authentication context
             context.setProperty(context.getExternalIdP().getIdentityProvider().getIdentityProviderName(),
                 sessionIndexObj);
 

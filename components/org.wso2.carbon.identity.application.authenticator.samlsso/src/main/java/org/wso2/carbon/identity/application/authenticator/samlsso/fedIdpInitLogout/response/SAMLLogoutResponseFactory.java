@@ -18,13 +18,13 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.response;
 
-import org.owasp.encoder.Encode;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponse;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponseFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityResponse;
 import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.exception.SAMLIdentityException;
 
+import org.owasp.encoder.Encode;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -111,5 +111,5 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
         out.append("</html>");
         return out.toString();
     }
-
 }
+

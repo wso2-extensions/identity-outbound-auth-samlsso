@@ -58,5 +58,4 @@ public class LambdaExceptionUtil {
     private static <E extends Throwable> void throwAsUnchecked(Exception exception) throws E {
         throw (E) exception;
     }
-
 }

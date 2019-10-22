@@ -121,5 +121,5 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     public X509Certificate getIdpCertificate() {
         return idpCertificate;
     }
-
 }
+

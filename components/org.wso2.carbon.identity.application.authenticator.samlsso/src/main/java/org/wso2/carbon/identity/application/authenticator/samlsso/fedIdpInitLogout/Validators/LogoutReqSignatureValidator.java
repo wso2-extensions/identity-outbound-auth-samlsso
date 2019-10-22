@@ -58,6 +58,66 @@ public class LogoutReqSignatureValidator {
 
 
     /**
+     * Validates the signature of the given SAML request against tge given certificate.
+     *
+     * @param queryString SAML request (passed an an HTTP query parameter)
+     * @param issuer      Issuer of the SAML request
+     * @param certificate Certificate for validating the signature
+     * @return
+     * @throws SecurityException
+     */
+
+    public boolean validateSignature(String queryString, String issuer, X509Certificate certificate)
+        throws SecurityException {
+
+        byte[] signature = getSignature(queryString);
+        byte[] signedContent = getSignedContent(queryString);
+        String algorithmUri = getSigAlg(queryString);
+        CriteriaSet criteriaSet = buildCriteriaSet(issuer);
+
+        X509CredentialImpl credential = new X509CredentialImpl(certificate);
+        List<Credential> credentials = new ArrayList<Credential>();
+        credentials.add(credential);
+        CollectionCredentialResolver credResolver = new CollectionCredentialResolver(credentials);
+        KeyInfoCredentialResolver kiResolver = SecurityHelper.buildBasicInlineKeyInfoResolver();
+        SignatureTrustEngine engine = new ExplicitKeySignatureTrustEngine(credResolver, kiResolver);
+        return engine.validate(signature, signedContent, algorithmUri, criteriaSet, null);
+    }
+
+    /**
+     * Validate the  Signature in the SAML Assertion.
+     *
+     * @param request SAML Assertion, this could be either a SAML Request or a LogoutRequest
+     * @param cred    Signature signing credential
+     * @param alias   Certificate alias against which the signature is validated.
+     * @return true, if the signature is valid.
+     * @throws IdentityException
+     */
+    public boolean validateXMLSignature(RequestAbstractType request, X509Credential cred,
+                                        String alias) throws IdentityException {
+        return validateXMLSignature((SignableXMLObject) request, cred, alias);
+    }
+
+    public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred,
+                                        String alias) throws IdentityException {
+
+        boolean isSignatureValid = false;
+
+        if (request.getSignature() != null) {
+            try {
+                org.opensaml.xml.signature.SignatureValidator validator =
+                    new org.opensaml.xml.signature.SignatureValidator(cred);
+                validator.validate(request.getSignature());
+                isSignatureValid = true;
+            } catch (ValidationException e) {
+                throw IdentityException.error("Signature Validation Failed for the SAML Assertion : " +
+                    "Signature is " + "invalid.", e);
+            }
+        }
+        return isSignatureValid;
+    }
+
+    /**
      * Build a criteria set suitable for input to the trust engine.
      *
      * @param issuer
@@ -217,64 +277,5 @@ public class LogoutReqSignatureValidator {
         builder.append(rawParam);
         return true;
     }
-
-    /**
-     * Validates the signature of the given SAML request against tge given certificate.
-     *
-     * @param queryString SAML request (passed an an HTTP query parameter)
-     * @param issuer      Issuer of the SAML request
-     * @param certificate Certificate for validating the signature
-     * @return
-     * @throws SecurityException
-     */
-
-    public boolean validateSignature(String queryString, String issuer, X509Certificate certificate)
-        throws SecurityException {
-
-        byte[] signature = getSignature(queryString);
-        byte[] signedContent = getSignedContent(queryString);
-        String algorithmUri = getSigAlg(queryString);
-        CriteriaSet criteriaSet = buildCriteriaSet(issuer);
-
-        X509CredentialImpl credential = new X509CredentialImpl(certificate);
-        List<Credential> credentials = new ArrayList<Credential>();
-        credentials.add(credential);
-        CollectionCredentialResolver credResolver = new CollectionCredentialResolver(credentials);
-        KeyInfoCredentialResolver kiResolver = SecurityHelper.buildBasicInlineKeyInfoResolver();
-        SignatureTrustEngine engine = new ExplicitKeySignatureTrustEngine(credResolver, kiResolver);
-        return engine.validate(signature, signedContent, algorithmUri, criteriaSet, null);
-    }
-
-    /**
-     * Validate the  Signature in the SAML Assertion.
-     *
-     * @param request SAML Assertion, this could be either a SAML Request or a LogoutRequest
-     * @param cred    Signature signing credential
-     * @param alias   Certificate alias against which the signature is validated.
-     * @return true, if the signature is valid.
-     * @throws IdentityException
-     */
-    public boolean validateXMLSignature(RequestAbstractType request, X509Credential cred,
-                                        String alias) throws IdentityException {
-        return validateXMLSignature((SignableXMLObject) request, cred, alias);
-    }
-
-    public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred,
-                                        String alias) throws IdentityException {
-
-        boolean isSignatureValid = false;
-
-        if (request.getSignature() != null) {
-            try {
-                org.opensaml.xml.signature.SignatureValidator validator =
-                    new org.opensaml.xml.signature.SignatureValidator(cred);
-                validator.validate(request.getSignature());
-                isSignatureValid = true;
-            } catch (ValidationException e) {
-                throw IdentityException.error("Signature Validation Failed for the SAML Assertion : " +
-                    "Signature is " + "invalid.", e);
-            }
-        }
-        return isSignatureValid;
-    }
 }
+

@@ -87,5 +87,5 @@ public class SAMLLogoutResponse extends IdentityResponse {
             return this;
         }
     }
-
 }
+

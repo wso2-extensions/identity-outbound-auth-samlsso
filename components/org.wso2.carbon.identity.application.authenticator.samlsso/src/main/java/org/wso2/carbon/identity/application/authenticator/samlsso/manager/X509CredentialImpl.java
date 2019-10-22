@@ -211,9 +211,14 @@ public class X509CredentialImpl implements X509Credential {
         publicKey = cert.getPublicKey();
     }
 
-    public X509CredentialImpl(X509Certificate cert) {
-        publicKey = cert.getPublicKey();
-        entityCertificate = cert;
+    /**
+     * Constructor.
+     *
+     * @param certificate certificate of the source
+     */
+    public X509CredentialImpl(X509Certificate certificate) {
+        publicKey = certificate.getPublicKey();
+        entityCertificate = certificate;
     }
 
     /**

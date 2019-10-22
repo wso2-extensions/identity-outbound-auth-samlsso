@@ -61,5 +61,5 @@ public class SAMLIdentityException extends FrameworkException {
     public String getExceptionMessage() {
         return exceptionMessage;
     }
-
 }
+
