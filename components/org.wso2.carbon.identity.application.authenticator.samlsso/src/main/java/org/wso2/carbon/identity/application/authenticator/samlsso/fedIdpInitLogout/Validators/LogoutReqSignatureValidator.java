@@ -51,7 +51,6 @@ import java.util.List;
 /**
  * This class is used to validate the signature in SAML logout Request.
  */
-
 public class LogoutReqSignatureValidator {
 
     private static final Log log = LogFactory.getLog(LogoutReqSignatureValidator.class);
@@ -65,7 +64,6 @@ public class LogoutReqSignatureValidator {
      * @return
      * @throws SecurityException
      */
-
     public boolean validateSignature(String queryString, String issuer, X509Certificate certificate)
         throws SecurityException {
 
