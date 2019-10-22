@@ -27,6 +27,7 @@ public class SSOConstants {
     public static final String HTTP_POST_PARAM_SAML2_RESP = "SAMLResponse";
     public static final String HTTP_POST_PARAM_SAML2_ARTIFACT_ID = "SAMLart";
     public static final String IDP_SESSION = "IdPSession";
+    public static final String RELAY_STATE = "RelayState";
 
     public static final String HTTP_POST = "POST";
     public static final String POST = "POST";
@@ -40,6 +41,7 @@ public class SSOConstants {
     public static final String LOGOUT_SESSION_INDEX = "logoutSessionIndex";
     public static final String AUTHN_CONTEXT_CLASS_REF = "AuthnContextClassRef";
     public static final String NAME_ID_FORMAT = "nameIdFormat";
+    public static final String ISSUER_FORMAT = "urn:oasis:names:tc:SAML:2.0:nameid-format:entity";
 
     public static final String SOAP_ACTION_PARAM_KEY = "SOAPAction";
     public static final String ACCEPT_PARAM_KEY = "Accept";
@@ -57,6 +59,10 @@ public class SSOConstants {
 
         public static final String IDENTITY_PROVIDER_ERROR = "urn:oasis:names:tc:SAML:2.0:status:Responder";
         public static final String NO_PASSIVE = "urn:oasis:names:tc:SAML:2.0:status:NoPassive";
+        public static final String SUCCESS_CODE = "urn:oasis:names:tc:SAML:2.0:status:Success";
+        public static final String REQUESTOR_ERROR = "urn:oasis:names:tc:SAML:2.0:status:Requester";
+        public static final String VERSION_MISMATCH = "urn:oasis:names:tc:SAML:2.0:status:VersionMismatch";
+
     }
 
     public class ServerConfig {

@@ -1,4 +1,22 @@
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedLogoutReq.Validators;
+/*
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.Validators;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,6 +47,10 @@ import java.net.URLDecoder;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+
+/**
+ * This class is used to validate the signature in SAML logout Request.
+ */
 
 public class LogoutReqSignatureValidator {
 
@@ -158,7 +180,8 @@ public class LogoutReqSignatureValidator {
         StringBuilder builder = new StringBuilder();
 
         // One of these two is mandatory
-        if (!appendParameter(builder, queryString, "SAMLRequest") && !appendParameter(builder, queryString, "SAMLResponse")) {
+        if (!appendParameter(builder, queryString, "SAMLRequest") &&
+            !appendParameter(builder, queryString, "SAMLResponse")) {
             throw new SecurityPolicyException(
                 "Extract of SAMLRequest or SAMLResponse from query string failed");
         }
@@ -194,6 +217,7 @@ public class LogoutReqSignatureValidator {
         builder.append(rawParam);
         return true;
     }
+
     /**
      * Validates the signature of the given SAML request against tge given certificate.
      *
@@ -205,7 +229,7 @@ public class LogoutReqSignatureValidator {
      */
 
     public boolean validateSignature(String queryString, String issuer, X509Certificate certificate)
-        throws SecurityException{
+        throws SecurityException {
 
         byte[] signature = getSignature(queryString);
         byte[] signedContent = getSignedContent(queryString);
@@ -221,6 +245,15 @@ public class LogoutReqSignatureValidator {
         return engine.validate(signature, signedContent, algorithmUri, criteriaSet, null);
     }
 
+    /**
+     * Validate the  Signature in the SAML Assertion.
+     *
+     * @param request SAML Assertion, this could be either a SAML Request or a LogoutRequest
+     * @param cred    Signature signing credential
+     * @param alias   Certificate alias against which the signature is validated.
+     * @return true, if the signature is valid.
+     * @throws IdentityException
+     */
     public boolean validateXMLSignature(RequestAbstractType request, X509Credential cred,
                                         String alias) throws IdentityException {
         return validateXMLSignature((SignableXMLObject) request, cred, alias);
@@ -233,12 +266,13 @@ public class LogoutReqSignatureValidator {
 
         if (request.getSignature() != null) {
             try {
-                org.opensaml.xml.signature.SignatureValidator validator = new org.opensaml.xml.signature.SignatureValidator(cred);
+                org.opensaml.xml.signature.SignatureValidator validator =
+                    new org.opensaml.xml.signature.SignatureValidator(cred);
                 validator.validate(request.getSignature());
                 isSignatureValid = true;
             } catch (ValidationException e) {
-                throw IdentityException.error("Signature Validation Failed for the SAML Assertion : Signature is " +
-                    "invalid.", e);
+                throw IdentityException.error("Signature Validation Failed for the SAML Assertion : " +
+                    "Signature is " + "invalid.", e);
             }
         }
         return isSignatureValid;

@@ -32,13 +32,11 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Htt
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponseFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedLogoutReq.processor.SAMLLogoutRequestProcessor;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedLogoutReq.processor.SAMLRespBuildProcessor;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedLogoutReq.request.SAMLLogoutRequestFactory;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedLogoutReq.response.SAMLLogoutResponseFactory;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedLogoutReq.util.SAMLFedLogoutUtil;
+import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.processor.SAMLLogoutRequestProcessor;
+import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.processor.SAMLSSOLogoutProcessor;
+import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.request.SAMLLogoutRequestFactory;
+import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.response.SAMLLogoutResponseFactory;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.CarbonUtils;
 
@@ -81,7 +79,7 @@ public class SAMLSSOAuthenticatorServiceComponent {
             ctxt.getBundleContext()
                     .registerService(IdentityProcessor.class.getName(), new SAMLLogoutRequestProcessor(), null);
             ctxt.getBundleContext()
-                    .registerService(IdentityProcessor.class.getName(), new SAMLRespBuildProcessor(), null);
+                    .registerService(IdentityProcessor.class.getName(), new SAMLSSOLogoutProcessor(), null);
 
             postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository" + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File.separator + "samlsso_federate.html";
             fis = new FileInputStream(new File(postPagePath));

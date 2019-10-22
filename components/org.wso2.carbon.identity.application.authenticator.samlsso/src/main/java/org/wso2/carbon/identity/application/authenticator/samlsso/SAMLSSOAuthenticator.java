@@ -294,10 +294,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             stateInfoDO.setSpNameQualifier(spNameQualifier);
             context.setStateInfo(stateInfoDO);
 
-            //include the saml index with federated idp as a property map to the context
-            Map<String, Object> authenticatorProperties = new HashMap<>();
-            context.setProperties(authenticatorProperties);
-            context.setProperty(context.getExternalIdP().getIdentityProvider().getIdentityProviderName(), sessionIndexObj);
+            //include the saml index with federated idp  in the context
+            context.setProperty(context.getExternalIdP().getIdentityProvider().getIdentityProviderName(),
+                sessionIndexObj);
 
             // Add AuthnContextClassRefs received with SAML2 Response to AuthenticationContext
             if (AS_RESPONSE.equalsIgnoreCase(context.getAuthenticatorProperties()

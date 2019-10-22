@@ -17,6 +17,7 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso.util;
 
+import org.apache.abdera.protocol.util.AbstractRequest;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -24,7 +25,10 @@ import org.apache.xml.security.c14n.Canonicalizer;
 import org.opensaml.Configuration;
 import org.opensaml.common.impl.SAMLObjectContentReference;
 import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
+import org.opensaml.saml2.core.LogoutRequest;
+import org.opensaml.saml2.core.LogoutResponse;
 import org.opensaml.saml2.core.RequestAbstractType;
+import org.opensaml.saml2.core.Response;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilder;
 import org.opensaml.xml.io.Marshaller;
@@ -48,6 +52,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.exception.Arti
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.xml.sax.SAXException;
 
@@ -106,7 +111,39 @@ public class SSOUtils {
     }
 
     /**
-     * Sign the SAML Request message
+     * Sign the SAML Response message.
+     *
+     * @param response
+     * @param signatureAlgorithm
+     * @param digestAlgorithm
+     * @param cred
+     * @return
+     * @throws IdentityException
+     */
+    public static void setSignature(LogoutResponse response, String signatureAlgorithm, String digestAlgorithm,
+                                    boolean includeCert, X509Credential cred) throws SAMLSSOException {
+
+        doSetSignature(response, signatureAlgorithm, digestAlgorithm, includeCert, cred);
+    }
+
+    /**
+     *  Sign SAML Logout Request message.
+     *
+     * @param request
+     * @param signatureAlgorithm
+     * @param digestAlgorithm
+     * @param cred
+     * @return
+     * @throws IdentityException
+     */
+    public static void setSignature(RequestAbstractType request, String signatureAlgorithm, String
+        digestAlgorithm, boolean includeCert, X509Credential cred) throws SAMLSSOException {
+
+        doSetSignature(request, signatureAlgorithm, digestAlgorithm, includeCert, cred);
+    }
+
+    /**
+     * Sign the SAML Request message.
      * 
      * @param request
      * @param signatureAlgorithm
@@ -115,7 +152,7 @@ public class SSOUtils {
      * @return
      * @throws SAMLSSOException
      */
-    public static void setSignature(SignableXMLObject request, String signatureAlgorithm,
+    public static void doSetSignature(SignableXMLObject request, String signatureAlgorithm,
                                     String digestAlgorithm, boolean includeCert, X509Credential x509Credential)
             throws SAMLSSOException {
         
@@ -162,7 +199,7 @@ public class SSOUtils {
         }
 
         request.setSignature(signature);
-        ((SAMLObjectContentReference)signature.getContentReferences().get(0))
+        ((SAMLObjectContentReference) signature.getContentReferences().get(0))
               .setDigestAlgorithm(digestAlgorithm);
         
         List<Signature> signatureList = new ArrayList<Signature>();
