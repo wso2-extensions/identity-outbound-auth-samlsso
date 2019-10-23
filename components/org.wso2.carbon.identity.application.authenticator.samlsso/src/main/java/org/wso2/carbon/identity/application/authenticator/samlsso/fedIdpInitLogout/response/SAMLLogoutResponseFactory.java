@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
  * This class  builds a HTTP response instance based on the common
  * IdentityRequest format used by the authentication framework.
  */
-
 public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
 
     @Override

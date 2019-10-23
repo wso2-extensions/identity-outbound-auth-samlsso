@@ -33,15 +33,16 @@ import javax.servlet.http.HttpServletResponse;
  * Contains the canHandle() method inherited from the parent class which
  * dictates whether or not a certain servlet request can be handled by this class.
  */
-
 public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
 
     public SAMLLogoutRequestFactory() {
+
         super();
     }
 
     @Override
     public String getName() {
+
         return "SAMLLogoutRequestFactory";
     }
 
@@ -54,7 +55,6 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
     @Override
     public IdentityRequest.IdentityRequestBuilder create(HttpServletRequest request, HttpServletResponse response)
         throws FrameworkClientException {
-
 
         SAMLLogoutRequest.SAMLLogoutRequestBuilder builder = new SAMLLogoutRequest.
             SAMLLogoutRequestBuilder(request, response);

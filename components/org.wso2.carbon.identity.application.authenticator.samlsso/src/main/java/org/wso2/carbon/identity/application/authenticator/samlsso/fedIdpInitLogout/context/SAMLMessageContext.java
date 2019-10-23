@@ -30,9 +30,7 @@ import java.util.Map;
 
 /**
  * This class is used for holding data about the federated IdP initiated logout request.
- *
  */
-
 public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable> extends IdentityMessageContext {
 
     private String acsUrl;
@@ -50,74 +48,97 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     }
 
     public SAMLLogoutRequest getSAMLLogoutRequest() {
+
         return (SAMLLogoutRequest) request;
     }
 
     public String getSessionID() {
+
         return sessionID;
     }
 
     public void setSessionID(String sessionID) {
+
         this.sessionID = sessionID;
     }
 
     public String getIdpSessionId() {
+
         return idpSessionId;
     }
 
     public void setIdpSessionId(String idpSessionId) {
+
         this.idpSessionId = idpSessionId;
     }
 
     public String getAcsUrl() {
+
         return acsUrl;
     }
 
     public void setAcsUrl(String acsUrl) {
+
         this.acsUrl = acsUrl;
     }
 
     public IdentityProvider getFederatedIdp() {
+
         return federatedIdp;
     }
 
-    public void setFederatedIdp(IdentityProvider federatedIdp) { this.federatedIdp = federatedIdp; }
+    public void setFederatedIdp(IdentityProvider federatedIdp) {
+
+        this.federatedIdp = federatedIdp;
+    }
 
     public String getSamlRequest() {
+
         return request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ);
     }
 
     public Boolean getValidStatus() {
+
         return validStatus;
     }
 
-    public void setValidStatus(Boolean validStatus) { this.validStatus = validStatus; }
+    public void setValidStatus(Boolean validStatus) {
+
+        this.validStatus = validStatus;
+    }
 
     public String getResponse() {
+
         return response;
     }
 
     public void setResponse(String response) {
+
         this.response = response;
     }
 
     public Map<String, String> getFedIdpConfigs() {
+
         return fedIdpConfigs;
     }
 
     public void setFedIdpConfigs(Map<String, String> fedIdpConfigs) {
+
         this.fedIdpConfigs = fedIdpConfigs;
     }
 
     public String getRelayState() {
+
         return request.getParameter(SSOConstants.RELAY_STATE);
     }
 
     public void setIdpCertificate(X509Certificate idpCertificate) {
+
         this.idpCertificate = idpCertificate;
     }
 
     public X509Certificate getIdpCertificate() {
+
         return idpCertificate;
     }
 }

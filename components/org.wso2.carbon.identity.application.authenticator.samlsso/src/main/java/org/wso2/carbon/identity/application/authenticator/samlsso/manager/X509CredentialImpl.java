@@ -217,6 +217,7 @@ public class X509CredentialImpl implements X509Credential {
      * @param certificate certificate of the source
      */
     public X509CredentialImpl(X509Certificate certificate) {
+
         publicKey = certificate.getPublicKey();
         entityCertificate = certificate;
     }

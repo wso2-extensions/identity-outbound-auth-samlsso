@@ -87,6 +87,7 @@ public class SAMLFedLogoutUtil extends InboundUtil {
      * @throws FrameworkException
      */
     public static void doBootstrap() throws FrameworkException {
+
         if (!isBootStrapped) {
             try {
                 DefaultBootstrap.bootstrap();
@@ -219,7 +220,6 @@ public class SAMLFedLogoutUtil extends InboundUtil {
                 SSOUtils.setSignature(logoutResp, null, null, includeCert,
                     new X509CredentialImpl(context.getSAMLLogoutRequest().getTenantDomain(), null));
             }
-
             return logoutResp;
 
         } catch (SAMLSSOException e) {
@@ -266,7 +266,6 @@ public class SAMLFedLogoutUtil extends InboundUtil {
      * @param samlMessageContext
      * @throws SAMLIdentityException
      */
-
     public static void setX509Certificate(SAMLMessageContext samlMessageContext) throws SAMLIdentityException {
 
         String certificate = samlMessageContext.getFederatedIdp().getCertificate();

@@ -23,7 +23,6 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.F
 /**
  * This class is used to denote exceptions thrown from the federated idp initiated saml logout flow.
  */
-
 public class SAMLIdentityException extends FrameworkException {
 
     private String acsUrl;
@@ -31,14 +30,17 @@ public class SAMLIdentityException extends FrameworkException {
     private String exceptionMessage;
 
     public SAMLIdentityException(String errorDesciption) {
+
         super(errorDesciption);
     }
 
     public SAMLIdentityException(String message, Throwable cause) {
+
         super(message, cause);
     }
 
     public SAMLIdentityException(String errorDescription, String exceptionMessage, String acsUrl, String relayState) {
+
         super(errorDescription);
         this.acsUrl = acsUrl;
         this.relayState = relayState;
@@ -52,14 +54,17 @@ public class SAMLIdentityException extends FrameworkException {
     }
 
     public String getAcsUrl() {
+
         return acsUrl;
     }
 
     public String getRelayState() {
+
         return relayState;
     }
 
     public String getExceptionMessage() {
+
         return exceptionMessage;
     }
 }

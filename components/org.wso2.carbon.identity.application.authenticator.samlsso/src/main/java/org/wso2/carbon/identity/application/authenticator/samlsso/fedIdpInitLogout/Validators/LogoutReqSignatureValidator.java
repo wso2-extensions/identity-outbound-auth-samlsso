@@ -92,6 +92,7 @@ public class LogoutReqSignatureValidator {
      */
     public boolean validateXMLSignature(RequestAbstractType request, X509Credential cred,
                                         String alias) throws IdentityException {
+
         return validateXMLSignature((SignableXMLObject) request, cred, alias);
     }
 
@@ -122,6 +123,7 @@ public class LogoutReqSignatureValidator {
      * @throws SecurityPolicyException
      */
     private static CriteriaSet buildCriteriaSet(String issuer) {
+
         CriteriaSet criteriaSet = new CriteriaSet();
         if (!DatatypeHelper.isEmpty(issuer)) {
             criteriaSet.add(new EntityIDCriteria(issuer));
@@ -136,6 +138,7 @@ public class LogoutReqSignatureValidator {
      * @throws SecurityPolicyException
      */
     private static String getSigAlg(String queryString) throws SecurityPolicyException {
+
         String sigAlgQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, "SigAlg");
         if (DatatypeHelper.isEmpty(sigAlgQueryParam)) {
             throw new SecurityPolicyException(
@@ -170,6 +173,7 @@ public class LogoutReqSignatureValidator {
      * @throws SecurityPolicyException
      */
     protected static byte[] getSignature(String queryString) throws SecurityPolicyException {
+
         String signatureQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, "Signature");
         if (DatatypeHelper.isEmpty(signatureQueryParam)) {
             throw new SecurityPolicyException("Could not extract the Signature from query string");
@@ -195,6 +199,7 @@ public class LogoutReqSignatureValidator {
      * @throws SecurityPolicyException
      */
     protected static byte[] getSignedContent(String queryString) throws SecurityPolicyException {
+
         // We need the raw non-URL-decoded query string param values for
         // HTTP-Redirect DEFLATE simple signature
         // validation.
@@ -203,6 +208,7 @@ public class LogoutReqSignatureValidator {
         // request directly. We can't use the decoded parameters because we need
         // the raw
         // data and URL-encoding isn't canonical.
+
         if (log.isDebugEnabled()) {
             log.debug("Constructing signed content string from URL query string " + queryString);
         }
@@ -234,8 +240,8 @@ public class LogoutReqSignatureValidator {
      * @throws SecurityPolicyException thrown if there is an error during request processing
      */
     private static String buildSignedContentString(String queryString) throws SecurityPolicyException {
-        StringBuilder builder = new StringBuilder();
 
+        StringBuilder builder = new StringBuilder();
         // One of these two is mandatory
         if (!appendParameter(builder, queryString, "SAMLRequest") &&
             !appendParameter(builder, queryString, "SAMLResponse")) {
@@ -262,8 +268,10 @@ public class LogoutReqSignatureValidator {
      * @param paramName   the name of the parameter to append
      * @return true if parameter was found, false otherwise
      */
+
     private static boolean appendParameter(StringBuilder builder, String queryString,
                                            String paramName) {
+
         String rawParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, paramName);
         if (rawParam == null) {
             return false;

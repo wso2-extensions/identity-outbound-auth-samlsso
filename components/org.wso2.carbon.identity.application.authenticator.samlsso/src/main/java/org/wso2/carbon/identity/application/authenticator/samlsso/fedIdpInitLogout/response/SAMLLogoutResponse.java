@@ -26,7 +26,6 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogo
  * SAMLLogoutResponseBuilder is an inner class of this class and it is responsible
  * or building a concrete instance of SAMLLogoutResponse for the framework when needed.
  */
-
 public class SAMLLogoutResponse extends IdentityResponse {
 
     protected SAMLMessageContext context;
@@ -44,14 +43,17 @@ public class SAMLLogoutResponse extends IdentityResponse {
     }
 
     public String getResponse() {
+
         return response;
     }
 
     public String getAcsUrl() {
+
         return acsUrl;
     }
 
     public String getRelayState() {
+
         return relayState;
     }
 
@@ -63,11 +65,13 @@ public class SAMLLogoutResponse extends IdentityResponse {
         protected String relayState;
 
         public SAMLLogoutResponseBuilder(SAMLMessageContext context) {
+
             this.context = context;
         }
 
         @Override
         public SAMLLogoutResponse build() {
+
             return new SAMLLogoutResponse(this);
         }
 
@@ -84,6 +88,7 @@ public class SAMLLogoutResponse extends IdentityResponse {
         }
 
         public SAMLLogoutResponseBuilder setRelayState(String relayState) {
+
             this.relayState = relayState;
             return this;
         }

@@ -33,6 +33,7 @@ public class LambdaExceptionUtil {
      */
     @FunctionalInterface
     public interface ConsumerWithExceptions<T, E extends Exception> {
+
         void accept(T t) throws E;
     }
 
@@ -45,6 +46,7 @@ public class LambdaExceptionUtil {
      * @return an instance of the {@code Consumer}
      */
     public static <T, E extends Exception> Consumer<T> rethrowConsumer(ConsumerWithExceptions<T, E> consumer) {
+
         return t -> {
             try {
                 consumer.accept(t);
@@ -56,6 +58,7 @@ public class LambdaExceptionUtil {
 
     @SuppressWarnings("unchecked")
     private static <E extends Throwable> void throwAsUnchecked(Exception exception) throws E {
+
         throw (E) exception;
     }
 }

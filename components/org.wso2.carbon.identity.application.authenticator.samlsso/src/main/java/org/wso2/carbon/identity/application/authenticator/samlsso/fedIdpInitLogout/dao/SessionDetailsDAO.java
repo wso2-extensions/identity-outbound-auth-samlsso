@@ -32,7 +32,6 @@ import java.util.Map;
 /**
  * DAO class to handle the federated idp initiated logout flow related DB operations.
  */
-
 public class SessionDetailsDAO {
 
     private static final Log log = LogFactory.getLog(SessionDetailsDAO.class);
