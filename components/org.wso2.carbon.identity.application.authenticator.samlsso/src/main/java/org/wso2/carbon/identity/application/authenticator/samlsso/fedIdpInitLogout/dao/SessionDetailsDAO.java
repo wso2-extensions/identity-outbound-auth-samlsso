@@ -32,6 +32,7 @@ import java.util.Map;
 /**
  * DAO class to handle the federated idp initiated logout flow related DB operations.
  */
+
 public class SessionDetailsDAO {
 
     private static final Log log = LogFactory.getLog(SessionDetailsDAO.class);
@@ -43,6 +44,7 @@ public class SessionDetailsDAO {
      * @return session details of given saml index
      * @throws SQLException
      */
+
     public Map<String, String> getSessionDetails(String sessionIndex) throws SQLException {
 
         Map<String, String> sessionDetails = new HashMap<>();
@@ -63,4 +65,3 @@ public class SessionDetailsDAO {
         return sessionDetails;
     }
 }
-

@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  * SAMLLogoutRequestBuilder is an inner class of this class and it is responsible
  * for building a concrete instance of SAMLLogoutRequest for the framework when needed.
  */
+
 public class SAMLLogoutRequest extends IdentityRequest {
 
     private boolean isPost;
@@ -61,4 +62,3 @@ public class SAMLLogoutRequest extends IdentityRequest {
         }
     }
 }
-

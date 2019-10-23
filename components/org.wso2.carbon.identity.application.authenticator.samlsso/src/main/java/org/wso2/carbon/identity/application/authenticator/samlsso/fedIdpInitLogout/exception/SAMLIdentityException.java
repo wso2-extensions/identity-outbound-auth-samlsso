@@ -47,6 +47,7 @@ public class SAMLIdentityException extends FrameworkException {
 
     public static SAMLIdentityException error(String errorDescription, String exceptionMessage, String relayState,
                                               String acsUrl) {
+
         return new SAMLIdentityException(errorDescription, exceptionMessage, acsUrl, relayState);
     }
 
@@ -62,4 +63,3 @@ public class SAMLIdentityException extends FrameworkException {
         return exceptionMessage;
     }
 }
-

@@ -69,20 +69,14 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 
 /**
  * This class is responsible for doing the actual processing of the logout request.
- * It does this by validating the IdentityRequest and passing it on to the authentication framework for validation.
- * process() method (inherited from the IdentityProcessor superclass) carried out the main functionality.
+ * It does this by validating the IdentityRequest and passing it on to the authentication framework for logout.
  */
+
 public class SAMLLogoutRequestProcessor extends IdentityProcessor {
 
     private static final Log log = LogFactory.getLog(SAMLLogoutRequestProcessor.class);
     private SAMLMessageContext samlMessageContext;
 
-    /**
-     * decide whether the given IdentityReuest can be processed in this processor.
-     *
-     * @param identityRequest
-     * @return
-     */
     @Override
     public boolean canHandle(IdentityRequest identityRequest) {
 
@@ -98,6 +92,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @return
      * @throws SAMLIdentityException
      */
+
     @Override
     public FrameworkLogoutResponse.FrameworkLogoutResponseBuilder process(IdentityRequest identityRequest) throws SAMLIdentityException {
 
@@ -165,6 +160,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @param context
      * @return
      */
+
     protected FrameworkLogoutResponse.FrameworkLogoutResponseBuilder buildResponseForFrameworkLogout
     (SAMLMessageContext context) {
 
@@ -215,6 +211,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @param sessionIndex
      * @throws SAMLIdentityException
      */
+
     private void getSessionInfo(String sessionIndex) throws SAMLIdentityException {
 
         try {
@@ -242,6 +239,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @param logoutRequest
      * @throws SAMLIdentityException
      */
+
     private void validateSessionIndex(LogoutRequest logoutRequest)
         throws SAMLIdentityException {
 
@@ -268,6 +266,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @param logoutRequest
      * @throws SAMLIdentityException
      */
+
     private void validateSamlVersion(LogoutRequest logoutRequest) throws SAMLIdentityException {
 
         if (!(SAMLVersion.VERSION_20.equals(logoutRequest.getVersion()))) {
@@ -289,6 +288,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @param logoutRequest
      * @throws SAMLIdentityException
      */
+
     private void validateIssuer(LogoutRequest logoutRequest) throws SAMLIdentityException {
 
         if (logoutRequest.getIssuer().getValue() != null) {
@@ -322,6 +322,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @param logoutRequest
      * @throws SAMLIdentityException
      */
+
     private void validateSubject(LogoutRequest logoutRequest) throws SAMLIdentityException {
 
         if (logoutRequest.getNameID() == null && logoutRequest.getBaseID() == null
@@ -344,6 +345,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @param logoutRequest
      * @throws SAMLIdentityException
      */
+
     private void validateSignature(LogoutRequest logoutRequest) throws SAMLIdentityException {
 
         try {
@@ -388,4 +390,3 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
         return null;
     }
 }
-

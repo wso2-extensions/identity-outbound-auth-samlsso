@@ -30,9 +30,18 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogo
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 /**
- * This class is responsible for processing the requests come from the framework after framework logout.
+ * This class is responsible for processing the processed response from the authentication framework
+ * after framework Logout .
  */
+
 public class SAMLSSOLogoutProcessor extends IdentityProcessor {
+
+    /**
+     * check whether there is a context for the IdentityRequest.
+     *
+     * @param identityRequest
+     * @return
+     */
 
     @Override
     public boolean canHandle(IdentityRequest identityRequest) {
@@ -43,6 +52,14 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
         }
         return false;
     }
+
+    /**
+     * process the response from authentication framework and build the SAMLLogoutResponse.
+     *
+     * @param identityRequest
+     * @return
+     * @throws FrameworkException
+     */
 
     @Override
     public SAMLLogoutResponse.SAMLLogoutResponseBuilder process(IdentityRequest identityRequest)
@@ -79,4 +96,3 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
         return 1;
     }
 }
-

@@ -282,4 +282,3 @@ public class SAMLFedLogoutUtil extends InboundUtil {
         samlMessageContext.setIdpCertificate(x509Certificate);
     }
 }
-

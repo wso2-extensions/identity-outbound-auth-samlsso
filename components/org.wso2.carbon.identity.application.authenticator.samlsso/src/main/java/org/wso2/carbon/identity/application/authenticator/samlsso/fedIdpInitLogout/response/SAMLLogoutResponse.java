@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogo
  * SAMLLogoutResponseBuilder is an inner class of this class and it is responsible
  * or building a concrete instance of SAMLLogoutResponse for the framework when needed.
  */
+
 public class SAMLLogoutResponse extends IdentityResponse {
 
     protected SAMLMessageContext context;
@@ -88,4 +89,3 @@ public class SAMLLogoutResponse extends IdentityResponse {
         }
     }
 }
-

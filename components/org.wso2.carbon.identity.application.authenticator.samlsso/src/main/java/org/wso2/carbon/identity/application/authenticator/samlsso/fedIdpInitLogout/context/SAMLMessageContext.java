@@ -32,6 +32,7 @@ import java.util.Map;
  * This class is used for holding data about the federated IdP initiated logout request.
  *
  */
+
 public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable> extends IdentityMessageContext {
 
     private String acsUrl;
@@ -90,9 +91,7 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
         return validStatus;
     }
 
-    public void setValidStatus(Boolean validStatus) {
-        this.validStatus = validStatus;
-    }
+    public void setValidStatus(Boolean validStatus) { this.validStatus = validStatus; }
 
     public String getResponse() {
         return response;
@@ -122,4 +121,3 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
         return idpCertificate;
     }
 }
-

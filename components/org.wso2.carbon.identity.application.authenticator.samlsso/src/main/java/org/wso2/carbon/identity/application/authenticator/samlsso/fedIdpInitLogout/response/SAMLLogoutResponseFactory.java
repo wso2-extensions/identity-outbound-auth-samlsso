@@ -28,10 +28,12 @@ import org.owasp.encoder.Encode;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- *This class  builds a HTTP response factory instance based on the common
+ * This class  builds a HTTP response instance based on the common
  * IdentityRequest format used by the authentication framework.
  */
+
 public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
+
     @Override
     public boolean canHandle(IdentityResponse identityResponse) {
 
@@ -112,4 +114,3 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
         return out.toString();
     }
 }
-

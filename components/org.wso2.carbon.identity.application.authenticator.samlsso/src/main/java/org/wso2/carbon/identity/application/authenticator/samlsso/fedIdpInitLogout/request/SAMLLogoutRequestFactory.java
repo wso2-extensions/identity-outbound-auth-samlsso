@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
  * Contains the canHandle() method inherited from the parent class which
  * dictates whether or not a certain servlet request can be handled by this class.
  */
+
 public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
 
     public SAMLLogoutRequestFactory() {
@@ -69,4 +70,3 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
         builder.isPost(StringUtils.isBlank(request.getQueryString()));
     }
 }
-
