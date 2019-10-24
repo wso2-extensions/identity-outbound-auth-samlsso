@@ -40,7 +40,6 @@ import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
-import org.wso2.carbon.identity.application.authentication.framework.inbound.InboundUtil;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.Validators.LogoutReqSignatureValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.context.SAMLMessageContext;
@@ -76,7 +75,7 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 /**
  * A Utility which provides functionality to handle federated idp initiated saml logout requests.
  */
-public class SAMLFedLogoutUtil extends InboundUtil {
+public class SAMLFedLogoutUtil {
 
     private static final Log log = LogFactory.getLog(SAMLFedLogoutUtil.class);
     private static boolean isBootStrapped = false;

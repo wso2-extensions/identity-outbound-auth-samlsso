@@ -18,6 +18,9 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.processor;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.ListUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,11 +53,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -95,8 +94,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     public FrameworkLogoutResponse.FrameworkLogoutResponseBuilder process(IdentityRequest identityRequest)
         throws SAMLIdentityException {
 
-        samlMessageContext = new SAMLMessageContext(identityRequest,
-            new HashMap<String, String>());
+        samlMessageContext = new SAMLMessageContext(identityRequest, new HashMap<String, String>());
 
         try {
             XMLObject samlRequest;
@@ -110,7 +108,6 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             if (samlRequest instanceof LogoutRequest) {
                 logoutRequest = (LogoutRequest) samlRequest;
                 samlMessageContext.setValidStatus(true);
-
             } else {
                 samlMessageContext.setValidStatus(false);
                 throw new SAMLIdentityException("Invalid Single Logout SAML Request");
@@ -146,7 +143,6 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
                 samlMessageContext.setResponse(SSOUtils.encode(SSOUtils.marshall(logoutResp)));
                 samlMessageContext.setAcsUrl(logoutResp.getDestination());
             }
-
         } catch (SAMLSSOException e) {
             throw new SAMLIdentityException("Error when processing the Logout Request");
         }
@@ -168,8 +164,9 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
         AuthenticationRequest authenticationRequest = new AuthenticationRequest();
         authenticationRequest.appendRequestQueryParams(parameterMap);
         Set<Map.Entry<String, String>> headers = new HashMap(identityRequest.getHeaderMap()).entrySet();
-        for (Map.Entry<String, String> header : headers) {
-            authenticationRequest.addHeader(header.getKey(), header.getValue());
+        Iterator<Map.Entry<String, String>> iterator = headers.iterator();
+        while (iterator.hasNext()){
+            authenticationRequest.addHeader(iterator.next().getKey(), iterator.next().getValue());
         }
         authenticationRequest.setTenantDomain(identityRequest.getTenantDomain());
         authenticationRequest.setRelyingParty(getRelyingPartyId(context));
@@ -195,10 +192,8 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             new FrameworkLogoutResponse.FrameworkLogoutResponseBuilder(context);
         responseBuilder.setContextKey(sessionDataKey);
         responseBuilder.setCallbackPath(getCallbackPath(context));
-        responseBuilder.setRelyingParty(getRelyingPartyId(context));
         responseBuilder.setAuthType(getType(context));
-        String commonAuthURL = IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH,
-            true, true);
+        String commonAuthURL = IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true);
         responseBuilder.setRedirectURL(commonAuthURL);
         return responseBuilder;
     }
@@ -374,11 +369,13 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
 
     @Override
     public String getRelyingPartyId() {
+
         return null;
     }
 
     @Override
     public String getRelyingPartyId(IdentityMessageContext context) {
+
         return null;
     }
 }

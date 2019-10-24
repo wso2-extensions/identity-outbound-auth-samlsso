@@ -20,7 +20,6 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLog
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.ws.security.SecurityPolicyException;
 import org.opensaml.ws.transport.http.HTTPTransportUtils;
 import org.opensaml.xml.security.CriteriaSet;
@@ -90,12 +89,6 @@ public class LogoutReqSignatureValidator {
      * @return true, if the signature is valid.
      * @throws IdentityException
      */
-    public boolean validateXMLSignature(RequestAbstractType request, X509Credential cred,
-                                        String alias) throws IdentityException {
-
-        return validateXMLSignature((SignableXMLObject) request, cred, alias);
-    }
-
     public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred,
                                         String alias) throws IdentityException {
 
@@ -133,6 +126,8 @@ public class LogoutReqSignatureValidator {
     }
 
     /**
+     * Extract the signature algorithm from the query string in the request
+     *
      * @param queryString
      * @return
      * @throws SecurityPolicyException
@@ -172,7 +167,7 @@ public class LogoutReqSignatureValidator {
      * @return
      * @throws SecurityPolicyException
      */
-    protected static byte[] getSignature(String queryString) throws SecurityPolicyException {
+    private static byte[] getSignature(String queryString) throws SecurityPolicyException {
 
         String signatureQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, "Signature");
         if (DatatypeHelper.isEmpty(signatureQueryParam)) {
@@ -194,20 +189,19 @@ public class LogoutReqSignatureValidator {
     }
 
     /**
+     * Extract the signed content string from the query string in the request.
+     *
+     * We need the raw non-URL-decoded query string param values for
+     * HTTP-Redirect DEFLATE simple signature validation.
+     * We have to construct a string containing the signature input by
+     * accessing the request directly. We can't use the decoded parameters because we need
+     * the raw data and URL-encoding isn't canonical.
+     *
      * @param queryString
      * @return
      * @throws SecurityPolicyException
      */
-    protected static byte[] getSignedContent(String queryString) throws SecurityPolicyException {
-
-        // We need the raw non-URL-decoded query string param values for
-        // HTTP-Redirect DEFLATE simple signature
-        // validation.
-        // We have to construct a string containing the signature input by
-        // accessing the
-        // request directly. We can't use the decoded parameters because we need
-        // the raw
-        // data and URL-encoding isn't canonical.
+    private static byte[] getSignedContent(String queryString) throws SecurityPolicyException {
 
         if (log.isDebugEnabled()) {
             log.debug("Constructing signed content string from URL query string " + queryString);
@@ -242,11 +236,8 @@ public class LogoutReqSignatureValidator {
     private static String buildSignedContentString(String queryString) throws SecurityPolicyException {
 
         StringBuilder builder = new StringBuilder();
-        // One of these two is mandatory
-        if (!appendParameter(builder, queryString, "SAMLRequest") &&
-            !appendParameter(builder, queryString, "SAMLResponse")) {
-            throw new SecurityPolicyException(
-                "Extract of SAMLRequest or SAMLResponse from query string failed");
+        if (!isRawQueryStringParam(queryString)) {
+            throw new SecurityPolicyException("Extract of SAMLRequest from query string failed");
         }
         // This is optional
         appendParameter(builder, queryString, "RelayState");
@@ -268,18 +259,24 @@ public class LogoutReqSignatureValidator {
      * @param paramName   the name of the parameter to append
      * @return true if parameter was found, false otherwise
      */
-
-    private static boolean appendParameter(StringBuilder builder, String queryString,
-                                           String paramName) {
+    private static void appendParameter(StringBuilder builder, String queryString, String paramName) {
 
         String rawParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, paramName);
-        if (rawParam == null) {
-            return false;
-        }
         if (builder.length() > 0) {
             builder.append('&');
         }
         builder.append(rawParam);
-        return true;
+    }
+
+    /**
+     * check whether there is a raw query string parameter in the query string.
+     *
+     * @param queryString
+     * @return
+     */
+    private static boolean isRawQueryStringParam(String queryString){
+
+        String rawParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, "SAMLRequest");
+        return rawParam != null;
     }
 }
