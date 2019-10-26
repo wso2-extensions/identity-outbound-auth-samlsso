@@ -80,7 +80,6 @@ import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.opensaml.xmlsec.signature.impl.SignatureImpl;
 import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.opensaml.xmlsec.signature.support.SignatureException;
-
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.base.MultitenantConstants;
