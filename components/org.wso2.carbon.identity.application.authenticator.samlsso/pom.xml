@@ -46,11 +46,11 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.opensaml</groupId>
-                    <artifactId>opensaml1</artifactId>
+                    <artifactId>opensaml</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.opensaml</groupId>
-                    <artifactId>opensaml</artifactId>
+                    <artifactId>opensaml1</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -72,11 +72,11 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.opensaml</groupId>
-                    <artifactId>opensaml1</artifactId>
+                    <artifactId>opensaml</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.opensaml</groupId>
-                    <artifactId>opensaml</artifactId>
+                    <artifactId>opensaml1</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

@@ -269,6 +269,10 @@ public class X509CredentialImpl implements X509Credential {
         return Collections.emptySet();
     }
 
+    /***
+     * Get the credential context set.
+     * @return This method is not supported so the return is null.
+     */
     @Override
     public CredentialContextSet getCredentialContextSet() {
         // TODO Auto-generated method stub
