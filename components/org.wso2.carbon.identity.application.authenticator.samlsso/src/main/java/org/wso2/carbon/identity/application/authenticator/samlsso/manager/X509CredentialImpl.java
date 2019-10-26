@@ -275,7 +275,6 @@ public class X509CredentialImpl implements X509Credential {
      */
     @Override
     public CredentialContextSet getCredentialContextSet() {
-        // TODO Auto-generated method stub
         return null;
     }
 
