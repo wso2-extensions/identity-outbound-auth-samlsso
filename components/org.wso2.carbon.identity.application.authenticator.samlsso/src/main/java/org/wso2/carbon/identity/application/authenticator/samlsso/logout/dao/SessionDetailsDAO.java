@@ -16,10 +16,11 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.dao;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 
 import java.sql.Connection;
@@ -29,6 +30,9 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.IDP_ID;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SESSION_ID;
+
 /**
  * DAO class to handle the federated idp initiated logout flow related DB operations.
  */
@@ -37,30 +41,30 @@ public class SessionDetailsDAO {
     private static final Log log = LogFactory.getLog(SessionDetailsDAO.class);
 
     /**
-     * return the session details of a given saml index.
+     * Retrieve the session details of a given SAML Index from the database.
      *
-     * @param sessionIndex Extracted saml index of the logout request
-     * @return session details of given saml index
-     * @throws SQLException
+     * @param sessionIndex Session Index of the SAML Request.
+     * @return Map of session details.
+     * @throws SAMLIdentityException If DB execution fails.
      */
+    public Map<String, String> getSessionDetails(String sessionIndex) throws SAMLIdentityException {
 
-    public Map<String, String> getSessionDetails(String sessionIndex) throws SQLException {
-
-        Map<String, String> sessionDetails = new HashMap<>();
-        String query = "SELECT * FROM IDN_FEDERATED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID =?";
+        final String query = "SELECT * FROM IDN_FEDERATED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID =?";
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, sessionIndex);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                Map<String, String> sessionDetails = new HashMap<>();
                 if (resultSet.next()) {
-                    sessionDetails.put("sessionID", resultSet.getString("SESSION_ID"));
-                    sessionDetails.put("idpID", resultSet.getString("IDP_ID"));
+                    sessionDetails.put(SESSION_ID, resultSet.getString("SESSION_ID"));
+                    sessionDetails.put(IDP_ID, resultSet.getString("IDP_ID"));
                 }
+                return sessionDetails;
             }
         } catch (SQLException e) {
-            throw new SQLException("Unable to read session details from the database with saml id: " + sessionIndex, e);
+            throw new SAMLIdentityException("Unable to read session details from the database with saml index: "
+                    + sessionIndex, e);
         }
-        return sessionDetails;
     }
 }

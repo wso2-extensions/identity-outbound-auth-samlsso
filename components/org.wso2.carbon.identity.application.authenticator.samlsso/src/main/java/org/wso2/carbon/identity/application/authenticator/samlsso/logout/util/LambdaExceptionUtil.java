@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.util;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.util;
 
 import java.util.function.Consumer;
 
@@ -28,8 +28,8 @@ public class LambdaExceptionUtil {
     /**
      * Represents a {@code Consumer} interface which can throw exceptions.
      *
-     * @param <T> the type of the input to the operation
-     * @param <E> the type of Exception
+     * @param <T> The type of the input to the operation.
+     * @param <E> The type of Exception.
      */
     @FunctionalInterface
     public interface ConsumerWithExceptions<T, E extends Exception> {
@@ -40,10 +40,10 @@ public class LambdaExceptionUtil {
     /**
      * This method allows a Consumer which throws exceptions to be used in places which expects a Consumer.
      *
-     * @param consumer instances of the {@code ConsumerWithExceptions} functional interface
-     * @param <T>      the type of the input to the function
-     * @param <E>      the type of Exception
-     * @return an instance of the {@code Consumer}
+     * @param consumer Instances of the {@code ConsumerWithExceptions} functional interface.
+     * @param <T>      The type of the input to the function.
+     * @param <E>      The type of Exception.
+     * @return An instance of the {@code Consumer}
      */
     public static <T, E extends Exception> Consumer<T> rethrowConsumer(ConsumerWithExceptions<T, E> consumer) {
 

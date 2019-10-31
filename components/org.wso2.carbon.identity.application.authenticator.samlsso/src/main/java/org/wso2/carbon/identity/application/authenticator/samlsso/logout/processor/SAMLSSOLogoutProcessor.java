@@ -16,21 +16,24 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.processor;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor;
 
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityMessageContext;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.InboundUtil;
-import org.wso2.carbon.identity.application.authentication.framework.inbound.InboundConstants;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.request.SAMLLogoutRequest;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.context.SAMLMessageContext;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.response.SAMLLogoutResponse;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponse;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
+import static org.wso2.carbon.identity.application.authentication.framework.inbound.InboundConstants.
+        RequestProcessor.CONTEXT_KEY;
+import static org.wso2.carbon.identity.base.IdentityConstants.IDENTITY_DEFAULT_ROLE;
+
 /**
- * This class is responsible for processing the processed response from the authentication framework
+ * The class which processes the response from the authentication framework
  * after framework Logout .
  */
 public class SAMLSSOLogoutProcessor extends IdentityProcessor {
@@ -39,21 +42,24 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
     public boolean canHandle(IdentityRequest identityRequest) {
 
         IdentityMessageContext context = getContextIfAvailable(identityRequest);
-        if (context != null) {
-            return (context.getRequest() instanceof SAMLLogoutRequest);
-        }
-        return false;
+        return context != null && (context.getRequest() instanceof SAMLLogoutRequest);
     }
 
+    /**
+     * Processes the response from the framework after framework logout.
+     *
+     * @param identityRequest IdentityRequest.
+     * @return SAMLLogoutResponse.SAMLLogoutResponseBuilder instance.
+     * @throws FrameworkException Error when processing the framework request.
+     */
     @Override
     public SAMLLogoutResponse.SAMLLogoutResponseBuilder process(IdentityRequest identityRequest)
-        throws FrameworkException {
+            throws FrameworkException {
 
-        String sessionDataKey = identityRequest.getParameter(InboundConstants.RequestProcessor.CONTEXT_KEY);
-        IdentityMessageContext context = InboundUtil.getContextFromCache(sessionDataKey);
-        SAMLMessageContext samlMessageContext = (SAMLMessageContext) context;
+        String sessionDataKey = identityRequest.getParameter(CONTEXT_KEY);
+        SAMLMessageContext samlMessageContext = (SAMLMessageContext) InboundUtil.getContextFromCache(sessionDataKey);
         SAMLLogoutResponse.SAMLLogoutResponseBuilder builder = new SAMLLogoutResponse.SAMLLogoutResponseBuilder
-            (samlMessageContext);
+                (samlMessageContext);
         builder.setResponse(samlMessageContext.getResponse());
         builder.setAcsUrl(samlMessageContext.getAcsUrl());
         return builder;
@@ -62,7 +68,7 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
     @Override
     public String getCallbackPath(IdentityMessageContext context) {
 
-        return IdentityUtil.getServerURL("identity", false, false);
+        return IdentityUtil.getServerURL(IDENTITY_DEFAULT_ROLE, false, false);
     }
 
     @Override

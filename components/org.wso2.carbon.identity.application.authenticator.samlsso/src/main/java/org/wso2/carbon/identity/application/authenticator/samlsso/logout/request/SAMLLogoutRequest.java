@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.request;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.request;
 
 import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkClientException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * This class  holds the necessary parameters in the HTTPServletRequest.
+ * This class  holds the necessary parameters of the HTTPServletRequest.
  * SAMLLogoutRequestBuilder is an inner class of this class and it is responsible
  * for building a concrete instance of SAMLLogoutRequest for the framework when needed.
  */

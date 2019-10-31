@@ -16,8 +16,9 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.util;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
@@ -41,36 +42,40 @@ import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.Validators.LogoutReqSignatureValidator;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.context.SAMLMessageContext;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.exception.SAMLIdentityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutReqSignatureValidator;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
-import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
-import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.base.IdentityException;
 
 import java.io.ByteArrayInputStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.StatusCodes.SUCCESS_CODE;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
-    SAML2SSO.SP_ENTITY_ID;
+        SAML2SSO.SP_ENTITY_ID;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
-    SAML2SSO.SSO_URL;
+        SAML2SSO.SSO_URL;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
-    SAML2SSO.IS_AUTHN_RESP_SIGNED;
+        SAML2SSO.IS_AUTHN_RESP_SIGNED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
-    SAML2SSO.INCLUDE_CERT;
+        SAML2SSO.INCLUDE_CERT;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
-    SAML2SSO.IS_LOGOUT_REQ_SIGNED;
+        SAML2SSO.IS_LOGOUT_REQ_SIGNED;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.CERTIFICATE_TYPE;
+import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
+import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 
 /**
  * A Utility which provides functionality to handle federated idp initiated saml logout requests.
@@ -81,9 +86,9 @@ public class SAMLFedLogoutUtil {
     private static boolean isBootStrapped = false;
 
     /**
-     * Do the boostrap first.
+     * Bootstrap the OpenSAML2 library only if it is not bootstrapped.
      *
-     * @throws FrameworkException
+     * @throws FrameworkException Error when bootstrapping.
      */
     public static void doBootstrap() throws FrameworkException {
 
@@ -98,34 +103,34 @@ public class SAMLFedLogoutUtil {
     }
 
     /**
-     * Build the StatusCode and statusMessage for Response.
+     * This method is used to build status of the response.
      *
-     * @param status
-     * @param statMsg
-     * @return
+     * @param statCode Status code of the response.
+     * @param statMsg  Status message of the response.
+     * @return Status object of Status element.
      */
-    private static Status buildStatus(String status, String statMsg) {
+    private static Status buildStatus(String statCode, String statMsg) {
 
-        Status stat = new StatusBuilder().buildObject();
+        Status status = new StatusBuilder().buildObject();
 
         // Set the status code.
-        StatusCode statCode = new StatusCodeBuilder().buildObject();
-        statCode.setValue(status);
-        stat.setStatusCode(statCode);
+        StatusCode statusCode = new StatusCodeBuilder().buildObject();
+        statusCode.setValue(statCode);
+        status.setStatusCode(statusCode);
 
         // Set the status Message.
-        if (statMsg != null) {
+        if (StringUtils.isNotBlank(statMsg)) {
             StatusMessage stateMesssage = new StatusMessageBuilder().buildObject();
             stateMesssage.setMessage(statMsg);
-            stat.setStatusMessage(stateMesssage);
+            status.setStatusMessage(stateMesssage);
         }
-        return stat;
+        return status;
     }
 
     /**
-     * Build the secure random ID for logout response.
+     * Generate a unique ID for logout response.
      *
-     * @return
+     * @return Generated unique ID.
      */
     private static String createID() throws IdentityException {
 
@@ -133,48 +138,42 @@ public class SAMLFedLogoutUtil {
             SecureRandomIdentifierGenerator generator = new SecureRandomIdentifierGenerator();
             return generator.generateIdentifier();
         } catch (NoSuchAlgorithmException e) {
-            throw new IdentityException("Error while building Secure Random ID", e);
+            throw new IdentityException("Error while generating Secure Random ID", e);
         }
     }
 
     /**
-     * store federated identity provider's configs into a map.
+     * Store federated identity provider's configurations into a map.
      *
-     * @param identityProvider
-     * @return
+     * @param identityProvider     IdentityProvider.
+     * @return Map<String, String> Map of properties of the Identity Provider.
      */
-    public static Map<String, String> getFederatedIdpConfigs(IdentityProvider identityProvider) {
+    public static Map<String, String> getFederatedIdPConfigs(IdentityProvider identityProvider) {
 
         Property[] properties = identityProvider.getDefaultAuthenticatorConfig().getProperties();
         List<String> idpPropertyNames = Arrays.asList(SP_ENTITY_ID, SSO_URL, IS_AUTHN_RESP_SIGNED,
-            INCLUDE_CERT, IS_LOGOUT_REQ_SIGNED);
-        Map<String, String> fedIdPConfigs = new HashMap<>();
+                INCLUDE_CERT, IS_LOGOUT_REQ_SIGNED);
 
-        for (Property property : properties) {
-            if (idpPropertyNames.contains(property.getName())) {
-                fedIdPConfigs.put(property.getName(), property.getValue());
-                if (idpPropertyNames.size() == fedIdPConfigs.size()) {
-                    break;
-                }
-            }
-        }
-        return fedIdPConfigs;
+        return Arrays.stream(properties)
+                .filter(t -> idpPropertyNames.contains(t.getName()))
+                .collect(Collectors.toMap(Property::getName, Property::getValue));
     }
 
     /**
-     * build the error response.
+     * Build error response when request contain validation or processing errors.
      *
-     * @param inResponseTo
-     * @param statusCode
-     * @param statusMsg
-     * @return encoded response
-     * @throws IdentityException
+     * @param samlMessageContext SAMLMessageContext
+     * @param inResponseTo       ID of the Logout Request.
+     * @param statusCode         Status Code of the Error Response.
+     * @param statusMsg          Status Message of the Error Response.
+     * @return String            Encoded Error Response.
+     * @throws SAMLIdentityException Error when building the Error Response.
      */
-    public static String buildErrorResponse(SAMLMessageContext context, String
-        inResponseTo, String statusCode, String statusMsg) throws SAMLIdentityException {
+    public static String buildErrorResponse(SAMLMessageContext samlMessageContext, String
+            inResponseTo, String statusCode, String statusMsg) throws SAMLIdentityException {
 
         try {
-            LogoutResponse errorResponse = buildResponse(context, inResponseTo, statusCode, statusMsg);
+            LogoutResponse errorResponse = buildResponse(samlMessageContext, inResponseTo, statusCode, statusMsg);
             return SSOUtils.encode(SSOUtils.marshall(errorResponse));
         } catch (SAMLSSOException e) {
             throw new SAMLIdentityException("Error Serializing the SAML Response", e);
@@ -184,27 +183,26 @@ public class SAMLFedLogoutUtil {
     /**
      * Build the Logout Response.
      *
-     * @param context
-     * @param inResponseTo
-     * @param statusCode
-     * @param statusMsg
-     * @return
-     * @throws SAMLIdentityException
+     * @param samlMessageContext SAMLMessageContext.
+     * @param inResponseTo       ID of the Logout Request.
+     * @param statusCode         Status Code of the Error Response.
+     * @param statusMsg          Status Message of the Error Response.
+     * @return Logout Response   Logout Response instance.
+     * @throws SAMLIdentityException Error when building the Logout Response.
      */
-    public static LogoutResponse buildResponse(SAMLMessageContext context, String inResponseTo,
+    public static LogoutResponse buildResponse(SAMLMessageContext samlMessageContext, String inResponseTo,
                                                String statusCode, String statusMsg) throws SAMLIdentityException {
 
         try {
             doBootstrap();
-            String issuerId = (String) context.getFedIdpConfigs().get(SP_ENTITY_ID);
-            String acsUrl = (String) context.getFedIdpConfigs().get(SSO_URL);
-            String isResSigned = (String) context.getFedIdpConfigs().get(IS_AUTHN_RESP_SIGNED);
-            boolean includeCert = (context.getFedIdpConfigs().get(IdentityApplicationConstants.
-                Authenticator.SAML2SSO.INCLUDE_CERT)).equals("true");
+            String issuerID = (String) samlMessageContext.getFedIdPConfigs().get(SP_ENTITY_ID);
+            String acsUrl = (String) samlMessageContext.getFedIdPConfigs().get(SSO_URL);
+            String isResSigned = (String) samlMessageContext.getFedIdPConfigs().get(IS_AUTHN_RESP_SIGNED);
+            boolean includeCert = TRUE.equals(samlMessageContext.getFedIdPConfigs().get(INCLUDE_CERT));
 
             IssuerBuilder issuerBuilder = new IssuerBuilder();
             Issuer issuer = issuerBuilder.buildObject();
-            issuer.setValue(issuerId);
+            issuer.setValue(issuerID);
 
             LogoutResponse logoutResp = new LogoutResponseBuilder().buildObject();
             logoutResp.setID(createID());
@@ -215,9 +213,11 @@ public class SAMLFedLogoutUtil {
             logoutResp.setIssueInstant(new DateTime());
             logoutResp.setDestination(acsUrl);
 
-            if (isResSigned.equals("true") && SSOConstants.StatusCodes.SUCCESS_CODE.equals(statusCode)) {
+            if (TRUE.equals(isResSigned) && SUCCESS_CODE.equals(statusCode)) {
+                String tenantDomain = StringUtils.isNotBlank(samlMessageContext.getSAMLLogoutRequest().getTenantDomain())
+                        ? samlMessageContext.getSAMLLogoutRequest().getTenantDomain() : SUPER_TENANT_DOMAIN_NAME;
                 SSOUtils.setSignature(logoutResp, null, null, includeCert,
-                    new X509CredentialImpl(context.getSAMLLogoutRequest().getTenantDomain(), null));
+                        new X509CredentialImpl(tenantDomain, null));
             }
             return logoutResp;
 
@@ -228,30 +228,29 @@ public class SAMLFedLogoutUtil {
         } catch (IdentityException e) {
             throw new SAMLIdentityException("Error while building Secure Random ID for the logout response", e);
         }
-
     }
 
     /**
      * Validate the signature of the LogoutRequest message against the given certificate.
      *
-     * @param logoutRequest The logout request object if available.
-     * @return
-     * @throws IdentityException
+     * @param logoutRequest      LogoutRequest.
+     * @return Boolean           If signature of the Logout Request is valid = true.
+     * @throws IdentityException Error when validating the signature.
      */
     public static boolean validateLogoutRequestSignature(LogoutRequest logoutRequest, SAMLMessageContext
-        samlMessageContext) throws IdentityException {
+            samlMessageContext) throws IdentityException {
 
         String issuer = logoutRequest.getIssuer().getValue();
-        setX509Certificate(samlMessageContext);
+        X509Certificate x509Certificate = generateX509Certificate(samlMessageContext.
+                getFederatedIdP().getCertificate());
 
         LogoutReqSignatureValidator signatureValidator = new LogoutReqSignatureValidator();
         try {
-            if (samlMessageContext.getSAMLLogoutRequest().getQueryString() != null) {
+            if (StringUtils.isNotBlank(samlMessageContext.getSAMLLogoutRequest().getQueryString())) {
                 return signatureValidator.validateSignature(samlMessageContext.getSAMLLogoutRequest().getQueryString(),
-                    issuer, samlMessageContext.getIdpCertificate());
+                        issuer, x509Certificate);
             } else {
-                return signatureValidator.validateXMLSignature(logoutRequest,
-                    (X509Credential) samlMessageContext.getIdpCertificate(), null);
+                return signatureValidator.validateXMLSignature(logoutRequest, (X509Credential) x509Certificate, null);
             }
         } catch (SecurityException e) {
             log.error("Error validating deflate signature", e);
@@ -262,21 +261,37 @@ public class SAMLFedLogoutUtil {
     /**
      * Generate the X509Certificate using the certificate string value in the identity provider's configuration.
      *
-     * @param samlMessageContext
-     * @throws SAMLIdentityException
+     * @param certificate            String value of the certificate in the IdP's configurations.
+     * @throws SAMLIdentityException Error while generating the X509Certificate.
      */
-    public static void setX509Certificate(SAMLMessageContext samlMessageContext) throws SAMLIdentityException {
+    private static X509Certificate generateX509Certificate(String certificate)
+            throws SAMLIdentityException {
 
-        String certificate = samlMessageContext.getFederatedIdp().getCertificate();
         byte[] certificateData = java.util.Base64.getDecoder().decode(certificate);
-        java.security.cert.X509Certificate x509Certificate = null;
-
         try {
-            x509Certificate = (java.security.cert.X509Certificate)
-                CertificateFactory.getInstance("X509").generateCertificate(new ByteArrayInputStream(certificateData));
+            return (java.security.cert.X509Certificate) CertificateFactory.getInstance(CERTIFICATE_TYPE).
+                    generateCertificate(new ByteArrayInputStream(certificateData));
         } catch (CertificateException e) {
-            throw new SAMLIdentityException("Error occurred while generating X509Certificate");
+            throw new SAMLIdentityException("Error occurred while generating X509Certificate", e);
         }
-        samlMessageContext.setIdpCertificate(x509Certificate);
+    }
+
+    /**
+     * @param logoutRequest          LogoutRequest.
+     * @return  String               Session Index of the Logout Request.
+     * @throws SAMLIdentityException Error while extracting the Session Index.
+     */
+    public static String getSessionIndex(LogoutRequest logoutRequest) throws SAMLIdentityException {
+
+        if (logoutRequest.getSessionIndexes() != null) {
+            return logoutRequest.getSessionIndexes().size() > 0 ? logoutRequest.getSessionIndexes().
+                    get(0).getSessionIndex() : null;
+        } else {
+            String notification = "Could not extract the Session Index from the Logout Request";
+            if (log.isDebugEnabled()) {
+                log.debug(notification);
+            }
+            throw new SAMLIdentityException(notification);
+        }
     }
 }

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.exception;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception;
 
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 

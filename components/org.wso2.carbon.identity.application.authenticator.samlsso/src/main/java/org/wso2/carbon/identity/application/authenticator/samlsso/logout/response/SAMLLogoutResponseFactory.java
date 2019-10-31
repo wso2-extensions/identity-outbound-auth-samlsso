@@ -16,16 +16,18 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.response;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.response;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponse;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponseFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityResponse;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.exception.SAMLIdentityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
 
 import org.owasp.encoder.Encode;
-import javax.servlet.http.HttpServletResponse;
+
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 /**
  * This class  builds a HTTP response instance based on the common
@@ -49,7 +51,7 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
     public HttpIdentityResponse.HttpIdentityResponseBuilder create(IdentityResponse identityResponse) {
 
         HttpIdentityResponse.HttpIdentityResponseBuilder responseBuilder =
-            new HttpIdentityResponse.HttpIdentityResponseBuilder();
+                new HttpIdentityResponse.HttpIdentityResponseBuilder();
         create(responseBuilder, identityResponse);
         return responseBuilder;
     }
@@ -60,7 +62,7 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
         SAMLLogoutResponse response = (SAMLLogoutResponse) identityResponse;
         String samlPostPage = generateSamlPostPage(response.getAcsUrl(), response.getResponse(), response.getRelayState());
         builder.setBody(samlPostPage);
-        builder.setStatusCode(HttpServletResponse.SC_OK);
+        builder.setStatusCode(SC_OK);
         builder.setRedirectURL(response.getAcsUrl());
     }
 
@@ -68,39 +70,39 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
     public HttpIdentityResponse.HttpIdentityResponseBuilder handleException(FrameworkException exception) {
 
         HttpIdentityResponse.HttpIdentityResponseBuilder errorResponseBuilder =
-            new HttpIdentityResponse.HttpIdentityResponseBuilder();
+                new HttpIdentityResponse.HttpIdentityResponseBuilder();
         SAMLIdentityException samlException = (SAMLIdentityException) exception;
         String samlPostPage = generateSamlPostPage(samlException.getAcsUrl(), samlException.getExceptionMessage(),
-            samlException.getRelayState());
+                samlException.getRelayState());
         errorResponseBuilder.setBody(samlPostPage);
-        errorResponseBuilder.setStatusCode(HttpServletResponse.SC_OK);
+        errorResponseBuilder.setStatusCode(SC_OK);
         errorResponseBuilder.setBody(samlException.getExceptionMessage());
         errorResponseBuilder.setRedirectURL(samlException.getAcsUrl());
         return errorResponseBuilder;
     }
 
     /**
-     *Generate the post page for the logout response.
+     * Generate the post page for the logout response.
      *
-     * @param acUrl
-     * @param samlMessage
-     * @param relayState
-     * @return
+     * @param acUrl       Assertion Service Consumer URL of the Logout Request.
+     * @param samlMessage SAML Logout Response.
+     * @param relayState  RelayState of the Logout Request.
+     * @return Post page.
      */
     private String generateSamlPostPage(String acUrl, String samlMessage, String relayState) {
 
         StringBuilder out = new StringBuilder();
         out.append("<html>");
         out.append("<body>");
-        out.append("<p>You are now redirected back to " + Encode.forHtmlContent(acUrl));
+        out.append("<p>You are now redirected back to ").append(Encode.forHtmlContent(acUrl));
         out.append(" If the redirection fails, please click the post button.</p>");
-        out.append("<form method='post' action='" + Encode.forHtmlAttribute(acUrl) + "'>");
+        out.append("<form method='post' action='").append(Encode.forHtmlAttribute(acUrl)).append("'>");
         out.append("<p>");
-        out.append("<input type='hidden' name='SAMLResponse' value='" + Encode.forHtmlAttribute(samlMessage) + "'>");
-
-        if (relayState != null) {
-            out.append("<input type='hidden' name='RelayState' value='" + Encode.forHtmlAttribute(relayState) +
-                "'>");
+        out.append("<input type='hidden' name='SAMLResponse' value='").append(Encode.forHtmlAttribute(samlMessage)).
+                append("'>");
+        if (StringUtils.isNotBlank(relayState)) {
+            out.append("<input type='hidden' name='RelayState' value='").append(Encode.forHtmlAttribute(relayState)).
+                    append("'>");
         }
         out.append("<button type='submit'>POST</button>");
         out.append("</p>");

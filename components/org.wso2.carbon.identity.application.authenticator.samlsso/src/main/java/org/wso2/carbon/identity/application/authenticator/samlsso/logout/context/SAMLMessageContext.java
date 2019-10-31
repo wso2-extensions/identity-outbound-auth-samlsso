@@ -16,31 +16,29 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.context;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.context;
 
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityMessageContext;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.request.SAMLLogoutRequest;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 
 import java.io.Serializable;
-import java.security.cert.X509Certificate;
 import java.util.Map;
 
 /**
- * This class is used for holding data about the federated IdP initiated logout request.
+ * This class is used for holding data of the federated IdP initiated logout request.
  */
 public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable> extends IdentityMessageContext {
 
     private String acsUrl;
     private String response;
     private String sessionID;
-    private String idpSessionId;
+    private String idpSessionID;
     private Boolean validStatus;
-    private IdentityProvider federatedIdp;
-    private X509Certificate idpCertificate;
-    private Map<String, String> fedIdpConfigs;
+    private IdentityProvider federatedIdP;
+    private Map<String, String> fedIdPConfigs;
 
     public SAMLMessageContext(IdentityRequest request, Map<T1, T2> parameters) {
 
@@ -62,14 +60,14 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
         this.sessionID = sessionID;
     }
 
-    public String getIdpSessionId() {
+    public String getIdPSessionID() {
 
-        return idpSessionId;
+        return idpSessionID;
     }
 
-    public void setIdpSessionId(String idpSessionId) {
+    public void setIdPSessionID(String idpSessionID) {
 
-        this.idpSessionId = idpSessionId;
+        this.idpSessionID = idpSessionID;
     }
 
     public String getAcsUrl() {
@@ -82,14 +80,14 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
         this.acsUrl = acsUrl;
     }
 
-    public IdentityProvider getFederatedIdp() {
+    public IdentityProvider getFederatedIdP() {
 
-        return federatedIdp;
+        return federatedIdP;
     }
 
-    public void setFederatedIdp(IdentityProvider federatedIdp) {
+    public void setFederatedIdP(IdentityProvider federatedIdP) {
 
-        this.federatedIdp = federatedIdp;
+        this.federatedIdP = federatedIdP;
     }
 
     public String getSamlRequest() {
@@ -117,28 +115,18 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
         this.response = response;
     }
 
-    public Map<String, String> getFedIdpConfigs() {
+    public Map<String, String> getFedIdPConfigs() {
 
-        return fedIdpConfigs;
+        return fedIdPConfigs;
     }
 
-    public void setFedIdpConfigs(Map<String, String> fedIdpConfigs) {
+    public void setFedIdPConfigs(Map<String, String> fedIdPConfigs) {
 
-        this.fedIdpConfigs = fedIdpConfigs;
+        this.fedIdPConfigs = fedIdPConfigs;
     }
 
     public String getRelayState() {
 
         return request.getParameter(SSOConstants.RELAY_STATE);
-    }
-
-    public void setIdpCertificate(X509Certificate idpCertificate) {
-
-        this.idpCertificate = idpCertificate;
-    }
-
-    public X509Certificate getIdpCertificate() {
-
-        return idpCertificate;
     }
 }

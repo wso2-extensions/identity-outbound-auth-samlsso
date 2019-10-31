@@ -32,10 +32,10 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Htt
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponseFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.processor.SAMLLogoutRequestProcessor;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.processor.SAMLSSOLogoutProcessor;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.request.SAMLLogoutRequestFactory;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.response.SAMLLogoutResponseFactory;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessor;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLSSOLogoutProcessor;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequestFactory;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseFactory;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.CarbonUtils;
@@ -71,7 +71,6 @@ public class SAMLSSOAuthenticatorServiceComponent {
         try {
             SAMLSSOAuthenticator samlSSOAuthenticator = new SAMLSSOAuthenticator();
             ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(), samlSSOAuthenticator, null);
-
             ctxt.getBundleContext().registerService(HttpIdentityRequestFactory.class.getName(), new
                     SAMLLogoutRequestFactory(), null);
             ctxt.getBundleContext().registerService(HttpIdentityResponseFactory.class.getName(), new

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.request;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.request;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkClientException;
@@ -28,10 +28,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * This class takes in a servlet request from the /identity servlet and
- * provides a builder to an SAMLLogoutRequest instance as the output.
- * Contains the canHandle() method inherited from the parent class which
- * dictates whether or not a certain servlet request can be handled by this class.
+ * This class checks whether requests from the Identity servlet are SAML Requests and
+ * provides a builder to an SAMLLogoutRequest instance.
  */
 public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
 
@@ -49,24 +47,17 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
     @Override
     public boolean canHandle(HttpServletRequest request, HttpServletResponse response) {
 
-        return (StringUtils.isNotBlank(request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)));
+        return StringUtils.isNotBlank(request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ));
     }
 
     @Override
     public IdentityRequest.IdentityRequestBuilder create(HttpServletRequest request, HttpServletResponse response)
-        throws FrameworkClientException {
+            throws FrameworkClientException {
 
         SAMLLogoutRequest.SAMLLogoutRequestBuilder builder = new SAMLLogoutRequest.
-            SAMLLogoutRequestBuilder(request, response);
-        create(builder, request, response);
-        return builder;
-    }
-
-    public void create(SAMLLogoutRequest.SAMLLogoutRequestBuilder builder,
-                       HttpServletRequest request,
-                       HttpServletResponse response) throws FrameworkClientException {
-
+                SAMLLogoutRequestBuilder(request, response);
         super.create(builder, request, response);
         builder.isPost(StringUtils.isBlank(request.getQueryString()));
+        return builder;
     }
 }

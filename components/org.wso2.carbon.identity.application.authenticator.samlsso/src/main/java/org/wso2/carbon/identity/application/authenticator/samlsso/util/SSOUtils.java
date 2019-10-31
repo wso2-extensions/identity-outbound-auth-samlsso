@@ -114,14 +114,15 @@ public class SSOUtils {
     }
 
     /**
-     * Sign the SAML Response message.
+     * Sign the SAML Logout Response.
      *
-     * @param response
-     * @param signatureAlgorithm
-     * @param digestAlgorithm
-     * @param cred
-     * @return
-     * @throws IdentityException
+     * @param response           Generic xml request.
+     * @param signatureAlgorithm Signature algorithm.
+     * @param digestAlgorithm    Cryptographic hash algorithm.
+     * @param includeCert        Whether to include certificate.
+     * @param cred               X509credential instance.
+     * @return LogoutResponse    Signed XML object.
+     * @throws SAMLSSOException  If unable to set signature.
      */
     public static void setSignature(LogoutResponse response, String signatureAlgorithm, String digestAlgorithm,
                                     boolean includeCert, X509Credential cred) throws SAMLSSOException {
@@ -130,30 +131,32 @@ public class SSOUtils {
     }
 
     /**
-     *  Sign SAML Logout Request message.
+     * Sign the SAML Request message.
      *
-     * @param request
-     * @param signatureAlgorithm
-     * @param digestAlgorithm
-     * @param cred
-     * @return
-     * @throws IdentityException
+     * @param request              Generic xml request.
+     * @param signatureAlgorithm   Signature algorithm.
+     * @param digestAlgorithm      Cryptographic hash algorithm.
+     * @param includeCert          Whether to include certificate.
+     * @param cred                 X509credential instance.
+     * @return RequestAbstractType Signed XML object.
+     * @throws SAMLSSOException    If unable to set signature.
      */
     public static void setSignature(RequestAbstractType request, String signatureAlgorithm, String
-        digestAlgorithm, boolean includeCert, X509Credential cred) throws SAMLSSOException {
+            digestAlgorithm, boolean includeCert, X509Credential cred) throws SAMLSSOException {
 
         doSetSignature(request, signatureAlgorithm, digestAlgorithm, includeCert, cred);
     }
 
     /**
-     * Sign the SAML Request message.
-     * 
-     * @param request
-     * @param signatureAlgorithm
-     * @param digestAlgorithm
-     * @param includeCert
-     * @return
-     * @throws SAMLSSOException
+     * Generic method to sign SAML2.0 Assertion or Response.
+     *
+     * @param request            Generic xml request.
+     * @param signatureAlgorithm Signature algorithm.
+     * @param digestAlgorithm    Cryptographic hash algorithm.
+     * @param includeCert        Whether to include certificate.
+     * @param x509Credential     X509credential instance.
+     * @return SignableXMLObject Signed XML object.
+     * @throws SAMLSSOException  If unable to set signature.
      */
     public static void doSetSignature(SignableXMLObject request, String signatureAlgorithm,
                                       String digestAlgorithm, boolean includeCert, X509Credential x509Credential)

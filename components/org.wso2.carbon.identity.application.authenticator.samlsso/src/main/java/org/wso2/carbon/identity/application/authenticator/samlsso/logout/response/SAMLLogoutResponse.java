@@ -16,10 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.response;
+package org.wso2.carbon.identity.application.authenticator.samlsso.logout.response;
 
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityResponse;
-import org.wso2.carbon.identity.application.authenticator.samlsso.fedIdpInitLogout.context.SAMLMessageContext;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 
 /**
  * This class  holds the necessary parameters for building the HTTPServletResponse.
