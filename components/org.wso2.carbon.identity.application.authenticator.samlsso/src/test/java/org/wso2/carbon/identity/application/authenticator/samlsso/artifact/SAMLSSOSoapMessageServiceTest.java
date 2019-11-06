@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.core.util.SAMLInitializer;
+import org.wso2.carbon.identity.saml.common.util.SAMLInitializer;
 
 import java.util.HashMap;
 import java.util.Map;
