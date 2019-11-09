@@ -28,7 +28,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * This class is used for holding data of the federated IdP initiated logout request.
+ * This class holds data of the federated IdP initiated logout flow.
  */
 public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable> extends IdentityMessageContext {
 
@@ -36,6 +36,7 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     private String response;
     private String sessionID;
     private String idpSessionID;
+    private String tenantDomain;
     private Boolean validStatus;
     private IdentityProvider federatedIdP;
     private Map<String, String> fedIdPConfigs;
@@ -70,6 +71,16 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
         this.idpSessionID = idpSessionID;
     }
 
+    public String getTenantDomain() {
+
+        return tenantDomain;
+    }
+
+    public void setTenantDomain(String tenantDomain) {
+
+        this.tenantDomain = tenantDomain;
+    }
+
     public String getAcsUrl() {
 
         return acsUrl;
@@ -88,11 +99,6 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     public void setFederatedIdP(IdentityProvider federatedIdP) {
 
         this.federatedIdP = federatedIdP;
-    }
-
-    public String getSamlRequest() {
-
-        return request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ);
     }
 
     public Boolean getValidStatus() {

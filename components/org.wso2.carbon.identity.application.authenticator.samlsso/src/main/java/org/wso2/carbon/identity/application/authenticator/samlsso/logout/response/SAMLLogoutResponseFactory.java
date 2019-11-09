@@ -18,22 +18,25 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.response;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.owasp.encoder.Encode;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponse;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponseFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityResponse;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
-
-import org.owasp.encoder.Encode;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessor;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 /**
- * This class  builds a HTTP response instance based on the common
- * IdentityRequest format used by the authentication framework.
+ * This class  builds a HTTP response instance based on the common IdentityRequest format used by
+ * the authentication framework.
  */
 public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
+
+    private static final Log log = LogFactory.getLog(SAMLLogoutRequestProcessor.class);
 
     @Override
     public boolean canHandle(IdentityResponse identityResponse) {
@@ -76,7 +79,6 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
                 samlException.getRelayState());
         errorResponseBuilder.setBody(samlPostPage);
         errorResponseBuilder.setStatusCode(SC_OK);
-        errorResponseBuilder.setBody(samlException.getExceptionMessage());
         errorResponseBuilder.setRedirectURL(samlException.getAcsUrl());
         return errorResponseBuilder;
     }
@@ -91,27 +93,23 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
      */
     private String generateSamlPostPage(String acUrl, String samlMessage, String relayState) {
 
-        StringBuilder out = new StringBuilder();
-        out.append("<html>");
-        out.append("<body>");
-        out.append("<p>You are now redirected back to ").append(Encode.forHtmlContent(acUrl));
-        out.append(" If the redirection fails, please click the post button.</p>");
-        out.append("<form method='post' action='").append(Encode.forHtmlAttribute(acUrl)).append("'>");
-        out.append("<p>");
-        out.append("<input type='hidden' name='SAMLResponse' value='").append(Encode.forHtmlAttribute(samlMessage)).
-                append("'>");
-        if (StringUtils.isNotBlank(relayState)) {
-            out.append("<input type='hidden' name='RelayState' value='").append(Encode.forHtmlAttribute(relayState)).
-                    append("'>");
+        String postPage = "<html><body><p>You are now redirected back to " + Encode.forHtmlContent(acUrl) +
+                " If the redirection fails, please click the post button.</p><form method='post' action='" +
+                Encode.forHtmlAttribute(acUrl) + "'><p><input type='hidden' name='SAMLResponse' value='"
+                + Encode.forHtmlAttribute(samlMessage) + "'/>";
+
+        if (relayState != null) {
+            postPage = postPage + "<input type='hidden' name='RelayState' value='"
+                    + Encode.forHtmlAttribute(relayState) + "'/>";
         }
-        out.append("<button type='submit'>POST</button>");
-        out.append("</p>");
-        out.append("</form>");
-        out.append("<script type='text/javascript'>");
-        out.append("document.forms[0].submit();");
-        out.append("</script>");
-        out.append("</body>");
-        out.append("</html>");
-        return out.toString();
+
+        postPage = postPage + "<button type='submit'>POST</button></p></form><script type='text/javascript'>" +
+                "document.forms[0].submit();</script></body></html>";
+
+        if (log.isDebugEnabled()) {
+            log.debug(postPage);
+        }
+        return postPage;
+
     }
 }

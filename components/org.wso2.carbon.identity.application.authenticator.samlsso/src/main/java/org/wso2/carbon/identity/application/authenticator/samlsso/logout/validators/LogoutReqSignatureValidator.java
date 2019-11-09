@@ -50,8 +50,7 @@ import java.util.List;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.SIGNATURE;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.SIGNATURE_ALGORITHM;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.
-        HTTP_POST_PARAM_SAML2_AUTH_REQ;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.RELAY_STATE;
 
 /**
@@ -68,10 +67,10 @@ public class LogoutReqSignatureValidator {
      * @param issuer      Issuer of the SAML request.
      * @param certificate Certificate for validating the signature
      * @return true       If the signature is valid, false otherwise.
-     * @throws SecurityException if something goes wrong during signature validation.
+     * @throws SecurityException If signature validation process fails.
      */
     public boolean validateSignature(String queryString, String issuer, X509Certificate certificate)
-            throws SecurityException {
+            throws SecurityException, IdentityException {
 
         byte[] signature = getSignature(queryString);
         byte[] signedContent = getSignedContent(queryString);
@@ -93,8 +92,8 @@ public class LogoutReqSignatureValidator {
      * @param request SAML Assertion (SAML LogoutRequest).
      * @param cred    Signature signing credential.
      * @param alias   Certificate alias against which the signature is validated.
-     * @return true,  If the signature is valid.
-     * @throws IdentityException If something goes wrong during signature validation.
+     * @return true   If the signature is valid.
+     * @throws IdentityException If signature validation process fails.
      */
     public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred,
                                         String alias) throws IdentityException {
@@ -134,23 +133,27 @@ public class LogoutReqSignatureValidator {
      * @param queryString SAML request (passed an an HTTP query parameter).
      * @return String     Signature Algorithm of the request.
      * @throws SecurityPolicyException If process of extracting signature algorithm fails.
+     * @throws IdentityException       If decoding not supproted
      */
-    private static String getSignatureAlgorithm(String queryString) throws SecurityPolicyException {
+    private static String getSignatureAlgorithm(String queryString) throws SecurityPolicyException,
+            IdentityException {
 
         String sigAlgQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, SIGNATURE_ALGORITHM);
         if (StringUtils.isEmpty(sigAlgQueryParam)) {
-            throw new SecurityPolicyException("Could'nt extract Signature Algorithm from query string: " + queryString);
+            throw new SecurityPolicyException("Could'nt extract signature algorithm from query string: " + queryString);
         }
 
         try {
             /* Split 'SigAlg=<sigalg_value>' query param using '=' as the delimiter,
             and get the Signature Algorithm. */
-            return URLDecoder.decode(sigAlgQueryParam.split("=")[1], StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Encoding not supported.", e);
+            if (StringUtils.isNotBlank(sigAlgQueryParam.split("=")[1])) {
+                return URLDecoder.decode(sigAlgQueryParam.split("=")[1], StandardCharsets.UTF_8.name());
             }
-            return null;
+            throw new SecurityPolicyException("Could'nt extract the signature algorithm value from the query string " +
+                    "parameter: " + sigAlgQueryParam);
+        } catch (UnsupportedEncodingException e) {
+            throw new IdentityException("Error occurred while decoding signature algorithm query parameter: "
+                    + sigAlgQueryParam, e);
         }
     }
 
@@ -161,7 +164,7 @@ public class LogoutReqSignatureValidator {
      * @return byte[]     Base64-decoded value of the HTTP request signature parameter.
      * @throws SecurityPolicyException If process of extracting signature fails.
      */
-    private static byte[] getSignature(String queryString) throws SecurityPolicyException {
+    private static byte[] getSignature(String queryString) throws SecurityPolicyException, IdentityException {
 
         String signatureQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, SIGNATURE);
         if (StringUtils.isEmpty(signatureQueryParam)) {
@@ -171,14 +174,15 @@ public class LogoutReqSignatureValidator {
         try {
             /* Split 'Signature=<sig_value>' query param using '=' as the delimiter,
 		      and get the Signature value. */
-            return Base64.decode(URLDecoder.decode(signatureQueryParam.split("=")[1],
-                    StandardCharsets.UTF_8.name()));
-        } catch (UnsupportedEncodingException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Encoding not supported.", e);
+            if (StringUtils.isNotBlank(signatureQueryParam.split("=")[1])) {
+                return Base64.decode(URLDecoder.decode(signatureQueryParam.split("=")[1],
+                        StandardCharsets.UTF_8.name()));
             }
-            // JVM is required to support UTF-8
-            return new byte[0];
+            throw new SecurityPolicyException("Could not extract the signature value from the query string parameter: "
+                    + signatureQueryParam);
+        } catch (UnsupportedEncodingException e) {
+            throw new IdentityException("Error occurred while decoding signature query parameter: "
+                    + signatureQueryParam, e);
         }
     }
 
@@ -191,18 +195,15 @@ public class LogoutReqSignatureValidator {
      */
     private static byte[] getSignedContent(String queryString) throws SecurityPolicyException {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Constructing signed content string from URL query string " + queryString);
+        String sigendContent = buildSignedContentString(queryString);
+        if (StringUtils.isEmpty(sigendContent)) {
+            String message = "Could not extract signed content string from query string: " + queryString;
+            if (log.isDebugEnabled()) {
+                log.debug(message);
+            }
+            throw new SecurityPolicyException(message);
         }
-        String constructed = buildSignedContentString(queryString);
-        if (StringUtils.isEmpty(constructed)) {
-            throw new SecurityPolicyException(
-                    "Could not extract signed content string from query string");
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Constructed signed content string for HTTP-Redirect DEFLATE " + constructed);
-        }
-        return constructed.getBytes(StandardCharsets.UTF_8);
+        return sigendContent.getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -219,7 +220,8 @@ public class LogoutReqSignatureValidator {
 
         if (StringUtils.isBlank(HTTPTransportUtils.getRawQueryStringParameter(queryString,
                 HTTP_POST_PARAM_SAML2_AUTH_REQ))) {
-            throw new SecurityPolicyException("Extract of SAMLRequest or SAMLResponse from query string failed");
+            throw new SecurityPolicyException("Process of extracting SAMLRequest from query string failed: "
+                    + queryString);
         }
         appendParameter(builder, queryString, HTTP_POST_PARAM_SAML2_AUTH_REQ);
         // This is optional.

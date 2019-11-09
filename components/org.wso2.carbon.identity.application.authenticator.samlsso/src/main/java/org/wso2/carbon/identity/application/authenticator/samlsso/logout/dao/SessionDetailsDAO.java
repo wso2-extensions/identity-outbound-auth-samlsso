@@ -43,7 +43,7 @@ public class SessionDetailsDAO {
     /**
      * Retrieve the session details of a given SAML Index from the database.
      *
-     * @param sessionIndex Session Index of the SAML Request.
+     * @param sessionIndex Session Index of the SAML Logout Request.
      * @return Map of session details.
      * @throws SAMLIdentityException If DB execution fails.
      */
@@ -60,11 +60,20 @@ public class SessionDetailsDAO {
                     sessionDetails.put(SESSION_ID, resultSet.getString("SESSION_ID"));
                     sessionDetails.put(IDP_ID, resultSet.getString("IDP_ID"));
                 }
+                if (log.isDebugEnabled()) {
+                    log.debug("Retrieved session index: " + resultSet.getString("SESSION_ID") +
+                            " from federated idp session index: " + sessionIndex);
+                }
+
                 return sessionDetails;
             }
         } catch (SQLException e) {
-            throw new SAMLIdentityException("Unable to read session details from the database with saml index: "
-                    + sessionIndex, e);
+            String notification = "Unable to retrieve session details from the database with SAML Index: "
+                    + sessionIndex;
+            if (log.isDebugEnabled()) {
+                log.debug(notification, e);
+            }
+            throw new SAMLIdentityException(notification, e);
         }
     }
 }

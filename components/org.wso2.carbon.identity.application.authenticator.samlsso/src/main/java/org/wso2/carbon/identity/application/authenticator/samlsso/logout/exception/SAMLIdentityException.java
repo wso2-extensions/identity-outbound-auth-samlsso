@@ -21,7 +21,7 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.except
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 
 /**
- * This class is used to denote exceptions thrown from the federated idp initiated saml logout flow.
+ * This class denotes exceptions thrown from the federated idp initiated SAML logout flow.
  */
 public class SAMLIdentityException extends FrameworkException {
 

@@ -23,8 +23,8 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Ide
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.InboundUtil;
-import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponse;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
@@ -33,8 +33,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.inbo
 import static org.wso2.carbon.identity.base.IdentityConstants.IDENTITY_DEFAULT_ROLE;
 
 /**
- * The class which processes the response from the authentication framework
- * after framework Logout .
+ * The class which processes the response from the authentication framework after framework Logout.
  */
 public class SAMLSSOLogoutProcessor extends IdentityProcessor {
 
@@ -48,9 +47,9 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
     /**
      * Processes the response from the framework after framework logout.
      *
-     * @param identityRequest IdentityRequest.
+     * @param identityRequest {@link IdentityRequest} object.
      * @return SAMLLogoutResponse.SAMLLogoutResponseBuilder instance.
-     * @throws FrameworkException Error when processing the framework request.
+     * @throws FrameworkException Error while processing the framework request.
      */
     @Override
     public SAMLLogoutResponse.SAMLLogoutResponseBuilder process(IdentityRequest identityRequest)

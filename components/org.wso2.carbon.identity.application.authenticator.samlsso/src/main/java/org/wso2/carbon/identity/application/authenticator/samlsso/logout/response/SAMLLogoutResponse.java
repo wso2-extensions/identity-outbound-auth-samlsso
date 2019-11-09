@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context
 
 /**
  * This class  holds the necessary parameters for building the HTTPServletResponse.
+ *
  * SAMLLogoutResponseBuilder is an inner class of this class and it is responsible
  * or building a concrete instance of SAMLLogoutResponse for the framework when needed.
  */
@@ -36,10 +37,11 @@ public class SAMLLogoutResponse extends IdentityResponse {
     protected SAMLLogoutResponse(IdentityResponseBuilder builder) {
 
         super(builder);
-        this.context = ((SAMLLogoutResponseBuilder) builder).context;
-        this.response = ((SAMLLogoutResponseBuilder) builder).response;
-        this.acsUrl = ((SAMLLogoutResponseBuilder) builder).acsUrl;
-        this.relayState = ((SAMLLogoutResponseBuilder) builder).relayState;
+        SAMLLogoutResponseBuilder responsebuilder = (SAMLLogoutResponseBuilder) builder;
+        this.context = responsebuilder.context;
+        this.response = responsebuilder.response;
+        this.acsUrl = responsebuilder.acsUrl;
+        this.relayState = responsebuilder.relayState;
     }
 
     public String getResponse() {

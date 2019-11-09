@@ -19,19 +19,27 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.request;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.opensaml.ws.transport.http.HTTPTransportUtils;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkClientException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityRequestFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ;
+
 /**
  * This class checks whether requests from the Identity servlet are SAML Requests and
- * provides a builder to an SAMLLogoutRequest instance.
+ * provides a builder to an instance of SAMLLogoutRequest.
  */
 public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
+
+    private static final Log log = LogFactory.getLog(SAMLLogoutRequestProcessor.class);
 
     public SAMLLogoutRequestFactory() {
 
@@ -57,7 +65,11 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
         SAMLLogoutRequest.SAMLLogoutRequestBuilder builder = new SAMLLogoutRequest.
                 SAMLLogoutRequestBuilder(request, response);
         super.create(builder, request, response);
-        builder.isPost(StringUtils.isBlank(request.getQueryString()));
+        builder.isPost(StringUtils.isBlank(HTTPTransportUtils.getRawQueryStringParameter(request.getQueryString(),
+                HTTP_POST_PARAM_SAML2_AUTH_REQ)));
+        if (log.isDebugEnabled()) {
+            log.debug("Query string : " + request.getQueryString());
+        }
         return builder;
     }
 }
