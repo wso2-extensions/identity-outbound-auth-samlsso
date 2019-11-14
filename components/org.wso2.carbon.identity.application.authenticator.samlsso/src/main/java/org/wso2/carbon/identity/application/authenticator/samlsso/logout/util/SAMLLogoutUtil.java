@@ -45,8 +45,8 @@ import org.opensaml.xml.security.x509.X509Credential;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
-import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutReqSignatureValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutReqSignatureValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
@@ -73,21 +73,21 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.
         IS_LOGOUT_REQ_SIGNED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.
-        IS_SLO_REQUEST_ENABLED;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.
         INCLUDE_CERT;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.
+        IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.CERTIFICATE_TYPE;
 import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
 
 /**
  * A Utility which provides functionality to handle federated idp initiated saml logout requests.
  */
-public class SAMLFedLogoutUtil {
+public class SAMLLogoutUtil {
 
-    private static final Log log = LogFactory.getLog(SAMLFedLogoutUtil.class);
+    private static final Log log = LogFactory.getLog(SAMLLogoutUtil.class);
     private static boolean isBootStrapped = false;
 
-    private SAMLFedLogoutUtil() {
+    private SAMLLogoutUtil() {
 
     }
 
@@ -111,23 +111,23 @@ public class SAMLFedLogoutUtil {
     /**
      * Build status of the logout response.
      *
-     * @param statCode Status code of the response.
-     * @param statMsg  Status message of the response.
+     * @param responseStatusCode Status code of the response.
+     * @param responseStatusMsg  Status message of the response.
      * @return Status object of Status element.
      */
-    private static Status buildStatus(String statCode, String statMsg) {
+    private static Status buildStatus(String responseStatusCode, String responseStatusMsg) {
 
         Status status = new StatusBuilder().buildObject();
 
         // Set the status code.
         StatusCode statusCode = new StatusCodeBuilder().buildObject();
-        statusCode.setValue(statCode);
+        statusCode.setValue(responseStatusCode);
         status.setStatusCode(statusCode);
 
         // Set the status Message.
-        if (StringUtils.isNotBlank(statMsg)) {
+        if (StringUtils.isNotBlank(responseStatusMsg)) {
             StatusMessage stateMesssage = new StatusMessageBuilder().buildObject();
-            stateMesssage.setMessage(statMsg);
+            stateMesssage.setMessage(responseStatusMsg);
             status.setStatusMessage(stateMesssage);
         }
         return status;
@@ -158,7 +158,7 @@ public class SAMLFedLogoutUtil {
 
         Property[] properties = identityProvider.getDefaultAuthenticatorConfig().getProperties();
         List<String> idpPropertyNames = Arrays.asList(SP_ENTITY_ID, SSO_URL, IS_AUTHN_RESP_SIGNED,
-                INCLUDE_CERT, IS_LOGOUT_REQ_SIGNED, IS_SLO_REQUEST_ENABLED);
+                INCLUDE_CERT, IS_LOGOUT_REQ_SIGNED, IS_SLO_REQUEST_ACCEPTED);
 
         return Arrays.stream(properties)
                 .filter(t -> idpPropertyNames.contains(t.getName()))
@@ -262,18 +262,13 @@ public class SAMLFedLogoutUtil {
         try {
             if (samlMessageContext.getSAMLLogoutRequest().isPost()) {
                 return signatureValidator.validateXMLSignature(logoutRequest, (X509Credential) x509Certificate, null);
-
             } else {
                 return signatureValidator.validateSignature(samlMessageContext.getSAMLLogoutRequest().getQueryString(),
                         issuer, x509Certificate);
             }
         } catch (SecurityException | IdentityException e) {
-            String message = "Process of validating the signature failed for the logout request with issuer: "
-                    + logoutRequest.getIssuer().getValue();
-            if (log.isDebugEnabled()) {
-                log.debug(message, e);
-            }
-            throw new SAMLIdentityException(message, e);
+            throw new SAMLIdentityException ("Process of validating the signature failed for the logout request with" +
+                    "issuer: " + logoutRequest.getIssuer().getValue(), e);
         }
     }
 
