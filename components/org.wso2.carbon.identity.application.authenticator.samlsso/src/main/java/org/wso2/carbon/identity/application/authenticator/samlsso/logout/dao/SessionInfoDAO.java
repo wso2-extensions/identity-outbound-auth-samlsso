@@ -30,15 +30,16 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.IDP_ID;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SESSION_ID;
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.
+        AnalyticsAttributes.SESSION_ID;
+import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_NAME;
 
 /**
  * DAO class to handle the federated idp initiated logout flow related DB operations.
  */
-public class SessionDetailsDAO {
+public class SessionInfoDAO {
 
-    private static final Log log = LogFactory.getLog(SessionDetailsDAO.class);
+    private static final Log log = LogFactory.getLog(SessionInfoDAO.class);
 
     /**
      * Retrieve the session details of a given SAML Index from the database.
@@ -58,11 +59,11 @@ public class SessionDetailsDAO {
                 Map<String, String> sessionDetails = new HashMap<>();
                 if (resultSet.next()) {
                     sessionDetails.put(SESSION_ID, resultSet.getString("SESSION_ID"));
-                    sessionDetails.put(IDP_ID, resultSet.getString("IDP_ID"));
+                    sessionDetails.put(IDP_NAME, resultSet.getString("IDP_NAME"));
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("Retrieved session index: " + resultSet.getString("SESSION_ID") +
-                            " from federated idp session index: " + sessionIndex);
+                            " for federated idp session index: " + sessionIndex);
                 }
 
                 return sessionDetails;

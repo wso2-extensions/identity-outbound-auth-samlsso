@@ -140,7 +140,7 @@ public class LogoutReqSignatureValidator {
 
         String sigAlgQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, SIGNATURE_ALGORITHM);
         if (StringUtils.isEmpty(sigAlgQueryParam)) {
-            throw new SecurityPolicyException("Could'nt extract signature algorithm from query string: " + queryString);
+            throw new SecurityPolicyException("Couldn't extract signature algorithm from query string: " + queryString);
         }
 
         try {
@@ -149,7 +149,7 @@ public class LogoutReqSignatureValidator {
             if (StringUtils.isNotBlank(sigAlgQueryParam.split("=")[1])) {
                 return URLDecoder.decode(sigAlgQueryParam.split("=")[1], StandardCharsets.UTF_8.name());
             }
-            throw new SecurityPolicyException("Could'nt extract the signature algorithm value from the query string " +
+            throw new SecurityPolicyException("Couldn't extract the signature algorithm value from the query string " +
                     "parameter: " + sigAlgQueryParam);
         } catch (UnsupportedEncodingException e) {
             throw new IdentityException("Error occurred while decoding signature algorithm query parameter: "
@@ -168,7 +168,7 @@ public class LogoutReqSignatureValidator {
 
         String signatureQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, SIGNATURE);
         if (StringUtils.isEmpty(signatureQueryParam)) {
-            throw new SecurityPolicyException("Could not extract the Signature from query string: " + queryString);
+            throw new SecurityPolicyException("Couldn't extract the Signature from query string: " + queryString);
         }
 
         try {
@@ -178,7 +178,7 @@ public class LogoutReqSignatureValidator {
                 return Base64.decode(URLDecoder.decode(signatureQueryParam.split("=")[1],
                         StandardCharsets.UTF_8.name()));
             }
-            throw new SecurityPolicyException("Could not extract the signature value from the query string parameter: "
+            throw new SecurityPolicyException("Couldn't extract the signature value from the query string parameter: "
                     + signatureQueryParam);
         } catch (UnsupportedEncodingException e) {
             throw new IdentityException("Error occurred while decoding signature query parameter: "
@@ -197,7 +197,7 @@ public class LogoutReqSignatureValidator {
 
         String sigendContent = buildSignedContentString(queryString);
         if (StringUtils.isEmpty(sigendContent)) {
-            String message = "Could not extract signed content string from query string: " + queryString;
+            String message = "Couldn't extract signed content string from query string: " + queryString;
             if (log.isDebugEnabled()) {
                 log.debug(message);
             }

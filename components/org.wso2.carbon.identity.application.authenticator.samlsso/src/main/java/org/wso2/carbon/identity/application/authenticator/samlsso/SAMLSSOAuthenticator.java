@@ -58,7 +58,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_RESP;
-import static org.wso2.carbon.identity.base.IdentityConstants.ServerConfig.FEDERATED_AUTH_FLOW;
+import static org.wso2.carbon.identity.base.IdentityConstants.FEDERATED_IDP_SESSION_ID;
 
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator implements FederatedApplicationAuthenticator {
 
@@ -295,9 +295,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             stateInfoDO.setSpNameQualifier(spNameQualifier);
             context.setStateInfo(stateInfoDO);
 
-            // Include the saml index with the federated IdP as a property in the authentication context.
-            context.setProperty(FEDERATED_AUTH_FLOW + context.getExternalIdP().getIdentityProvider().
-                    getIdentityProviderName(), sessionIndexObj);
+            // Adding session index with the federated IdP name as a property into the authentication context.
+            context.setProperty(FEDERATED_IDP_SESSION_ID + context.getExternalIdP().getIdentityProvider().
+                    getIdentityProviderName(), sessionIndex);
 
             // Add AuthnContextClassRefs received with SAML2 Response to AuthenticationContext
             if (AS_RESPONSE.equalsIgnoreCase(context.getAuthenticatorProperties()

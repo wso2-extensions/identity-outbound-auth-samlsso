@@ -27,8 +27,6 @@ public class SSOConstants {
     public static final String HTTP_POST_PARAM_SAML2_RESP = "SAMLResponse";
     public static final String HTTP_POST_PARAM_SAML2_ARTIFACT_ID = "SAMLart";
     public static final String IDP_SESSION = "IdPSession";
-    public static final String SESSION_ID = "SessionID";
-    public static final String IDP_ID = "IdPID";
     public static final String RELAY_STATE = "RelayState";
 
     public static final String HTTP_POST = "POST";
