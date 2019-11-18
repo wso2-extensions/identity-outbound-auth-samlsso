@@ -364,7 +364,7 @@
         <carbon.identity.framework.imp.pkg.version.range>[5.14.67, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
         <!--SAML Common Util Version-->
-        <saml.common.util.version>1.0.1</saml.common.util.version>
+        <saml.common.util.version>1.0.3</saml.common.util.version>
         <saml.common.util.version.range>[1.0.0,2.0.0)</saml.common.util.version.range>
 
         <!-- Carbon Commons -->
