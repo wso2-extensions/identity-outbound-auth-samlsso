@@ -184,14 +184,14 @@ public class SSOUtils {
           and https://stackoverflow.com/questions/37948303/opensaml3-resource-not-found-default-config-xml-in-osgi-container
         */
         Thread thread = Thread.currentThread();
-        ClassLoader loader = thread.getContextClassLoader();
+        ClassLoader originalClassLoader = thread.getContextClassLoader();
         thread.setContextClassLoader(SignatureValidationProvider.class.getClassLoader());
         try {
             Signer.signObjects(signatureList);
         } catch (SignatureException e) {
             throw new SAMLSSOException("Error while signing the SAML Request", e);
         } finally {
-            thread.setContextClassLoader(loader);
+            thread.setContextClassLoader(originalClassLoader);
         }
     }
 
