@@ -17,7 +17,7 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
-import org.opensaml.common.xml.SAMLConstants;
+import org.opensaml.saml.common.xml.SAMLConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.RequestData;
 
 /**

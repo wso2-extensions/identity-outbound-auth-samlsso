@@ -29,12 +29,12 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.opensaml.common.SAMLObject;
-import org.opensaml.ws.soap.common.SOAPObjectBuilder;
-import org.opensaml.ws.soap.soap11.Body;
-import org.opensaml.ws.soap.soap11.Envelope;
-import org.opensaml.xml.Configuration;
-import org.opensaml.xml.XMLObjectBuilderFactory;
+import org.opensaml.saml.common.SAMLObject;
+import org.opensaml.soap.common.SOAPObjectBuilder;
+import org.opensaml.soap.soap11.Body;
+import org.opensaml.soap.soap11.Envelope;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
@@ -63,7 +63,7 @@ public class SAMLSSOSoapMessageService {
      */
     public Envelope buildSOAPMessage(SAMLObject samlMessage) {
 
-        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+        XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
 
         SOAPObjectBuilder<Envelope> envBuilder = (SOAPObjectBuilder<Envelope>) builderFactory.getBuilder(
                 Envelope.DEFAULT_ELEMENT_NAME);
@@ -133,7 +133,7 @@ public class SAMLSSOSoapMessageService {
      * @throws GeneralSecurityException
      */
     private SSLContext getSSLContext(final ServerConfiguration serverConfig)
-            throws GeneralSecurityException, ArtifactResolutionException {
+            throws GeneralSecurityException {
 
         SSLContext sslContext = null;
         KeyManagerFactory keyManagerFactory;

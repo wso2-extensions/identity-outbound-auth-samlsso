@@ -23,19 +23,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.joda.time.DateTime;
-import org.opensaml.Configuration;
-import org.opensaml.common.SAMLObject;
-import org.opensaml.common.SAMLObjectBuilder;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.core.Artifact;
-import org.opensaml.saml2.core.ArtifactResolve;
-import org.opensaml.saml2.core.ArtifactResponse;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.RequestAbstractType;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.ws.soap.soap11.Envelope;
-import org.opensaml.xml.XMLObjectBuilderFactory;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.common.SAMLObject;
+import org.opensaml.saml.common.SAMLObjectBuilder;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.Artifact;
+import org.opensaml.saml.saml2.core.ArtifactResolve;
+import org.opensaml.saml.saml2.core.ArtifactResponse;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.opensaml.saml.saml2.core.StatusCode;
+import org.opensaml.soap.soap11.Envelope;
+import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
@@ -211,7 +211,7 @@ public class SAMLSSOArtifactResolutionService {
         }
 
         String artifactResponseStatus = artifactResponse.getStatus().getStatusCode().getValue();
-        if (!StatusCode.SUCCESS_URI.equals(artifactResponseStatus)) {
+        if (!StatusCode.SUCCESS.equals(artifactResponseStatus)) {
             throw new ArtifactResolutionException("Unsuccessful artifact response with status: " +
                     artifactResponseStatus);
         }
@@ -234,7 +234,7 @@ public class SAMLSSOArtifactResolutionService {
 
     private ArtifactResolve createArtifactResolveObject(String samlArtReceived) {
 
-        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+        XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
 
         SAMLObjectBuilder<ArtifactResolve> artifactResolveBuilder =
                 (SAMLObjectBuilder<ArtifactResolve>) builderFactory.getBuilder(ArtifactResolve.DEFAULT_ELEMENT_NAME);
