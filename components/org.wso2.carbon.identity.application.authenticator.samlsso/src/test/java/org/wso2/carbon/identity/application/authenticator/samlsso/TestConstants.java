@@ -17,7 +17,7 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso;
 
-import org.opensaml.common.xml.SAMLConstants;
+import org.opensaml.saml.common.xml.SAMLConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.RequestData;
 
 /**
@@ -252,6 +252,10 @@ public final class TestConstants {
     public static final String KEY_STORE_PASSWORD = "wso2carbon";
 
     public static final String SAMPLE_TENANT_DOMAIN_NAME = "wso2";
+
+    public static final String START_TENANT_FLOW = "startTenantFlow";
+
+    public static final String END_TENANT_FLOW = "endTenantFlow";
 
     public static final String INVALID_TENANT_DOMAIN = "invalid_tenant_domain";
 

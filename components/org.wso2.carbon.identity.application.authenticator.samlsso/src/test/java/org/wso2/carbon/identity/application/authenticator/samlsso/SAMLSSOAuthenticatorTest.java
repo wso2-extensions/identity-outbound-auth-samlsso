@@ -20,13 +20,12 @@ package org.wso2.carbon.identity.application.authenticator.samlsso;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.opensaml.saml2.core.NameIDType;
+import org.opensaml.saml.saml2.core.NameIDType;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
@@ -55,7 +54,6 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketException;
 import java.util.HashMap;
@@ -64,7 +62,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.xpath.XPathFactory;
 
@@ -83,6 +80,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.util.Mo
 /**
  * Unit test cases for SAMLSSOAuthenticator
  */
+@PowerMockIgnore({"javax.xml.datatype.*"})
 @PrepareForTest({XPathFactory.class, XMLInputFactory.class, DocumentBuilderFactory.class, IdentityUtil.class,
         DOMImplementationRegistry.class})
 public class SAMLSSOAuthenticatorTest {

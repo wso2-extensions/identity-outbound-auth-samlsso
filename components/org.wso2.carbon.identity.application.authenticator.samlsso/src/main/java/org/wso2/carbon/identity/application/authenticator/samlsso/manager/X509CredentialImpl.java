@@ -22,15 +22,15 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.opensaml.xml.security.credential.Credential;
-import org.opensaml.xml.security.credential.CredentialContextSet;
-import org.opensaml.xml.security.credential.UsageType;
-import org.opensaml.xml.security.x509.X509Credential;
+import org.opensaml.security.credential.Credential;
+import org.opensaml.security.credential.CredentialContextSet;
+import org.opensaml.security.credential.UsageType;
+import org.opensaml.security.x509.X509Credential;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.core.util.KeyStoreManager;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
-import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponent;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -119,6 +119,7 @@ public class X509CredentialImpl implements X509Credential {
                  * Get the private key and the cert for the respective tenant domain.
                  */
                 if (!tenantDomain.equals(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+                    FrameworkUtils.startTenantFlow(tenantDomain);
                     // derive key store name
                     String ksName = tenantDomain.trim().replace(".", "-");
                     // derive JKS name
@@ -193,6 +194,10 @@ public class X509CredentialImpl implements X509Credential {
                 throw new SAMLSSOException(
                         "Error retrieving private key and the certificate for tenant " +
                                 tenantDomain, e);
+            } finally {
+                if (!tenantDomain.equals(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+                    FrameworkUtils.endTenantFlow();
+                }
             }
 
             if (key == null) {
@@ -275,9 +280,12 @@ public class X509CredentialImpl implements X509Credential {
         return Collections.emptySet();
     }
 
+    /***
+     * Get the credential context set.
+     * @return This method is not supported so the return is null.
+     */
     @Override
-    public CredentialContextSet getCredentalContextSet() {
-        // TODO Auto-generated method stub
+    public CredentialContextSet getCredentialContextSet() {
         return null;
     }
 

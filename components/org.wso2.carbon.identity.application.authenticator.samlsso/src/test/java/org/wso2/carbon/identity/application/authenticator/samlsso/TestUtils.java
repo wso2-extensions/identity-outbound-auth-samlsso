@@ -20,64 +20,51 @@ package org.wso2.carbon.identity.application.authenticator.samlsso;
 
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
-import org.opensaml.Configuration;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.xml.SAMLConstants;
-import org.opensaml.saml2.common.Extensions;
-import org.opensaml.saml2.common.impl.ExtensionsBuilder;
-import org.opensaml.saml2.common.impl.ExtensionsImpl;
-import org.opensaml.saml2.core.AuthnContextClassRef;
-import org.opensaml.saml2.core.AuthnContextComparisonTypeEnumeration;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.LogoutRequest;
-import org.opensaml.saml2.core.NameID;
-import org.opensaml.saml2.core.NameIDPolicy;
-import org.opensaml.saml2.core.RequestAbstractType;
-import org.opensaml.saml2.core.RequestedAuthnContext;
-import org.opensaml.saml2.core.SessionIndex;
-import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
-import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
-import org.opensaml.saml2.core.impl.IssuerBuilder;
-import org.opensaml.saml2.core.impl.LogoutRequestBuilder;
-import org.opensaml.saml2.core.impl.NameIDBuilder;
-import org.opensaml.saml2.core.impl.NameIDPolicyBuilder;
-import org.opensaml.saml2.core.impl.RequestedAuthnContextBuilder;
-import org.opensaml.saml2.core.impl.SessionIndexBuilder;
-import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.io.Marshaller;
-import org.opensaml.xml.io.MarshallingException;
-import org.opensaml.xml.io.Unmarshaller;
-import org.opensaml.xml.io.UnmarshallerFactory;
-import org.opensaml.xml.io.UnmarshallingException;
-import org.opensaml.xml.util.Base64;
-import org.opensaml.xml.util.XMLHelper;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.common.xml.SAMLConstants;
+import org.opensaml.saml.saml2.core.AuthnContextClassRef;
+import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.LogoutRequest;
+import org.opensaml.saml.saml2.core.NameID;
+import org.opensaml.saml.saml2.core.NameIDPolicy;
+import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.opensaml.saml.saml2.core.RequestedAuthnContext;
+import org.opensaml.saml.saml2.core.SessionIndex;
+import org.opensaml.saml.saml2.core.impl.AuthnContextClassRefBuilder;
+import org.opensaml.saml.saml2.core.impl.AuthnRequestBuilder;
+import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.saml.saml2.core.impl.LogoutRequestBuilder;
+import org.opensaml.saml.saml2.core.impl.NameIDBuilder;
+import org.opensaml.saml.saml2.core.impl.NameIDPolicyBuilder;
+import org.opensaml.saml.saml2.core.impl.RequestedAuthnContextBuilder;
+import org.opensaml.saml.saml2.core.impl.SessionIndexBuilder;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.io.Marshaller;
+import org.opensaml.core.xml.io.MarshallingException;
+import org.opensaml.core.xml.io.Unmarshaller;
+import org.opensaml.core.xml.io.UnmarshallerFactory;
+import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.RequestData;
-import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.security.KeyStore;
 import java.util.Random;
-import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Test util methods
@@ -193,11 +180,11 @@ public class TestUtils {
     private static String encodeRequestMessage(RequestAbstractType requestMessage, String binding) throws
             MarshallingException, IOException {
 
-        Marshaller marshaller = Configuration.getMarshallerFactory().getMarshaller(requestMessage);
+        Marshaller marshaller = XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(requestMessage);
         Element authDOM;
         authDOM = marshaller.marshall(requestMessage);
-        StringWriter rspWrt = new StringWriter();
-        XMLHelper.writeNode(authDOM, rspWrt);
+        OutputStream rspWrt = new ByteArrayOutputStream();
+        SerializeSupport.writeNode(authDOM, rspWrt);
         if (SAMLConstants.SAML2_REDIRECT_BINDING_URI.equals(binding)) {
             //Compress the message, Base 64 encode and URL encode
             Deflater deflater = new Deflater(Deflater.DEFLATED, true);
@@ -206,11 +193,11 @@ public class TestUtils {
                     (byteArrayOutputStream, deflater);
             deflaterOutputStream.write(rspWrt.toString().getBytes(Charset.forName("UTF-8")));
             deflaterOutputStream.close();
-            return Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
+            return new String(org.apache.commons.codec.binary.Base64.encodeBase64(byteArrayOutputStream.toByteArray(), false));
         } else if (SAMLConstants.SAML2_POST_BINDING_URI.equals(binding)) {
-            return Base64.encodeBytes(rspWrt.toString().getBytes(), Base64.DONT_BREAK_LINES);
+            return new String(org.apache.commons.codec.binary.Base64.encodeBase64(rspWrt.toString().getBytes(), false));
         } else {
-            return Base64.encodeBytes(rspWrt.toString().getBytes(), Base64.DONT_BREAK_LINES);
+            return new String(org.apache.commons.codec.binary.Base64.encodeBase64(rspWrt.toString().getBytes(), false));
         }
     }
 
@@ -221,7 +208,7 @@ public class TestUtils {
             DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
             Document document = docBuilder.parse(inputStream);
             Element element = document.getDocumentElement();
-            UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
+            UnmarshallerFactory unmarshallerFactory = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
             return unmarshaller.unmarshall(element);
         }
