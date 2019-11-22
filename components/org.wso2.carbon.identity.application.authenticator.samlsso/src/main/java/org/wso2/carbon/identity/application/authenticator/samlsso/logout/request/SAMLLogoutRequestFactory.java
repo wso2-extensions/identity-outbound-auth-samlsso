@@ -18,10 +18,10 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.request;
 
+import net.shibboleth.utilities.java.support.net.URISupport;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import net.shibboleth.utilities.java.support.net.URISupport;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkClientException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityRequestFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
