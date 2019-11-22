@@ -18,43 +18,41 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.util;
 
+import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
-import org.opensaml.DefaultBootstrap;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
-
-import org.opensaml.saml2.core.LogoutRequest;
-import org.opensaml.saml2.core.LogoutResponse;
-import org.opensaml.saml2.core.Status;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.saml2.core.StatusMessage;
-import org.opensaml.saml2.core.impl.StatusBuilder;
-import org.opensaml.saml2.core.impl.LogoutResponseBuilder;
-import org.opensaml.saml2.core.impl.IssuerBuilder;
-import org.opensaml.saml2.core.impl.StatusCodeBuilder;
-import org.opensaml.saml2.core.impl.StatusMessageBuilder;
-import org.opensaml.xml.ConfigurationException;
-import org.opensaml.xml.security.SecurityException;
-
-import org.opensaml.xml.security.x509.X509Credential;
+import org.opensaml.core.config.InitializationException;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.saml2.core.LogoutRequest;
+import org.opensaml.saml.saml2.core.LogoutResponse;
+import org.opensaml.saml.saml2.core.Status;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.StatusCode;
+import org.opensaml.saml.saml2.core.StatusMessage;
+import org.opensaml.saml.saml2.core.impl.StatusBuilder;
+import org.opensaml.saml.saml2.core.impl.LogoutResponseBuilder;
+import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.saml.saml2.core.impl.StatusCodeBuilder;
+import org.opensaml.saml.saml2.core.impl.StatusMessageBuilder;
+import org.opensaml.security.SecurityException;
+import org.opensaml.security.x509.X509Credential;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutReqSignatureValidator;
+import org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.saml.common.util.SAMLInitializer;
 
 import java.io.ByteArrayInputStream;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -85,27 +83,33 @@ import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
 public class SAMLLogoutUtil {
 
     private static final Log log = LogFactory.getLog(SAMLLogoutUtil.class);
-    private static boolean isBootStrapped = false;
+    private static boolean bootStrapped = false;
 
     private SAMLLogoutUtil() {
 
     }
 
     /**
-     * Bootstrap the OpenSAML2 library only if it is not bootstrapped.
+     * Bootstrap the OpenSAML3 library only if it is not bootstrapped.
      *
-     * @throws FrameworkException Error when bootstrapping.
      */
-    public static void doBootstrap() throws FrameworkException {
+    public static void doBootstrap() {
 
-        if (!isBootStrapped) {
+        /* Initializing the OpenSAML library */
+        if (!bootStrapped) {
+            Thread thread = Thread.currentThread();
+            ClassLoader loader = thread.getContextClassLoader();
+            thread.setContextClassLoader(new DefaultSAML2SSOManager().getClass().getClassLoader());
             try {
-                DefaultBootstrap.bootstrap();
-                isBootStrapped = true;
-            } catch (ConfigurationException e) {
-                throw new FrameworkException("Error in bootstrapping the OpenSAML2 library", e);
+                SAMLInitializer.doBootstrap();
+                bootStrapped = true;
+            } catch (InitializationException e) {
+                log.error("Error in bootstrapping the OpenSAML3 library", e);
+            } finally {
+                thread.setContextClassLoader(loader);
             }
         }
+
     }
 
     /**
@@ -126,9 +130,9 @@ public class SAMLLogoutUtil {
 
         // Set the status Message.
         if (StringUtils.isNotBlank(responseStatusMsg)) {
-            StatusMessage stateMesssage = new StatusMessageBuilder().buildObject();
-            stateMesssage.setMessage(responseStatusMsg);
-            status.setStatusMessage(stateMesssage);
+            StatusMessage statusMessage = new StatusMessageBuilder().buildObject();
+            statusMessage.setMessage(responseStatusMsg);
+            status.setStatusMessage(statusMessage);
         }
         return status;
     }
@@ -138,14 +142,10 @@ public class SAMLLogoutUtil {
      *
      * @return Generated unique ID.
      */
-    private static String createID() throws IdentityException {
+    private static String createID() {
 
-        try {
-            SecureRandomIdentifierGenerator generator = new SecureRandomIdentifierGenerator();
-            return generator.generateIdentifier();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IdentityException("Error while generating Secure Random ID", e);
-        }
+        RandomIdentifierGenerationStrategy generator = new RandomIdentifierGenerationStrategy();
+        return generator.generateIdentifier();
     }
 
     /**
@@ -223,10 +223,6 @@ public class SAMLLogoutUtil {
 
         } catch (SAMLSSOException e) {
             throw new SAMLIdentityException("Error occurred while setting the signature of logout response", e);
-        } catch (FrameworkException e) {
-            throw new SAMLIdentityException("Error in bootstrapping the OpenSAML2 library", e);
-        } catch (IdentityException e) {
-            throw new SAMLIdentityException("Error while building Secure Random ID for the logout response", e);
         }
     }
 

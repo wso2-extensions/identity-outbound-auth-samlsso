@@ -18,26 +18,26 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators;
 
+import net.shibboleth.utilities.java.support.codec.Base64Support;
 import org.apache.commons.lang.StringUtils;
+import org.opensaml.core.criterion.EntityIdCriterion;
+import org.opensaml.security.SecurityException;
+import net.shibboleth.utilities.java.support.net.URISupport;
+import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.config.DefaultSecurityConfigurationBootstrap;
+import org.opensaml.security.credential.impl.CollectionCredentialResolver;
+import org.opensaml.security.credential.Credential;
+import org.opensaml.security.credential.UsageType;
+import org.opensaml.security.criteria.UsageCriterion;
+import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver;
+import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureTrustEngine;
+import org.opensaml.xmlsec.signature.SignableXMLObject;
+import org.opensaml.xmlsec.signature.support.SignatureValidator;
+import org.opensaml.xmlsec.signature.support.impl.ExplicitKeySignatureTrustEngine;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.opensaml.ws.security.SecurityPolicyException;
-import org.opensaml.ws.transport.http.HTTPTransportUtils;
-import org.opensaml.xml.security.CriteriaSet;
-import org.opensaml.xml.security.SecurityException;
-import org.opensaml.xml.security.SecurityHelper;
-import org.opensaml.xml.security.credential.CollectionCredentialResolver;
-import org.opensaml.xml.security.credential.Credential;
-import org.opensaml.xml.security.credential.UsageType;
-import org.opensaml.xml.security.criteria.EntityIDCriteria;
-import org.opensaml.xml.security.criteria.UsageCriteria;
-import org.opensaml.xml.security.keyinfo.KeyInfoCredentialResolver;
-import org.opensaml.xml.security.x509.X509Credential;
-import org.opensaml.xml.signature.SignableXMLObject;
-import org.opensaml.xml.signature.SignatureTrustEngine;
-import org.opensaml.xml.signature.impl.ExplicitKeySignatureTrustEngine;
-import org.opensaml.xml.util.Base64;
-import org.opensaml.xml.validation.ValidationException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
 import org.wso2.carbon.identity.base.IdentityException;
 
@@ -77,11 +77,14 @@ public class LogoutReqSignatureValidator {
         String algorithmUri = getSignatureAlgorithm(queryString);
         CriteriaSet criteriaSet = buildCriteriaSet(issuer);
 
-        X509CredentialImpl credential = new X509CredentialImpl(certificate);
+        // creating the SAML2HTTPRedirectDeflateSignatureRule
+        X509CredentialImpl credential = new X509CredentialImpl(certificate, issuer);
+
         List<Credential> credentials = new ArrayList<Credential>();
         credentials.add(credential);
         CollectionCredentialResolver credentialResolver = new CollectionCredentialResolver(credentials);
-        KeyInfoCredentialResolver keyResolver = SecurityHelper.buildBasicInlineKeyInfoResolver();
+        KeyInfoCredentialResolver keyResolver = DefaultSecurityConfigurationBootstrap.
+                buildBasicInlineKeyInfoCredentialResolver();
         SignatureTrustEngine engine = new ExplicitKeySignatureTrustEngine(credentialResolver, keyResolver);
         return engine.validate(signature, signedContent, algorithmUri, criteriaSet, null);
     }
@@ -100,11 +103,9 @@ public class LogoutReqSignatureValidator {
 
         if (request.getSignature() != null) {
             try {
-                org.opensaml.xml.signature.SignatureValidator validator =
-                        new org.opensaml.xml.signature.SignatureValidator(cred);
-                validator.validate(request.getSignature());
+                SignatureValidator.validate(request.getSignature(), cred);
                 return true;
-            } catch (ValidationException e) {
+            } catch (SignatureException e) {
                 throw IdentityException.error("Signature Validation Failed for the SAML Assertion", e);
             }
         }
@@ -118,12 +119,11 @@ public class LogoutReqSignatureValidator {
      * @return CriteriaSet.
      */
     private static CriteriaSet buildCriteriaSet(String issuer) {
-
         CriteriaSet criteriaSet = new CriteriaSet();
-        if (StringUtils.isNotEmpty(issuer)) {
-            criteriaSet.add(new EntityIDCriteria(issuer));
+        if (StringUtils.isNotBlank(issuer)) {
+            criteriaSet.add(new EntityIdCriterion(issuer));
         }
-        criteriaSet.add(new UsageCriteria(UsageType.SIGNING));
+        criteriaSet.add(new UsageCriterion(UsageType.SIGNING));
         return criteriaSet;
     }
 
@@ -132,15 +132,15 @@ public class LogoutReqSignatureValidator {
      *
      * @param queryString SAML request (passed an an HTTP query parameter).
      * @return String     Signature Algorithm of the request.
-     * @throws SecurityPolicyException If process of extracting signature algorithm fails.
+     * @throws SecurityException If process of extracting signature algorithm fails.
      * @throws IdentityException       If decoding not supproted
      */
-    private static String getSignatureAlgorithm(String queryString) throws SecurityPolicyException,
+    private static String getSignatureAlgorithm(String queryString) throws SecurityException,
             IdentityException {
 
-        String sigAlgQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, SIGNATURE_ALGORITHM);
+        String sigAlgQueryParam = URISupport.getRawQueryStringParameter(queryString, SIGNATURE_ALGORITHM);
         if (StringUtils.isEmpty(sigAlgQueryParam)) {
-            throw new SecurityPolicyException("Couldn't extract signature algorithm from query string: " + queryString);
+            throw new SecurityException("Couldn't extract signature algorithm from query string: " + queryString);
         }
 
         try {
@@ -149,7 +149,7 @@ public class LogoutReqSignatureValidator {
             if (StringUtils.isNotBlank(sigAlgQueryParam.split("=")[1])) {
                 return URLDecoder.decode(sigAlgQueryParam.split("=")[1], StandardCharsets.UTF_8.name());
             }
-            throw new SecurityPolicyException("Couldn't extract the signature algorithm value from the query string " +
+            throw new SecurityException("Couldn't extract the signature algorithm value from the query string " +
                     "parameter: " + sigAlgQueryParam);
         } catch (UnsupportedEncodingException e) {
             throw new IdentityException("Error occurred while decoding signature algorithm query parameter: "
@@ -162,23 +162,23 @@ public class LogoutReqSignatureValidator {
      *
      * @param queryString SAML request (passed an an HTTP query parameter).
      * @return byte[]     Base64-decoded value of the HTTP request signature parameter.
-     * @throws SecurityPolicyException If process of extracting signature fails.
+     * @throws SecurityException If process of extracting signature fails.
      */
-    private static byte[] getSignature(String queryString) throws SecurityPolicyException, IdentityException {
+    private static byte[] getSignature(String queryString) throws SecurityException, IdentityException {
 
-        String signatureQueryParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, SIGNATURE);
+        String signatureQueryParam = URISupport.getRawQueryStringParameter(queryString, SIGNATURE);
         if (StringUtils.isEmpty(signatureQueryParam)) {
-            throw new SecurityPolicyException("Couldn't extract the Signature from query string: " + queryString);
+            throw new SecurityException("Couldn't extract the Signature from query string: " + queryString);
         }
 
         try {
             /* Split 'Signature=<sig_value>' query param using '=' as the delimiter,
 		      and get the Signature value. */
             if (StringUtils.isNotBlank(signatureQueryParam.split("=")[1])) {
-                return Base64.decode(URLDecoder.decode(signatureQueryParam.split("=")[1],
+                return Base64Support.decode(URLDecoder.decode(signatureQueryParam.split("=")[1],
                         StandardCharsets.UTF_8.name()));
             }
-            throw new SecurityPolicyException("Couldn't extract the signature value from the query string parameter: "
+            throw new SecurityException("Couldn't extract the signature value from the query string parameter: "
                     + signatureQueryParam);
         } catch (UnsupportedEncodingException e) {
             throw new IdentityException("Error occurred while decoding signature query parameter: "
@@ -191,9 +191,9 @@ public class LogoutReqSignatureValidator {
      *
      * @param queryString SAML request (passed an an HTTP query parameter).
      * @return byte[]     Signed content.
-     * @throws SecurityPolicyException If process of constructing signed content fails.
+     * @throws SecurityException If process of constructing signed content fails.
      */
-    private static byte[] getSignedContent(String queryString) throws SecurityPolicyException {
+    private static byte[] getSignedContent(String queryString) throws SecurityException {
 
         String sigendContent = buildSignedContentString(queryString);
         if (StringUtils.isEmpty(sigendContent)) {
@@ -201,7 +201,7 @@ public class LogoutReqSignatureValidator {
             if (log.isDebugEnabled()) {
                 log.debug(message);
             }
-            throw new SecurityPolicyException(message);
+            throw new SecurityException(message);
         }
         return sigendContent.getBytes(StandardCharsets.UTF_8);
     }
@@ -212,15 +212,15 @@ public class LogoutReqSignatureValidator {
      *
      * @param queryString SAML request (passed an an HTTP query parameter).
      * @return String     Representation of the signed content.
-     * @throws SecurityPolicyException thrown if there is an error during request processing.
+     * @throws SecurityException thrown if there is an error during request processing.
      */
-    private static String buildSignedContentString(String queryString) throws SecurityPolicyException {
+    private static String buildSignedContentString(String queryString) throws SecurityException {
 
         StringBuilder builder = new StringBuilder();
 
-        if (StringUtils.isBlank(HTTPTransportUtils.getRawQueryStringParameter(queryString,
+        if (StringUtils.isBlank(URISupport.getRawQueryStringParameter(queryString,
                 HTTP_POST_PARAM_SAML2_AUTH_REQ))) {
-            throw new SecurityPolicyException("Process of extracting SAMLRequest from query string failed: "
+            throw new SecurityException("Process of extracting SAMLRequest from query string failed: "
                     + queryString);
         }
         appendParameter(builder, queryString, HTTP_POST_PARAM_SAML2_AUTH_REQ);
@@ -243,7 +243,7 @@ public class LogoutReqSignatureValidator {
     private static boolean appendParameter(StringBuilder builder, String queryString,
                                            String paramName) {
 
-        String rawParam = HTTPTransportUtils.getRawQueryStringParameter(queryString, paramName);
+        String rawParam = URISupport.getRawQueryStringParameter(queryString, paramName);
         if (rawParam == null) {
             return false;
         }

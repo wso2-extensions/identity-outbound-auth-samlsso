@@ -62,6 +62,7 @@ public class X509CredentialImpl implements X509Credential {
     private PublicKey publicKey = null;
     private PrivateKey privateKey = null;
     private X509Certificate entityCertificate = null;
+    private String entityId = "";
 
     private static KeyStore superTenantSignKeyStore = null;
     private static final Log log = LogFactory.getLog(X509CredentialImpl.class);
@@ -219,12 +220,13 @@ public class X509CredentialImpl implements X509Credential {
     /**
      * Constructor.
      *
-     * @param certificate certificate of the source
+     * @param certificate Certificate of the IDP.
+     * @param entityId    Entity Id of the credential.
      */
-    public X509CredentialImpl(X509Certificate certificate) {
+    public X509CredentialImpl(X509Certificate certificate, String entityId) {
 
         publicKey = certificate.getPublicKey();
-        entityCertificate = certificate;
+        this.entityId = entityId;
     }
 
     /**
@@ -297,8 +299,8 @@ public class X509CredentialImpl implements X509Credential {
 
     @Override
     public String getEntityId() {
-        // TODO Auto-generated method stub
-        return null;
+
+        return entityId;
     }
 
     @Override
@@ -315,7 +317,7 @@ public class X509CredentialImpl implements X509Credential {
 
     @Override
     public UsageType getUsageType() {
-        // TODO Auto-generated method stub
-        return null;
+
+        return UsageType.UNSPECIFIED;
     }
 }

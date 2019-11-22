@@ -21,8 +21,8 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.valida
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.saml2.core.LogoutRequest;
+import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.LambdaExceptionUtil;
