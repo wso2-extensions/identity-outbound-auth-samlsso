@@ -39,7 +39,6 @@ import org.opensaml.saml.saml2.core.impl.StatusCodeBuilder;
 import org.opensaml.saml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.security.SecurityException;
 import org.opensaml.security.x509.X509Credential;
-import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
@@ -257,13 +256,14 @@ public class SAMLLogoutUtil {
         LogoutReqSignatureValidator signatureValidator = new LogoutReqSignatureValidator();
         try {
             if (samlMessageContext.getSAMLLogoutRequest().isPost()) {
-                return signatureValidator.validateXMLSignature(logoutRequest, (X509Credential) x509Certificate, null);
+                return signatureValidator.validateXMLSignature(logoutRequest,
+                        new X509CredentialImpl(x509Certificate, issuer), null);
             } else {
                 return signatureValidator.validateSignature(samlMessageContext.getSAMLLogoutRequest().getQueryString(),
                         issuer, x509Certificate);
             }
         } catch (SecurityException | IdentityException e) {
-            throw new SAMLIdentityException ("Process of validating the signature failed for the logout request with" +
+            throw new SAMLIdentityException("Process of validating the signature failed for the logout request with" +
                     "issuer: " + logoutRequest.getIssuer().getValue(), e);
         }
     }
