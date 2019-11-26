@@ -82,6 +82,7 @@ import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
 public class SAMLLogoutUtil {
 
     private static final Log log = LogFactory.getLog(SAMLLogoutUtil.class);
+
     private static boolean bootStrapped = false;
 
     private SAMLLogoutUtil() {

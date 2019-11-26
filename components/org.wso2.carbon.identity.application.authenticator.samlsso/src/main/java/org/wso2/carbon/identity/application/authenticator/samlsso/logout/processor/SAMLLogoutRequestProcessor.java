@@ -56,9 +56,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.LOGOUT;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AnalyticsAttributes.SESSION_ID;
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.
+        AnalyticsAttributes.SESSION_ID;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.StatusCodes.SUCCESS_CODE;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
+        SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.COMMONAUTH;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_NAME;
 import static org.wso2.carbon.identity.base.IdentityConstants.IDENTITY_DEFAULT_ROLE;
@@ -116,8 +118,9 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             if (StringUtils.isNotBlank(samlMessageContext.getIdPSessionID())) {
                 populateContextWithSessionDetails(samlMessageContext);
             }
-            if (!(TRUE.equals(samlMessageContext.getFedIdPConfigs().get(IS_SLO_REQUEST_ACCEPTED)))) {
-                throw new SAMLIdentityException("Single logout requests from the federated IdP: "
+
+            if (Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_SLO_REQUEST_ACCEPTED))) {
+                throw new SAMLIdentityException("Single logout request from the federated IdP: "
                         + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " is not accepted");
             }
             LogoutRequestValidator logoutRequestValidator = new LogoutRequestValidator(samlMessageContext);
