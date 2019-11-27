@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.util;
 
+import java.util.regex.Pattern;
+
 public class SSOConstants {
 
     public static final String AUTHENTICATOR_NAME = "SAMLSSOAuthenticator";
@@ -51,6 +53,8 @@ public class SSOConstants {
 
     public static final String SECURITY_KEYSTORE_LOCATION = "Security.KeyStore.Location";
     public static final String SECURITY_KEYSTORE_TYPE = "Security.KeyStore.Type";
+
+    public static final Pattern SAML_SLO_ENDPOINT_URL_PATTERN = Pattern.compile("(.*)/identity/saml/slo/?");
 
     public class StatusCodes {
         private StatusCodes() {

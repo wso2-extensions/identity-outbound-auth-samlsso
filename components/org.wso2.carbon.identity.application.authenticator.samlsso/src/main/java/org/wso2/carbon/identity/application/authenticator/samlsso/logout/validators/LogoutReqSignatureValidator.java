@@ -179,6 +179,7 @@ public class LogoutReqSignatureValidator {
                         StandardCharsets.UTF_8.name()));
             }
             throw new SecurityException("Couldn't extract the signature value from the query string parameter: "
+
                     + signatureQueryParam);
         } catch (UnsupportedEncodingException e) {
             throw new IdentityException("Error occurred while decoding signature query parameter: "

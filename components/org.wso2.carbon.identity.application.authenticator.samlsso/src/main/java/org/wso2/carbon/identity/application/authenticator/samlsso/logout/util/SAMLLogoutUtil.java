@@ -81,9 +81,8 @@ import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
  */
 public class SAMLLogoutUtil {
 
-    private static final Log log = LogFactory.getLog(SAMLLogoutUtil.class);
-
     private static boolean bootStrapped = false;
+    private static final Log log = LogFactory.getLog(SAMLLogoutUtil.class);
 
     private SAMLLogoutUtil() {
 
@@ -133,7 +132,7 @@ public class SAMLLogoutUtil {
             StatusMessage statusMessage = new StatusMessageBuilder().buildObject();
             statusMessage.setMessage(responseStatusMsg);
             status.setStatusMessage(statusMessage);
-        }
+   }
         return status;
     }
 
