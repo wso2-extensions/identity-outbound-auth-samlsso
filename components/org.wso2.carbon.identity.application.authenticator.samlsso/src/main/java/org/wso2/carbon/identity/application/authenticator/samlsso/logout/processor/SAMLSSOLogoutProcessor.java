@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor;
 
-import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityMessageContext;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
@@ -49,11 +48,9 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
      *
      * @param identityRequest {@link IdentityRequest} object.
      * @return SAMLLogoutResponse.SAMLLogoutResponseBuilder instance.
-     * @throws FrameworkException Error while processing the framework request.
      */
     @Override
-    public SAMLLogoutResponse.SAMLLogoutResponseBuilder process(IdentityRequest identityRequest)
-            throws FrameworkException {
+    public SAMLLogoutResponse.SAMLLogoutResponseBuilder process(IdentityRequest identityRequest) {
 
         String sessionDataKey = identityRequest.getParameter(CONTEXT_KEY);
         SAMLMessageContext samlMessageContext = (SAMLMessageContext) InboundUtil.getContextFromCache(sessionDataKey);
@@ -61,6 +58,7 @@ public class SAMLSSOLogoutProcessor extends IdentityProcessor {
                 (samlMessageContext);
         builder.setResponse(samlMessageContext.getResponse());
         builder.setAcsUrl(samlMessageContext.getAcsUrl());
+        builder.setRelayState(samlMessageContext.getRelayState());
         return builder;
     }
 

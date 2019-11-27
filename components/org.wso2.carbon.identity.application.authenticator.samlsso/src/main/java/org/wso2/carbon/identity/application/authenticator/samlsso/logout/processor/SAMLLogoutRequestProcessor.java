@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao.SessionInfoDAO;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
+
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SAMLLogoutUtil;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutRequestValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
@@ -58,12 +59,12 @@ import java.util.concurrent.TimeUnit;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.LOGOUT;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.
         AnalyticsAttributes.SESSION_ID;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_URL;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.StatusCodes.SUCCESS_CODE;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
         SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.COMMONAUTH;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_NAME;
-import static org.wso2.carbon.identity.base.IdentityConstants.IDENTITY_DEFAULT_ROLE;
 import static org.wso2.carbon.identity.base.IdentityConstants.ServerConfig.SAMLSSO;
 import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
 import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
@@ -120,7 +121,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             }
             if (!Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_SLO_REQUEST_ACCEPTED))) {
                 throw new SAMLIdentityException("Single logout requests from the federated IdP: "
-                        + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " is not accepted");
+                        + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " are not accepted");
             }
             LogoutRequestValidator logoutRequestValidator = new LogoutRequestValidator(samlMessageContext);
             if (logoutRequestValidator.isValidate(logoutRequest)) {
@@ -143,7 +144,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @return FrameworkLogoutResponse.FrameworkLogoutResponseBuilder instance.
      */
     private FrameworkLogoutResponse.FrameworkLogoutResponseBuilder buildResponseForFrameworkLogout
-            (SAMLMessageContext<String, String> samlMessageContext) {
+    (SAMLMessageContext<String, String> samlMessageContext) {
 
         IdentityRequest identityRequest = samlMessageContext.getRequest();
         Map<String, String[]> parameterMap = identityRequest.getParameterMap();
@@ -228,7 +229,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     @Override
     public String getCallbackPath(IdentityMessageContext context) {
 
-        return IdentityUtil.getServerURL(IDENTITY_DEFAULT_ROLE, false, false);
+        return IdentityUtil.getServerURL(SAML_SLO_URL, false, false);
     }
 
     @Override
