@@ -31,7 +31,10 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConsta
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.util.regex.Matcher;
+
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_ENDPOINT_URL_PATTERN;
 
 /**
  * This class checks whether requests from the Identity servlet are SAML Requests and
@@ -55,7 +58,15 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
     @Override
     public boolean canHandle(HttpServletRequest request, HttpServletResponse response) {
 
-        return StringUtils.isNotBlank(request.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ));
+        boolean canHandle = false;
+        if (request != null) {
+            Matcher matcher = SAML_SLO_ENDPOINT_URL_PATTERN.matcher(request.getRequestURI());
+            if (matcher.matches() && StringUtils.isNotBlank(request.getParameter
+                    (SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))) {
+                canHandle = true;
+            }
+        }
+        return canHandle;
     }
 
     @Override

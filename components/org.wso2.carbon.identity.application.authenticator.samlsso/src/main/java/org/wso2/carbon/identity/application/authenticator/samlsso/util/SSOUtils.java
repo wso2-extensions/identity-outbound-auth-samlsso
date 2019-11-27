@@ -17,7 +17,6 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso.util;
 
-import org.apache.abdera.protocol.util.AbstractRequest;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
