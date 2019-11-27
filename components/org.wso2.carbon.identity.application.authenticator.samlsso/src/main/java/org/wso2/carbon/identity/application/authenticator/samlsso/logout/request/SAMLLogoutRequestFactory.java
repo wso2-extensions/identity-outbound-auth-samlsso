@@ -27,11 +27,10 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Htt
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
+import java.util.regex.Matcher;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import java.util.regex.Matcher;
 
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_ENDPOINT_URL_PATTERN;

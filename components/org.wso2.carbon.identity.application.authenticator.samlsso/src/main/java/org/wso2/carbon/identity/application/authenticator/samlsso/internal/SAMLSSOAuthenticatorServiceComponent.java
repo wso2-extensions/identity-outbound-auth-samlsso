@@ -33,7 +33,7 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Htt
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessor;
-import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLSSOLogoutProcessor;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutResponseProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequestFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseFactory;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
@@ -78,7 +78,7 @@ public class SAMLSSOAuthenticatorServiceComponent {
             ctxt.getBundleContext()
                     .registerService(IdentityProcessor.class.getName(), new SAMLLogoutRequestProcessor(), null);
             ctxt.getBundleContext()
-                    .registerService(IdentityProcessor.class.getName(), new SAMLSSOLogoutProcessor(), null);
+                    .registerService(IdentityProcessor.class.getName(), new SAMLLogoutResponseProcessor(), null);
 
             postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository" + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File.separator + "samlsso_federate.html";
             fis = new FileInputStream(new File(postPagePath));
