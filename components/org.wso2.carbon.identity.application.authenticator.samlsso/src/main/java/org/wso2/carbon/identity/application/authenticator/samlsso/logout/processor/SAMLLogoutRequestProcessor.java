@@ -59,6 +59,7 @@ import java.util.concurrent.TimeUnit;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.LOGOUT;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.
         AnalyticsAttributes.SESSION_ID;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_URL;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.StatusCodes.SUCCESS_CODE;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
         SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
@@ -231,7 +232,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     @Override
     public String getCallbackPath(IdentityMessageContext context) {
 
-        return IdentityUtil.getServerURL(IDENTITY_DEFAULT_ROLE, false, false);
+        return IdentityUtil.getServerURL(SAML_SLO_URL, false, false);
     }
 
     @Override

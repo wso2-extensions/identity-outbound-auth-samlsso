@@ -54,6 +54,7 @@ public class SSOConstants {
     public static final String SECURITY_KEYSTORE_LOCATION = "Security.KeyStore.Location";
     public static final String SECURITY_KEYSTORE_TYPE = "Security.KeyStore.Type";
 
+    public static final String SAML_SLO_URL = "identity/saml/slo";
     public static final Pattern SAML_SLO_ENDPOINT_URL_PATTERN = Pattern.compile("(.*)/identity/saml/slo/?");
 
     public class StatusCodes {
