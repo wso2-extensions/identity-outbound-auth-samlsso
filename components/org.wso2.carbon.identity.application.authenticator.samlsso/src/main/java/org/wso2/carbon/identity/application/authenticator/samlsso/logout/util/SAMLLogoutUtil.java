@@ -256,13 +256,14 @@ public class SAMLLogoutUtil {
         LogoutReqSignatureValidator signatureValidator = new LogoutReqSignatureValidator();
         try {
             if (samlMessageContext.getSAMLLogoutRequest().isPost()) {
-                return signatureValidator.validateXMLSignature(logoutRequest, (X509Credential) x509Certificate, null);
+                return signatureValidator.validateXMLSignature(logoutRequest,
+                        new X509CredentialImpl(x509Certificate, issuer), null);
             } else {
                 return signatureValidator.validateSignature(samlMessageContext.getSAMLLogoutRequest().getQueryString(),
                         issuer, x509Certificate);
             }
         } catch (SecurityException | IdentityException e) {
-            throw new SAMLIdentityException ("Process of validating the signature failed for the logout request with" +
+            throw new SAMLIdentityException("Process of validating the signature failed for the logout request with" +
                     "issuer: " + logoutRequest.getIssuer().getValue(), e);
         }
     }
