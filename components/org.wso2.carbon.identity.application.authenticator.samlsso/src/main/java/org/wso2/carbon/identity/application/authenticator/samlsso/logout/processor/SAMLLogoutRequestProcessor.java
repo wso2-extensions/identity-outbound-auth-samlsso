@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao.SessionInfoDAO;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
+
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SAMLLogoutUtil;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutRequestValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
@@ -120,7 +121,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             }
             if (!Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_SLO_REQUEST_ACCEPTED))) {
                 throw new SAMLIdentityException("Single logout requests from the federated IdP: "
-                        + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " is not accepted");
+                        + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " are not accepted");
             }
             LogoutRequestValidator logoutRequestValidator = new LogoutRequestValidator(samlMessageContext);
             if (logoutRequestValidator.isValidate(logoutRequest)) {
