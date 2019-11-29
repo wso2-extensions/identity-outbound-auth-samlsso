@@ -490,11 +490,21 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         Property selectMode = new Property();
         selectMode.setName("selectMode");
+        selectMode.setDisplayName("Select Mode");
         selectMode.setDescription("Select the input method for SAML configuration");
+        selectMode.setType("string");
         selectMode.setOptions(new String[]{"Manual Configuration", "Metadata File Configuration"});
         selectMode.setDefaultValue("Manual Configuration");
         selectMode.setDisplayOrder(3);
         configProperties.add(selectMode);
+
+        Property samlMetadata = new Property();
+        samlMetadata.setName("meta_data_saml");
+        samlMetadata.setDisplayName("SAML Metadata File");
+        samlMetadata.setDescription("Base-64 encoded metadata file content for SAML configuration");
+        samlMetadata.setType("string");
+        samlMetadata.setDisplayOrder(4);
+        configProperties.add(samlMetadata);
 
         Property idpEntityId = new Property();
         idpEntityId.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID);
@@ -502,7 +512,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         idpEntityId.setRequired(true);
         idpEntityId.setDescription("Enter identity provider's entity identifier value. This should be a valid URI/URL.");
         idpEntityId.setType("string");
-        idpEntityId.setDisplayOrder(4);
+        idpEntityId.setDisplayOrder(5);
         configProperties.add(idpEntityId);
 
         Property ssoUrl = new Property();
@@ -511,7 +521,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         ssoUrl.setRequired(true);
         ssoUrl.setDescription("Enter identity provider's SAML2 Web SSO URL value");
         ssoUrl.setType("string");
-        ssoUrl.setDisplayOrder(5);
+        ssoUrl.setDisplayOrder(6);
         configProperties.add(ssoUrl);
 
         Property authnReqSign = new Property();
@@ -520,7 +530,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         authnReqSign.setRequired(false);
         authnReqSign.setDescription("Specifies if the SAML2 authentication request to the identity provider must be signed or not");
         authnReqSign.setType("boolean");
-        authnReqSign.setDisplayOrder(6);
+        authnReqSign.setDisplayOrder(7);
         configProperties.add(authnReqSign);
 
         Property assertionEncryption = new Property();
@@ -529,7 +539,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         assertionEncryption.setRequired(false);
         assertionEncryption.setDescription("Specify if SAMLAssertion element is encrypted");
         assertionEncryption.setType("boolean");
-        assertionEncryption.setDisplayOrder(7);
+        assertionEncryption.setDisplayOrder(8);
         configProperties.add(assertionEncryption);
 
         Property assertionSigning = new Property();
@@ -538,7 +548,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         assertionSigning.setRequired(false);
         assertionSigning.setDescription("Specify if SAMLAssertion element is signed");
         assertionSigning.setType("boolean");
-        assertionSigning.setDisplayOrder(8);
+        assertionSigning.setDisplayOrder(9);
         configProperties.add(assertionSigning);
 
         Property enableLogout = new Property();
@@ -547,7 +557,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         enableLogout.setRequired(false);
         enableLogout.setDescription("Specifies if logout/single Logout is enabled for this identity provider");
         enableLogout.setType("boolean");
-        enableLogout.setDisplayOrder(9);
+        enableLogout.setDisplayOrder(10);
         configProperties.add(enableLogout);
 
         Property logoutUrl = new Property();
@@ -556,7 +566,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         logoutUrl.setRequired(false);
         logoutUrl.setDescription("Enter identity provider's logout URL value if it is different from the SSO Url");
         logoutUrl.setType("string");
-        logoutUrl.setDisplayOrder(10);
+        logoutUrl.setDisplayOrder(11);
         configProperties.add(logoutUrl);
 
         Property logoutReqSign = new Property();
@@ -565,7 +575,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         logoutReqSign.setRequired(false);
         logoutReqSign.setDescription("Specifies if SAML2 logout request to the identity provider must be signed or not");
         logoutReqSign.setType("boolean");
-        logoutReqSign.setDisplayOrder(11);
+        logoutReqSign.setDisplayOrder(12);
         configProperties.add(logoutReqSign);
 
         Property authnResSign = new Property();
@@ -575,7 +585,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         authnResSign.setDescription("Specifies if SAML2 authentication response from the identity provider must be " +
                 "signed or not");
         authnResSign.setType("boolean");
-        authnResSign.setDisplayOrder(12);
+        authnResSign.setDisplayOrder(13);
         configProperties.add(authnResSign);
 
         Property enableArtifactBinding = new Property();
@@ -584,7 +594,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         enableArtifactBinding.setRequired(false);
         enableArtifactBinding.setDescription("Specifies if SAML2 Artifact Binding is enabled from IDP");
         enableArtifactBinding.setType("boolean");
-        enableArtifactBinding.setDisplayOrder(13);
+        enableArtifactBinding.setDisplayOrder(14);
 
         SubProperty artifactResolveUrl = new SubProperty();
         artifactResolveUrl.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.ARTIFACT_RESOLVE_URL);
@@ -592,7 +602,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         artifactResolveUrl.setRequired(false);
         artifactResolveUrl.setDescription("Specify the Artifact Resolve Endpoint Url");
         artifactResolveUrl.setType("string");
-        artifactResolveUrl.setDisplayOrder(14);
+        artifactResolveUrl.setDisplayOrder(15);
 
         SubProperty artifactResolveReqSign = new SubProperty();
         artifactResolveReqSign.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED);
@@ -601,7 +611,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         artifactResolveReqSign.setDescription(" Specifies if the SAML2 artifact resolve request to the identity provider must " +
                 "be signed or not");
         artifactResolveReqSign.setType("boolean");
-        artifactResolveReqSign.setDisplayOrder(15);
+        artifactResolveReqSign.setDisplayOrder(16);
 
         SubProperty enableArtifactResSign = new SubProperty();
         enableArtifactResSign.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED);
@@ -610,7 +620,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         enableArtifactResSign.setDescription("Specifies if the SAML2 artifact response from the identity provider will be " +
                 "signed or not");
         enableArtifactResSign.setType("boolean");
-        enableArtifactResSign.setDisplayOrder(16);
+        enableArtifactResSign.setDisplayOrder(17);
         SubProperty[] enableArtifactBindingSubProps = new SubProperty[]{artifactResolveUrl, artifactResolveReqSign,
                 enableArtifactResSign};
         enableArtifactBinding.setSubProperties(enableArtifactBindingSubProps);
@@ -622,7 +632,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         signatureAlgo.setRequired(false);
         signatureAlgo.setDescription("Specifies the SignatureMethod Algorithm");
         signatureAlgo.setType("string");
-        signatureAlgo.setDisplayOrder(17);
+        signatureAlgo.setDisplayOrder(18);
 
         List<String> signatureAlgoOptions = new ArrayList<>();
         signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.DSA_SHA1);
@@ -647,7 +657,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         digestAlgo.setRequired(false);
         digestAlgo.setDescription("Specifies the DigestMethod Algorithm. Applicable only in POST Binding");
         digestAlgo.setType("string");
-        digestAlgo.setDisplayOrder(18);
+        digestAlgo.setDisplayOrder(19);
 
         List<String> digestAlgoOptions = new ArrayList<>();
         digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.MD5);
@@ -667,7 +677,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         attributeConsumeIndex.setRequired(false);
         attributeConsumeIndex.setDescription("Specify the Attribute Consuming Service Index");
         attributeConsumeIndex.setType("string");
-        attributeConsumeIndex.setDisplayOrder(19);
+        attributeConsumeIndex.setDisplayOrder(20);
         configProperties.add(attributeConsumeIndex);
 
         Property forceAuthn = new Property();
@@ -676,7 +686,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         forceAuthn.setRequired(false);
         forceAuthn.setDescription("Enable force authentication or decide from the in coming request");
         forceAuthn.setType("string");
-        forceAuthn.setDisplayOrder(20);
+        forceAuthn.setDisplayOrder(21);
         forceAuthn.setOptions(new String[]{"yes", "no", "as_request"});
         forceAuthn.setDefaultValue("as_request");
         configProperties.add(forceAuthn);
@@ -687,7 +697,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         includeCert.setRequired(false);
         includeCert.setDescription("Include Public Certificate in the the request");
         includeCert.setType("boolean");
-        includeCert.setDisplayOrder(21);
+        includeCert.setDisplayOrder(22);
         configProperties.add(includeCert);
 
         Property includeProtocolBinding = new Property();
@@ -696,7 +706,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         includeProtocolBinding.setRequired(false);
         includeProtocolBinding.setDescription("Include ProtocolBinding in the request");
         includeProtocolBinding.setType("boolean");
-        includeProtocolBinding.setDisplayOrder(22);
+        includeProtocolBinding.setDisplayOrder(23);
         configProperties.add(includeProtocolBinding);
 
         Property includeNameIdPolicy = new Property();
@@ -705,7 +715,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         includeNameIdPolicy.setRequired(false);
         includeNameIdPolicy.setDescription("Include NameIDPolicy in the request");
         includeNameIdPolicy.setType("boolean");
-        includeNameIdPolicy.setDisplayOrder(23);
+        includeNameIdPolicy.setDisplayOrder(24);
         configProperties.add(includeNameIdPolicy);
 
         Property includeAuthnContext = new Property();
@@ -714,7 +724,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         includeAuthnContext.setRequired(false);
         includeAuthnContext.setDescription("Include a new RequestedAuthnContext in the request, or decide from the incoming request");
         includeAuthnContext.setType("string");
-        includeAuthnContext.setDisplayOrder(24);
+        includeAuthnContext.setDisplayOrder(25);
         includeAuthnContext.setOptions(new String[]{"yes", "no", "as_request"});
         includeAuthnContext.setDefaultValue("yes");
         configProperties.add(includeAuthnContext);
@@ -757,7 +767,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         authnContextClass.setOptions(authnContextOptions.toArray(new String[0]));
         authnContextClass.setDefaultValue(IdentityApplicationConstants.SAML2.AuthnContextClass.UNSPECIFIED);
-        authnContextClass.setDisplayOrder(25);
+        authnContextClass.setDisplayOrder(26);
         configProperties.add(authnContextClass);
 
         Property customAuthnContextClass = new Property();
@@ -767,7 +777,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         customAuthnContextClass.setRequired(false);
         customAuthnContextClass.setDescription("Custom AuthnContextClassRef to be sent");
         customAuthnContextClass.setType("string");
-        customAuthnContextClass.setDisplayOrder(26);
+        customAuthnContextClass.setDisplayOrder(27);
         configProperties.add(customAuthnContextClass);
 
         Property authnContextComparison = new Property();
@@ -777,7 +787,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         authnContextComparison.setRequired(false);
         authnContextComparison.setDescription("Choose RequestedAuthnContext Comparison to be sent");
         authnContextComparison.setType("string");
-        authnContextComparison.setDisplayOrder(27);
+        authnContextComparison.setDisplayOrder(28);
         authnContextComparison.setOptions(new String[]{"Exact", "Mininum", "Maximum", "Better"});
         authnContextComparison.setDefaultValue("Exact");
         configProperties.add(authnContextComparison);
@@ -788,7 +798,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         userIdLocation.setRequired(false);
         userIdLocation.setDescription("Specifies the location to find the user identifier in the SAML2 assertion");
         userIdLocation.setType("boolean");
-        userIdLocation.setDisplayOrder(28);
+        userIdLocation.setDisplayOrder(29);
         userIdLocation.setDefaultValue("false");
         configProperties.add(userIdLocation);
 
@@ -798,7 +808,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         httpBinding.setRequired(false);
         httpBinding.setDescription("Choose the HTTP Binding or decide from incoming request");
         httpBinding.setType("string");
-        httpBinding.setDisplayOrder(29);
+        httpBinding.setDisplayOrder(30);
         httpBinding.setOptions(new String[]{"redirect", "post", "as_request"});
         httpBinding.setDefaultValue("redirect");
         configProperties.add(httpBinding);
@@ -809,7 +819,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         resAuthnContextClass.setRequired(false);
         resAuthnContextClass.setDescription("Choose the AuthnContextClassRef sent back to the service provider");
         resAuthnContextClass.setType("string");
-        resAuthnContextClass.setDisplayOrder(30);
+        resAuthnContextClass.setDisplayOrder(31);
         resAuthnContextClass.setOptions(new String[]{"default", "as_response"});
         resAuthnContextClass.setDefaultValue("default");
         configProperties.add(resAuthnContextClass);
@@ -820,7 +830,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         queryParams.setRequired(false);
         queryParams.setDescription("Additional query parameters. e.g: paramName1=value1");
         queryParams.setType("string");
-        queryParams.setDisplayOrder(31);
+        queryParams.setDisplayOrder(32);
         configProperties.add(queryParams);
 
         return configProperties;
