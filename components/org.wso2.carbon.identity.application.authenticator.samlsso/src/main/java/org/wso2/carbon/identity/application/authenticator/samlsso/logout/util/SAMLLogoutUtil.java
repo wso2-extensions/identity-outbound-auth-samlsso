@@ -131,7 +131,7 @@ public class SAMLLogoutUtil {
             StatusMessage statusMessage = new StatusMessageBuilder().buildObject();
             statusMessage.setMessage(responseStatusMsg);
             status.setStatusMessage(statusMessage);
-   }
+        }
         return status;
     }
 

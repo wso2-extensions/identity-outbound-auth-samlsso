@@ -61,8 +61,8 @@ public class SAMLLogoutResponse extends IdentityResponse {
 
     public static class SAMLLogoutResponseBuilder extends IdentityResponseBuilder {
 
-        protected SAMLMessageContext context;
-        protected String response;
+        private SAMLMessageContext context;
+        private String response;
         protected String acsUrl;
         protected String relayState;
 
