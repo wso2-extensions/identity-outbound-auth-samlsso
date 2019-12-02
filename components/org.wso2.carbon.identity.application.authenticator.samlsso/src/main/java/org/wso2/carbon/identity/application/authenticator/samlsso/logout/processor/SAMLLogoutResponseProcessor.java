@@ -34,7 +34,7 @@ import static org.wso2.carbon.identity.base.IdentityConstants.IDENTITY_DEFAULT_R
 /**
  * The class which processes the response from the authentication framework after framework Logout.
  */
-public class SAMLSSOLogoutProcessor extends IdentityProcessor {
+public class SAMLLogoutResponseProcessor extends IdentityProcessor {
 
     @Override
     public boolean canHandle(IdentityRequest identityRequest) {

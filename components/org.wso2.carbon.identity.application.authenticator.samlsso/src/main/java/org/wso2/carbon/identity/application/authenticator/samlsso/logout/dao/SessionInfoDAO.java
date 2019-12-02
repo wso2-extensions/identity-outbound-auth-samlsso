@@ -44,17 +44,17 @@ public class SessionInfoDAO {
     /**
      * Retrieve the session details of a given SAML Index from the database.
      *
-     * @param sessionIndex Session Index of the SAML Logout Request.
+     * @param samlIndex Session Index of the SAML Logout Request.
      * @return Map of session details.
      * @throws SAMLIdentityException If DB execution fails.
      */
-    public Map<String, String> getSessionDetails(String sessionIndex) throws SAMLIdentityException {
+    public Map<String, String> getSessionDetails(String samlIndex) throws SAMLIdentityException {
 
         final String query = "SELECT * FROM IDN_FEDERATED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID =?";
 
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setString(1, sessionIndex);
+            preparedStatement.setString(1, samlIndex);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 Map<String, String> sessionDetails = new HashMap<>();
                 if (resultSet.next()) {
@@ -63,14 +63,14 @@ public class SessionInfoDAO {
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("Retrieved session index: " + resultSet.getString("SESSION_ID") +
-                            " for federated idp session index: " + sessionIndex);
+                            " for federated idp session index: " + samlIndex);
                 }
 
                 return sessionDetails;
             }
         } catch (SQLException e) {
             String notification = "Unable to retrieve session details from the database with SAML Index: "
-                    + sessionIndex;
+                    + samlIndex;
             if (log.isDebugEnabled()) {
                 log.debug(notification, e);
             }

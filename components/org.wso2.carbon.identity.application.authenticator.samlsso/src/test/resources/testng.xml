@@ -25,16 +25,15 @@
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImplTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManagerTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOArtifactResolutionServiceTest"/>
-            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOSoapMessageServiceTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequestFactoryTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequestTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseFactoryTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutRequestValidatorTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.Utils.LogoutUtilTest"/>
-            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLSSOLogoutProcessorTest"/>
-            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessorTest"/>
-
-
-
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutResponseProcessorTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContextTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao.SessionInfoDAOTest"/>
         </classes>
     </test>
 </suite>

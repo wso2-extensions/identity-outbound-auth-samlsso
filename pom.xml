@@ -360,7 +360,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.15.12-SNAPSHOT</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.15.28</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.15.0, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
         <!--SAML Common Util Version-->
@@ -415,6 +415,7 @@
         <pax.logging.version>1.11.0</pax.logging.version>
         <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>
         <com.google.guava.version>27.0-jre</com.google.guava.version>
+        <h2database.version>1.4.199</h2database.version>
     </properties>
 
 </project>
