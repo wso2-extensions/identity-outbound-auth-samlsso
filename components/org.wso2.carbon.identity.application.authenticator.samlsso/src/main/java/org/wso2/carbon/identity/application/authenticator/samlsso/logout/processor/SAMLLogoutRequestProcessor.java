@@ -65,7 +65,6 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
         SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.COMMONAUTH;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_NAME;
-import static org.wso2.carbon.identity.base.IdentityConstants.IDENTITY_DEFAULT_ROLE;
 import static org.wso2.carbon.identity.base.IdentityConstants.ServerConfig.SAMLSSO;
 import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
 import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
@@ -147,7 +146,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * @return FrameworkLogoutResponse.FrameworkLogoutResponseBuilder instance.
      */
     private FrameworkLogoutResponse.FrameworkLogoutResponseBuilder buildResponseForFrameworkLogout
-            (SAMLMessageContext<String, String> samlMessageContext) {
+    (SAMLMessageContext<String, String> samlMessageContext) {
 
         IdentityRequest identityRequest = samlMessageContext.getRequest();
         Map<String, String[]> parameterMap = identityRequest.getParameterMap();

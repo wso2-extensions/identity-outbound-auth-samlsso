@@ -36,7 +36,6 @@ import java.util.function.Consumer;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.ISSUER_FORMAT;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
         SAML2SSO.IS_LOGOUT_REQ_SIGNED;
-import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
 
 /**
  * This class is responsible for validating the SAML single logout request from the federated IdP.
@@ -136,7 +135,7 @@ public class LogoutRequestValidator {
             throw new SAMLIdentityException(notification, errorResponse, logoutRequest.getDestination(),
                     samlMessageContext.getRelayState());
         }
-}
+    }
 
     /**
      * Validate the subject of the logout request.
@@ -168,7 +167,7 @@ public class LogoutRequestValidator {
      */
     private void isValidLogoutReqSignature(LogoutRequest logoutRequest) throws SAMLIdentityException {
 
-        if (TRUE.equals(samlMessageContext.getFedIdPConfigs().get(IS_LOGOUT_REQ_SIGNED)) &&
+        if (Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_LOGOUT_REQ_SIGNED).toString()) &&
                 (!SAMLLogoutUtil.isValidSignature(logoutRequest, samlMessageContext))) {
             String notification = "Signature validation failed for logout request with issuer: "
                     + logoutRequest.getIssuer().getValue();

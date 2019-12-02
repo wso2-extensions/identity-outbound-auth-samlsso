@@ -73,7 +73,6 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.
         IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.CERTIFICATE_TYPE;
-import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
 
 /**
  * A Utility which provides functionality to handle federated idp initiated saml logout requests.
@@ -201,8 +200,10 @@ public class SAMLLogoutUtil {
             doBootstrap();
             String issuerID = (String) samlMessageContext.getFedIdPConfigs().get(SP_ENTITY_ID);
             String acsUrl = (String) samlMessageContext.getFedIdPConfigs().get(SSO_URL);
-            String isResponseSigned = (String) samlMessageContext.getFedIdPConfigs().get(IS_AUTHN_RESP_SIGNED);
-            boolean isIncludeCert = TRUE.equals(samlMessageContext.getFedIdPConfigs().get(INCLUDE_CERT));
+            boolean isResponseSigned = Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().
+                    get(IS_AUTHN_RESP_SIGNED).toString());
+            boolean isIncludeCert = Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().
+                    get(INCLUDE_CERT).toString());
 
             LogoutResponse logoutResp = new LogoutResponseBuilder().buildObject();
             logoutResp.setID(createID());
@@ -213,7 +214,7 @@ public class SAMLLogoutUtil {
             logoutResp.setIssueInstant(new DateTime());
             logoutResp.setDestination(acsUrl);
 
-            if (TRUE.equals(isResponseSigned) && SUCCESS_CODE.equals(statusCode)) {
+            if (isResponseSigned && SUCCESS_CODE.equals(statusCode)) {
                 SSOUtils.setSignature(logoutResp, null, null, isIncludeCert,
                         new X509CredentialImpl(samlMessageContext.getTenantDomain(), null));
             }
