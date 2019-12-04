@@ -25,6 +25,9 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.SUPER_TENANT_DOMAIN;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.HTTP_POST_PARAM_SAML2_RESP;
 
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
@@ -47,16 +50,16 @@ public class SAMLMessageContextTest extends PowerMockTestCase {
     public void test() {
 
         SAMLMessageContext context = new SAMLMessageContext(mockedRequest, mockedMap);
-        context.setSessionID("1234");
-        context.setTenantDomain("carbon");
+        context.setSessionID(INBOUND_SESSION_INDEX);
+        context.setTenantDomain(SUPER_TENANT_DOMAIN);
         context.setValidStatus(true);
         context.setFederatedIdP(mockedIdP);
-        context.setResponse("SAMLResponse");
+        context.setResponse(HTTP_POST_PARAM_SAML2_RESP);
 
-        assertEquals("1234", context.getSessionID(), "Failed to handle for valid input");
-        assertEquals("carbon", context.getTenantDomain(), "Failed to handle for valid input");
+        assertEquals(INBOUND_SESSION_INDEX, context.getSessionID(), "Failed to handle for valid input");
+        assertEquals(SUPER_TENANT_DOMAIN, context.getTenantDomain(), "Failed to handle for valid input");
         assertTrue(context.getValidStatus(), "Failed to handle for valid input");
         assertEquals(mockedIdP, context.getFederatedIdP(), "Failed to handle for valid input");
-        assertEquals("SAMLResponse", context.getResponse(), "Failed to handle for valid input");
+        assertEquals(HTTP_POST_PARAM_SAML2_RESP, context.getResponse(), "Failed to handle for valid input");
     }
 }

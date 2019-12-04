@@ -31,6 +31,9 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.respons
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.application.authentication.framework.inbound.InboundConstants.RequestProcessor.CONTEXT_KEY;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.HTTP_POST_PARAM_SAML2_RESP;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_URL;
 
 /**
  * Unit test cases for SAMLLogoutRequestProcessor
@@ -38,22 +41,22 @@ import static org.wso2.carbon.identity.application.authentication.framework.inbo
 public class SAMLLogoutResponseProcessorTest extends PowerMockTestCase {
 
     @Mock
-    private SAMLLogoutRequest mockedRequest;
+    private SAMLLogoutRequest mockedLogoutRequest;
 
     @Mock
-    private IdentityRequest mockedReq;
+    private IdentityRequest mockedIdentityRequest;
 
     private SAMLLogoutResponseProcessor mockedProcessor = new SAMLLogoutResponseProcessor();
 
     @Test(expectedExceptions = NoClassDefFoundError.class)
     public void testProcess() {
 
-        when(mockedReq.getParameter(CONTEXT_KEY)).thenReturn("1234");
-        SAMLMessageContext context = new SAMLMessageContext(mockedRequest, new HashMap());
-        context.setResponse("SamlResponse");
-        context.setAcsUrl("/saml/sso");
-        InboundUtil.addContextToCache("1234", context);
-        SAMLLogoutResponse.SAMLLogoutResponseBuilder builder = mockedProcessor.process(mockedReq);
+        when(mockedIdentityRequest.getParameter(CONTEXT_KEY)).thenReturn(INBOUND_SESSION_INDEX);
+        SAMLMessageContext context = new SAMLMessageContext(mockedLogoutRequest, new HashMap());
+        context.setResponse(HTTP_POST_PARAM_SAML2_RESP);
+        context.setAcsUrl(IDP_URL);
+        InboundUtil.addContextToCache(INBOUND_SESSION_INDEX, context);
+        SAMLLogoutResponse.SAMLLogoutResponseBuilder builder = mockedProcessor.process(mockedIdentityRequest);
         assertEquals(context.getResponse(), builder.build().getResponse(), "Failed to handle for valid input");
     }
 }

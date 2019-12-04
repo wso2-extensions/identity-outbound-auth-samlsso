@@ -57,7 +57,6 @@ public class SSOConstants {
     public static final String SAML_SLO_URL = "identity/saml/slo";
     public static final Pattern SAML_SLO_ENDPOINT_URL_PATTERN = Pattern.compile("(.*)/identity/saml/slo/?");
 
-
     public class StatusCodes {
         private StatusCodes() {
 

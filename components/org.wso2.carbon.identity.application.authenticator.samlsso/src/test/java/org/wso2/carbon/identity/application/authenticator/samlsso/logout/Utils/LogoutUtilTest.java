@@ -34,6 +34,8 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SA
 import static org.testng.Assert.assertEquals;
 
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_URL;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.StatusCodes.SUCCESS_CODE;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL;
@@ -64,8 +66,8 @@ public class LogoutUtilTest extends PowerMockTestCase {
 
         when(mockedLogoutReq.getSessionIndexes()).thenReturn(mockedlist);
         when(mockedlist.get(0)).thenReturn(mockedIndex);
-        when(mockedIndex.getSessionIndex()).thenReturn("123456");
-        assertEquals(SAMLLogoutUtil.getSessionIndex(mockedLogoutReq), "123456");
+        when(mockedIndex.getSessionIndex()).thenReturn(INBOUND_SESSION_INDEX);
+        assertEquals(SAMLLogoutUtil.getSessionIndex(mockedLogoutReq), INBOUND_SESSION_INDEX);
     }
 
     @Test
@@ -74,18 +76,18 @@ public class LogoutUtilTest extends PowerMockTestCase {
         SAMLMessageContext mockedContext = new SAMLMessageContext(mockedIdentityRequest, new HashMap());
         Map<String, String> mockedFedIdPConfigs = new HashMap<>();
         mockedFedIdPConfigs.put(IS_SLO_REQUEST_ACCEPTED, "true");
-        mockedFedIdPConfigs.put(SSO_URL, "https:localhost/9444/samlsso");
-        mockedFedIdPConfigs.put(SP_ENTITY_ID, "localhost");
+        mockedFedIdPConfigs.put(SSO_URL, IDP_URL);
+        mockedFedIdPConfigs.put(SP_ENTITY_ID, "wso2is");
         mockedFedIdPConfigs.put(IS_AUTHN_RESP_SIGNED, "false");
         mockedFedIdPConfigs.put(INCLUDE_CERT, "false");
         mockedContext.setFedIdPConfigs(mockedFedIdPConfigs);
         mockedContext.setTenantDomain(SUPER_TENANT_DOMAIN_NAME);
 
-        LogoutResponse logoutResp = SAMLLogoutUtil.buildResponse(mockedContext, "1234",
-                SUCCESS_CODE, "building logout response");
-        assertEquals(logoutResp.getInResponseTo(), "1234","Failed to handle for valid input");
-        assertEquals(logoutResp.getStatus().getStatusCode().getValue(), SUCCESS_CODE,"Failed to handle for valid input");
-        assertEquals(logoutResp.getStatus().getStatusMessage().getMessage(), "building logout response",
+        LogoutResponse logoutResp = SAMLLogoutUtil.buildResponse(mockedContext, INBOUND_SESSION_INDEX,
+                SUCCESS_CODE, "SAML logout response");
+        assertEquals(logoutResp.getInResponseTo(), INBOUND_SESSION_INDEX, "Failed to handle for valid input");
+        assertEquals(logoutResp.getStatus().getStatusCode().getValue(), SUCCESS_CODE, "Failed to handle for valid input");
+        assertEquals(logoutResp.getStatus().getStatusMessage().getMessage(), "SAML logout response",
                 "Failed to handle for valid input");
     }
 }

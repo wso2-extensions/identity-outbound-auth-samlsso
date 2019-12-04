@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
-import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.LambdaExceptionUtil;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SAMLLogoutUtil;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
@@ -87,9 +87,9 @@ public class LogoutRequestValidator {
      * Validate the SAML version of the logout request.
      *
      * @param logoutRequest {@link LogoutRequest} object to be validated.
-     * @throws SAMLIdentityException If SAML version validation fails.
+     * @throws SAMLLogoutException If SAML version validation fails.
      */
-    private void isSAMLVersionValid(LogoutRequest logoutRequest) throws SAMLIdentityException {
+    private void isSAMLVersionValid(LogoutRequest logoutRequest) throws SAMLLogoutException {
 
         if (!(SAMLVersion.VERSION_20.equals(logoutRequest.getVersion()))) {
             String notification = "Invalid SAML Version in Logout Request. SAML Version should be equal to 2.0";
@@ -99,7 +99,7 @@ public class LogoutRequestValidator {
             samlMessageContext.setValidStatus(false);
             String errorResponse = SAMLLogoutUtil.buildErrorResponse(samlMessageContext, logoutRequest.getID(),
                     SSOConstants.StatusCodes.VERSION_MISMATCH, notification);
-            throw new SAMLIdentityException(notification, errorResponse, logoutRequest.getDestination(),
+            throw new SAMLLogoutException(notification, errorResponse, logoutRequest.getDestination(),
                     samlMessageContext.getRelayState());
         }
     }
@@ -108,9 +108,9 @@ public class LogoutRequestValidator {
      * Validate the issuer of the logout request.
      *
      * @param logoutRequest {@link LogoutRequest} object to be validated.
-     * @throws SAMLIdentityException If Issuer of the Logout Request validation fails.
+     * @throws SAMLLogoutException If Issuer of the Logout Request validation fails.
      */
-    private void isIssuerValid(LogoutRequest logoutRequest) throws SAMLIdentityException {
+    private void isIssuerValid(LogoutRequest logoutRequest) throws SAMLLogoutException {
 
         if (logoutRequest.getIssuer().getValue() == null) {
             String notification = "Issuer value cannot be null in the Logout Request";
@@ -120,7 +120,7 @@ public class LogoutRequestValidator {
             samlMessageContext.setValidStatus(false);
             String errorResponse = SAMLLogoutUtil.buildErrorResponse(samlMessageContext, logoutRequest.getID(),
                     SSOConstants.StatusCodes.REQUESTOR_ERROR, notification);
-            throw new SAMLIdentityException(notification, errorResponse, logoutRequest.getDestination(),
+            throw new SAMLLogoutException(notification, errorResponse, logoutRequest.getDestination(),
                     samlMessageContext.getRelayState());
         }
         if (StringUtils.isBlank(logoutRequest.getIssuer().getFormat()) ||
@@ -132,7 +132,7 @@ public class LogoutRequestValidator {
             samlMessageContext.setValidStatus(false);
             String errorResponse = SAMLLogoutUtil.buildErrorResponse(samlMessageContext, logoutRequest.getID(),
                     SSOConstants.StatusCodes.REQUESTOR_ERROR, notification);
-            throw new SAMLIdentityException(notification, errorResponse, logoutRequest.getDestination(),
+            throw new SAMLLogoutException(notification, errorResponse, logoutRequest.getDestination(),
                     samlMessageContext.getRelayState());
         }
     }
@@ -141,9 +141,9 @@ public class LogoutRequestValidator {
      * Validate the subject of the logout request.
      *
      * @param logoutRequest {@link LogoutRequest} object to be validated.
-     * @throws SAMLIdentityException If Subject of the Logout Request validation fails.
+     * @throws SAMLLogoutException If Subject of the Logout Request validation fails.
      */
-    private void isSubjectValid(LogoutRequest logoutRequest) throws SAMLIdentityException {
+    private void isSubjectValid(LogoutRequest logoutRequest) throws SAMLLogoutException {
 
         if (logoutRequest.getNameID() == null && logoutRequest.getBaseID() == null
                 && logoutRequest.getEncryptedID() == null) {
@@ -154,7 +154,7 @@ public class LogoutRequestValidator {
             samlMessageContext.setValidStatus(false);
             String errorResponse = SAMLLogoutUtil.buildErrorResponse(samlMessageContext, logoutRequest.getID(),
                     SSOConstants.StatusCodes.REQUESTOR_ERROR, notification);
-            throw new SAMLIdentityException(notification, errorResponse, logoutRequest.getDestination(),
+            throw new SAMLLogoutException(notification, errorResponse, logoutRequest.getDestination(),
                     samlMessageContext.getRelayState());
         }
     }
@@ -163,9 +163,9 @@ public class LogoutRequestValidator {
      * Validate the signature of the logout request.
      *
      * @param logoutRequest {@link LogoutRequest} object to be validated.
-     * @throws SAMLIdentityException If Signature of the Logout Request validation fails.
+     * @throws SAMLLogoutException If Signature of the Logout Request validation fails.
      */
-    private void isValidLogoutReqSignature(LogoutRequest logoutRequest) throws SAMLIdentityException {
+    private void isValidLogoutReqSignature(LogoutRequest logoutRequest) throws SAMLLogoutException {
 
         if (Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_LOGOUT_REQ_SIGNED).toString()) &&
                 (!SAMLLogoutUtil.isValidSignature(logoutRequest, samlMessageContext))) {
@@ -177,7 +177,7 @@ public class LogoutRequestValidator {
             samlMessageContext.setValidStatus(false);
             String errorResponse = SAMLLogoutUtil.buildErrorResponse(samlMessageContext,
                     logoutRequest.getID(), SSOConstants.StatusCodes.REQUESTOR_ERROR, notification);
-            throw new SAMLIdentityException(notification, errorResponse, logoutRequest.getDestination(),
+            throw new SAMLLogoutException(notification, errorResponse, logoutRequest.getDestination(),
                     samlMessageContext.getRelayState());
         }
     }

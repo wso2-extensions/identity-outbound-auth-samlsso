@@ -23,7 +23,6 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context
 
 /**
  * This class  holds the necessary parameters for building the HTTPServletResponse.
- * <p>
  * SAMLLogoutResponseBuilder is an inner class of this class and it is responsible
  * or building a concrete instance of SAMLLogoutResponse for the framework when needed.
  */

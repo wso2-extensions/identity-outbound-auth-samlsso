@@ -38,6 +38,8 @@ import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_NAME;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
 
 /**
  * Unit test cases for SessionInfoDAO
@@ -48,6 +50,7 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
 
     private static Map<String, BasicDataSource> dataSourceMap = new HashMap<>();
     private static final String DB_NAME = "testSAMLSLO";
+    private static final String SAML_INDEX = "94911684-8ef8-407b-bc59-e435b6270858";
 
     @Test
     public void setupDatabase() throws Exception {
@@ -58,8 +61,9 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
             prepareConnection(connection1, false);
 
             String sql = "INSERT INTO IDN_FEDERATED_AUTH_SESSION_MAPPING " +
-                    "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE) VALUES " +
-                    "('94911684-8ef8-407b-bc59-e435b6270858', '1234A', 'secondary', 'samlssoAuthenticator', 'samlsso');";
+                    "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE) VALUES ( '" +
+                    SAML_INDEX + "' , '" + INBOUND_SESSION_INDEX + "' , '" + IDP_NAME + "' , " +
+                    "'samlssoAuthenticator', 'samlsso');";
             PreparedStatement statement = connection1.prepareStatement(sql);
             statement.execute();
         }
@@ -74,7 +78,7 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
             if (resultSet.next()) {
                 result = resultSet.getString("SESSION_ID");
             }
-            assertEquals("1234A", result, "Failed to handle for valid input");
+            assertEquals(INBOUND_SESSION_INDEX, result, "Failed to handle for valid input");
         }
     }
 

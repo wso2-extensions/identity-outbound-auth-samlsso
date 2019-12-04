@@ -21,7 +21,6 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.reques
 import java.util.Enumeration;
 import org.mockito.Mock;
 import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,7 +28,9 @@ import javax.servlet.http.HttpServletResponse;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.SAML2_POST_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SAML_SLO_URL;
 
 /**
  * Unit test cases for SAMLLogoutRequestFactory
@@ -45,14 +46,13 @@ public class SAMLLogoutRequestFactoryTest extends PowerMockTestCase {
     @Mock
     private Enumeration<String> mockedList;
 
-
     private SAMLLogoutRequestFactory samlLogoutRequestFactory = new SAMLLogoutRequestFactory();
 
     @Test
     public void testCanHandle() {
 
-        when(mockedHttpServletRequest.getParameter("SAMLRequest")).thenReturn("SAMLRequest");
-        when(mockedHttpServletRequest.getRequestURI()).thenReturn("/identity/saml/slo/");
+        when(mockedHttpServletRequest.getParameter(HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn(HTTP_POST_PARAM_SAML2_AUTH_REQ);
+        when(mockedHttpServletRequest.getRequestURI()).thenReturn(INBOUND_SAML_SLO_URL);
         assertTrue(samlLogoutRequestFactory.canHandle(mockedHttpServletRequest, mockedHttpServletResponse),
                 "Failed to handle for valid input");
     }
@@ -60,8 +60,8 @@ public class SAMLLogoutRequestFactoryTest extends PowerMockTestCase {
     @Test
     public void testCanHandleFalse() {
 
-        when(mockedHttpServletRequest.getParameter("SAMLRequest")).thenReturn(null);
-        when(mockedHttpServletRequest.getRequestURI()).thenReturn("/identity/saml/slo/");
+        when(mockedHttpServletRequest.getParameter(HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn(null);
+        when(mockedHttpServletRequest.getRequestURI()).thenReturn(INBOUND_SAML_SLO_URL);
         assertFalse(samlLogoutRequestFactory.canHandle(mockedHttpServletRequest, mockedHttpServletResponse),
                 "Able to handle for invalid input");
     }
@@ -69,8 +69,8 @@ public class SAMLLogoutRequestFactoryTest extends PowerMockTestCase {
     @Test
     public void testCanHandleFalseWithURI() {
 
-        when(mockedHttpServletRequest.getParameter("SAMLRequest")).thenReturn("SAMLRequest");
-        when(mockedHttpServletRequest.getRequestURI()).thenReturn("/identity/saml/sso/");
+        when(mockedHttpServletRequest.getParameter(HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn(HTTP_POST_PARAM_SAML2_AUTH_REQ);
+        when(mockedHttpServletRequest.getRequestURI()).thenReturn("/identity/saml/sso");
         assertFalse(samlLogoutRequestFactory.canHandle(mockedHttpServletRequest, mockedHttpServletResponse),
                 "Able to handle for invalid input");
     }

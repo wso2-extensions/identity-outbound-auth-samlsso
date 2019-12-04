@@ -25,6 +25,9 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Htt
 
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertTrue;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_URL;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.HTTP_POST_PARAM_SAML2_RESP;
 
 /**
  * Unit test cases for SAMLLogoutResponseFactory
@@ -45,14 +48,14 @@ public class SAMLLogoutResponseFactoryTest extends PowerMockTestCase {
     @Test
     public void testCreate() {
 
-        when(mockedIdentityResponse.getResponse()).thenReturn("SAMLResponse");
-        when(mockedIdentityResponse.getAcsUrl()).thenReturn("saml/slo");
-        when(mockedIdentityResponse.getRelayState()).thenReturn("1234");
+        when(mockedIdentityResponse.getResponse()).thenReturn(HTTP_POST_PARAM_SAML2_RESP);
+        when(mockedIdentityResponse.getAcsUrl()).thenReturn(IDP_URL);
+        when(mockedIdentityResponse.getRelayState()).thenReturn(INBOUND_SESSION_INDEX);
 
         HttpIdentityResponse.HttpIdentityResponseBuilder responseBuilder = samlLogoutResponseFactory.
                 create(mockedIdentityResponse);
-        assertTrue(responseBuilder.build().getBody().contains("SAMLResponse"), "Failed to handle for valid input");
-        assertTrue(responseBuilder.build().getBody().contains("saml/slo"), "Failed to handle for valid input");
-        assertTrue(responseBuilder.build().getBody().contains("1234"), "Failed to handle for valid input");
+        assertTrue(responseBuilder.build().getBody().contains(HTTP_POST_PARAM_SAML2_RESP), "Failed to handle for valid input");
+        assertTrue(responseBuilder.build().getBody().contains(IDP_URL), "Failed to handle for valid input");
+        assertTrue(responseBuilder.build().getBody().contains(INBOUND_SESSION_INDEX), "Failed to handle for valid input");
     }
 }

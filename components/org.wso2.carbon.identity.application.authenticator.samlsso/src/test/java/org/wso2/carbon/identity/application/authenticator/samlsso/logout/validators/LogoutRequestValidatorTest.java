@@ -62,7 +62,6 @@ public class LogoutRequestValidatorTest extends PowerMockTestCase {
     @Mock
     private EncryptedID mockedEncId;
 
-
     @BeforeTest
     public void setUp() {
 
@@ -71,7 +70,7 @@ public class LogoutRequestValidatorTest extends PowerMockTestCase {
 
     @Test(dataProvider = "logoutRequestBuilderDataProvider")
     public void testIsValid(SAMLVersion version, String issuerID, String issuerFormat, NameID nameId, BaseID baseId,
-                            EncryptedID encId, String isLogReqSigned, Boolean expectedValue) {
+                            EncryptedID encId, String isLogReqSigned, Boolean actualValue) {
 
         SAMLMessageContext mockedContext = new SAMLMessageContext(mockedIdentityRequest, new HashMap());
         mockedContext.setValidStatus(true);
@@ -94,8 +93,8 @@ public class LogoutRequestValidatorTest extends PowerMockTestCase {
         mockedContext.setFedIdPConfigs(mockedFedIdPConfigs);
 
         LogoutRequestValidator validator = new LogoutRequestValidator(mockedContext);
-        Boolean actualValue = validator.isValidate(logReq);
-        assertEquals(actualValue, actualValue);
+        Boolean expectedValue = validator.isValidate(logReq);
+        assertEquals(actualValue, expectedValue);
     }
 
     @DataProvider(name = "logoutRequestBuilderDataProvider")

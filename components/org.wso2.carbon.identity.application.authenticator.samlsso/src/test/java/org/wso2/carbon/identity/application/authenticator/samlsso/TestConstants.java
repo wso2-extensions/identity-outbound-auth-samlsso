@@ -77,48 +77,6 @@ public final class TestConstants {
                     "cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6YWM6Y2xhc3NlczpQYXNzd29yZFByb3RlY3RlZFRyYW5zcG9ydDwvc2FtbDp" +
                     "BdXRobkNvbnRleHRDbGFzc1JlZj48L3NhbWwycDpSZXF1ZXN0ZWRBdXRobkNvbnRleHQ+PC9zYW1scDpBdXRoblJlcXVlc3Q+";
 
-    public static final String SAML2_LOGOUT_POST_REQUEST ="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNhb" +
-            "WwycDpMb2dvdXRSZXF1ZXN0IERlc3RpbmF0aW9uPSJodHRwczovL2xvY2FsaG9zdDo5NDQzL2lkZW50aXR5IiBJRD0iXzY5NGNkMWYw" +
-            "MjczZGU5NjYzMjdmYmE2OTYyY2IxNDhhIiBJc3N1ZUluc3RhbnQ9IjIwMTktMTEtMjZUMTY6MTQ6NTcuNDQwWiIgTm90T25PckFmdGV" +
-            "yPSIyMDE5LTExLTI2VDE2OjE5OjU3LjQ0MFoiIFJlYXNvbj0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmxvZ291dDp1c2VyIi" +
-            "BWZXJzaW9uPSIyLjAiIHhtbG5zOnNhbWwycD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOnByb3RvY29sIj48c2FtbDI6SXNzd" +
-            "WVyIEZvcm1hdD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOm5hbWVpZC1mb3JtYXQ6ZW50aXR5IiB4bWxuczpzYW1sMj0idXJu" +
-            "Om9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmFzc2VydGlvbiI+bG9jYWxob3N0PC9zYW1sMjpJc3N1ZXI+PGRzOlNpZ25hdHVyZSB4bWx" +
-            "uczpkcz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wOS94bWxkc2lnIyI+CjxkczpTaWduZWRJbmZvPgo8ZHM6Q2Fub25pY2FsaXphdG" +
-            "lvbk1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMTAveG1sLWV4Yy1jMTRuIyIvPgo8ZHM6U2lnbmF0dXJlT" +
-            "WV0aG9kIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wOS94bWxkc2lnI3JzYS1zaGExIi8+CjxkczpSZWZlcmVuY2Ug" +
-            "VVJJPSIjXzY5NGNkMWYwMjczZGU5NjYzMjdmYmE2OTYyY2IxNDhhIj4KPGRzOlRyYW5zZm9ybXM+CjxkczpUcmFuc2Zvcm0gQWxnb3J" +
-            "pdGhtPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwLzA5L3htbGRzaWcjZW52ZWxvcGVkLXNpZ25hdHVyZSIvPgo8ZHM6VHJhbnNmb3JtIE" +
-            "FsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS8xMC94bWwtZXhjLWMxNG4jIi8+CjwvZHM6VHJhbnNmb3Jtcz4KPGRzOkRpZ" +
-            "2VzdE1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1sZHNpZyNzaGExIi8+CjxkczpEaWdlc3RWYWx1" +
-            "ZT5wTGozSDhaazFiUkpZRkRFR3d5ZGtwdCswazg9PC9kczpEaWdlc3RWYWx1ZT4KPC9kczpSZWZlcmVuY2U+CjwvZHM6U2lnbmVkSW5" +
-            "mbz4KPGRzOlNpZ25hdHVyZVZhbHVlPgpDM2JPMi9SMllUdGZodklBOTZ2V1lhaksxTkhGUkFuWFBOWmtyOVRoQ1A1ck5DZWxzcEYzaU" +
-            "10K1ArL2RYVkJ4WG9NMzgvck43NjZUCmJEK004RHM1a1BSV0txSm5iaDhzRVU5ZHVNb0g5UEp6RHZzQzU1OTlnQVJJcFZKTjl6a0tVQ" +
-            "XVvQnk4RWl0ZW9Jcm9ZV0tmdEVDVFAKZFlzcTVPOVBxdzB3N0Vjd0M4aEM3RURxMHE1UDFwK25Ia3ZSdlc4REZiSzRrY2NqRHNJa3Vn" +
-            "VFFUTEp5V3lPdGNlTytIbFJQS3d3VgpTNGNTVGFwc3k3YzhFOVlMMU9Ibno5SXdoRmh0RmIvNEM0cDhlY25taHJ6VFN0YlJFTytOMEh" +
-            "TNTdvKzlockw4a0tYZ0Zpd3FZTUJBCkJhVHdRMFJFMGQ5QlpwWXdUc0VhcTc1c2txM2lHa1lESDMxNk1nPT0KPC9kczpTaWduYXR1cm" +
-            "VWYWx1ZT4KPGRzOktleUluZm8+PGRzOlg1MDlEYXRhPjxkczpYNTA5Q2VydGlmaWNhdGU+TUlJRGZUQ0NBbVdnQXdJQkFnSUViZlZqQ" +
-            "npBTkJna3Foa2lHOXcwQkFRc0ZBREJrTVFzd0NRWURWUVFHRXdKVlV6RUxNQWtHQTFVRQpDQk1DUTBFeEZqQVVCZ05WQkFjVERVMXZk" +
-            "VzUwWVdsdUlGWnBaWGN4RFRBTEJnTlZCQW9UQkZkVFR6SXhEVEFMQmdOVkJBc1RCRmRUClR6SXhFakFRQmdOVkJBTVRDV3h2WTJGc2F" +
-            "HOXpkREFlRncweE9UQTRNak14TWpVd016TmFGdzB5T1RBNE1qQXhNalV3TXpOYU1HUXgKQ3pBSkJnTlZCQVlUQWxWVE1Rc3dDUVlEVl" +
-            "FRSUV3SkRRVEVXTUJRR0ExVUVCeE1OVFc5MWJuUmhhVzRnVm1sbGR6RU5NQXNHQTFVRQpDaE1FVjFOUE1qRU5NQXNHQTFVRUN4TUVWM" +
-            "U5QTWpFU01CQUdBMVVFQXhNSmJHOWpZV3hvYjNOME1JSUJJakFOQmdrcWhraUc5dzBCCkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQWoz" +
-            "bVlNVDhOMlNSOGNwaW1kTU9UcGsvTThmT3hQRjFCSFFBaUN0bGQ0bmJrc0lMZ0pLc0EKMzRHU1A1T2g0Z0xXMjFWQ0VQUHpkR0xucWZ" +
-            "3TTZab0cvWDByY0s1KytWYnFIL3ZINENjbGJhNmZxbEx4Q3ZUaVJiUEo1OFBlNytiaQpDZVEzNjhkRzJhZUJQVjNFaE84YnIzWi9MY1" +
-            "FYQVNtaFNXcHM4SjNHT1N4LzQ5eHprSGg1OUoyZ0pIaG52anhjc3paQUYzNVNMQWI2CkYrMnJKUXJPSnM2dTdXZkp2NE5ReFN5aGNnY" +
-            "3I0Lys3N0p6TkZFVlVqNFRQU0J5MldHQWdLNXR0UDUra0czK3JLczBsUWpUbzloL2gKSzg5S2piYlJ2b3FaZHB4bndRWXhGRE9rMEN4" +
-            "aWpaVk81Q3MzY2FiZVVIWmVYZWhIU2dYajZXK1ZHTWlEZ3dJREFRQUJvemN3TlRBVQpCZ05WSFJFRURUQUxnZ2xzYjJOaGJHaHZjM1F" +
-            "3SFFZRFZSME9CQllFRkZVMkE0cEJ1UjBhS0dyZ1FBdHJTbHFXck5MTE1BMEdDU3FHClNJYjNEUUVCQ3dVQUE0SUJBUUFYK0YzMGhJd0" +
-            "krOGhPOUlROVdyNDArekw2S1RnRHhXcmFCNDUwRDdVeVovRkFwS0syUi92WXZJcWEKYitINnU5WE5DejYzK3NZZ1g2L1VCU1lXNDdvd" +
-            "zZRTWN2NzF4ZXBYYnd0THFxM01RcjZmcmdQNTJaMmp5UXRBYkRwaXJoNC9JWGtoRgorUzhEc0RGeG1sUHk0MjNMS25UcUNxSWZ5djdZ" +
-            "OFk4bHR5NUJXeWZZSlY3VjJSSm5aNHpJS3Y2NlUzZXh4dWdSMFdSR1d5NTZuSVk4CkdHYXJveHVDOWNINk5rVndOOUdtWW9DYTlQVUd" +
-            "5blE0TkhqZWc2VlN3UVoyNzlWR3BMaG9nV1M2N3g4Vi9uUit5akkrcVRqakNiSnEKc29IVlFMOTBWeGErQVNEMURWaUJBOGFyMS85Tn" +
-            "M1dklFWmV0NUdUMW5NMTBaekVLK0UxUU1HZWQ8L2RzOlg1MDlDZXJ0aWZpY2F0ZT48L2RzOlg1MDlEYXRhPjwvZHM6S2V5SW5mbz48L" +
-            "2RzOlNpZ25hdHVyZT48c2FtbDI6TmFtZUlEIEZvcm1hdD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6MS4xOm5hbWVpZC1mb3JtYXQ6" +
-            "ZW1haWxBZGRyZXNzIiB4bWxuczpzYW1sMj0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmFzc2VydGlvbiI+YWRtaW5AY2FyYm9" +
-            "uLnN1cGVyPC9zYW1sMjpOYW1lSUQ+PHNhbWwycDpTZXNzaW9uSW5kZXg+NjU3NGVhZTktNzM0MS00ZGZjLTkzODgtZGEzNWU0ODgzMT" +
-            "EyPC9zYW1sMnA6U2Vzc2lvbkluZGV4Pjwvc2FtbDJwOkxvZ291dFJlcXVlc3Q+";
-
     public static final String SAML2_SLO_POST_REQUEST = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNhbWw" +
             "ycDpMb2dvdXRSZXF1ZXN0IERlc3RpbmF0aW9uPSJodHRwczovL2xvY2FsaG9zdDo5NDQzL2lkZW50aXR5L3NhbWwvc2xvIiBJRD0iX2" +
             "E4NzE3NmY0MDA2ZWYxNDI5ODJhNGZhNDllZWY5MmM0IiBJc3N1ZUluc3RhbnQ9IjIwMTktMTEtMzBUMTg6NTk6MzUuOTU0WiIgTm90T" +
@@ -161,7 +119,6 @@ public final class TestConstants {
             "mVzcyIgeG1sbnM6c2FtbDI9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDphc3NlcnRpb24iPmFkbWluQGNhcmJvbi5zdXBlcjwv" +
             "c2FtbDI6TmFtZUlEPjxzYW1sMnA6U2Vzc2lvbkluZGV4Pjk0OTExNjg0LThlZjgtNDA3Yi1iYzU5LWU0MzViNjI3MDg1ODwvc2FtbDJ" +
             "wOlNlc3Npb25JbmRleD48L3NhbWwycDpMb2dvdXRSZXF1ZXN0Pg==";
-
 
     public static final String SAML2_REDIRECT_REQUEST = "nVNhb9owEP0rkb+ThLTqwCJUDFQNqZsY0H3YN+NcwNSxPd+F0n8/Jykdmza" +
             "E9vV89+7de8+j+2OlowN4VNbkrB+nLAIjbaHMNmdP64fegN2PRygq7fikpp1Zwo8akKIwZ5C3DzmrveFWoEJuRAXISfLV5PMjz+KUO2" +
@@ -429,6 +386,8 @@ public final class TestConstants {
 
     public static final String INBOUND_IDP_URL = "https://localhost:9443/samlsso";
 
+    public static final String INBOUND_SAML_SLO_URL = "https://localhost:9443/identity/saml/slo";
+
     public static final String AUTHENTICATED_USER = "admin";
 
     public static final String SP_ENTITY_ID = "wso2is";
@@ -436,6 +395,8 @@ public final class TestConstants {
     public static final String ACS_URL = "http://localhost:9443/commonauth";
 
     public static final String ACS_INDEX = "123456789";
+
+    public static final String IDP_NAME = "secondary";
 
     public static final String IDP_URL = "https://localhost:9444/samlsso";
 

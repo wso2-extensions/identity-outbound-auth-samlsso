@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Unit test cases for  SAMLMessageContext
+ * Unit test cases for  SAMLLogoutRequestTest
  */
 public class SAMLLogoutRequestTest extends PowerMockTestCase {
 
@@ -36,7 +36,6 @@ public class SAMLLogoutRequestTest extends PowerMockTestCase {
 
     @Mock
     private HttpServletResponse mockedHttpResponse;
-
 
     @Test
     public void testBuildRequest() throws Exception {

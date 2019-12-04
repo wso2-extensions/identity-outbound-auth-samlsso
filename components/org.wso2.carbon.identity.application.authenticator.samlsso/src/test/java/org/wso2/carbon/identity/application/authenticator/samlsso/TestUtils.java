@@ -23,8 +23,24 @@ import org.joda.time.DateTime;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.common.xml.SAMLConstants;
-import org.opensaml.saml.saml2.core.*;
-import org.opensaml.saml.saml2.core.impl.*;
+import org.opensaml.saml.saml2.core.AuthnContextClassRef;
+import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration;
+import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.LogoutRequest;
+import org.opensaml.saml.saml2.core.NameID;
+import org.opensaml.saml.saml2.core.NameIDPolicy;
+import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.opensaml.saml.saml2.core.RequestedAuthnContext;
+import org.opensaml.saml.saml2.core.SessionIndex;
+import org.opensaml.saml.saml2.core.impl.AuthnContextClassRefBuilder;
+import org.opensaml.saml.saml2.core.impl.AuthnRequestBuilder;
+import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.saml.saml2.core.impl.LogoutRequestBuilder;
+import org.opensaml.saml.saml2.core.impl.NameIDBuilder;
+import org.opensaml.saml.saml2.core.impl.NameIDPolicyBuilder;
+import org.opensaml.saml.saml2.core.impl.RequestedAuthnContextBuilder;
+import org.opensaml.saml.saml2.core.impl.SessionIndexBuilder;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.io.Marshaller;
 import org.opensaml.core.xml.io.MarshallingException;
@@ -49,8 +65,6 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import static org.opensaml.saml.saml2.core.StatusCode.SUCCESS;
 
 /**
  * Test util methods
@@ -134,7 +148,7 @@ public class TestUtils {
         return authRequest;
     }
 
-    public static LogoutRequest buildLogoutRequest(RequestData requestData) {
+    private static LogoutRequest buildLogoutRequest(RequestData requestData) {
 
         LogoutRequest logoutReq = new LogoutRequestBuilder().buildObject();
 
@@ -163,47 +177,12 @@ public class TestUtils {
         return logoutReq;
     }
 
-    public static LogoutResponse buildLogoutResponse(RequestData requestData, String statusCode, String statusMsg, String inResponseTo){
-        LogoutResponse logoutResp = new LogoutResponseBuilder().buildObject();
-        logoutResp.setID(createID());
+    private static String encodeRequestMessage(RequestAbstractType requestMessage, String binding) throws
+            MarshallingException, IOException {
 
-        IssuerBuilder issuerBuilder = new IssuerBuilder();
-        Issuer issuer = issuerBuilder.buildObject();
-        issuer.setValue(requestData.getSpEntityId());
-        logoutResp.setIssuer(issuer);
-
-        logoutResp.setInResponseTo(inResponseTo);
-        logoutResp.setVersion(SAMLVersion.VERSION_20);
-        logoutResp.setStatus(buildStatus(statusCode, statusMsg));
-        logoutResp.setIssueInstant(new DateTime());
-        logoutResp.setDestination(requestData.getAcsUrl());
-        return logoutResp;
-    }
-
-
-    private static Status buildStatus(String responseStatusCode, String responseStatusMsg) {
-
-        Status status = new StatusBuilder().buildObject();
-
-        // Set the status code.
-        StatusCode statusCode = new StatusCodeBuilder().buildObject();
-        statusCode.setValue(responseStatusCode);
-        status.setStatusCode(statusCode);
-
-        // Set the status Message.
-        if (StringUtils.isNotBlank(responseStatusMsg)) {
-            StatusMessage statusMessage = new StatusMessageBuilder().buildObject();
-            statusMessage.setMessage(responseStatusMsg);
-            status.setStatusMessage(statusMessage);
-        }
-        return status;
-    }
-
-    private static String encode(XMLObject message, String binding) throws
-            MarshallingException, IOException{
-        Marshaller marshaller = XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(message);
+        Marshaller marshaller = XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(requestMessage);
         Element authDOM;
-        authDOM = marshaller.marshall(message);
+        authDOM = marshaller.marshall(requestMessage);
         OutputStream rspWrt = new ByteArrayOutputStream();
         SerializeSupport.writeNode(authDOM, rspWrt);
         if (SAMLConstants.SAML2_REDIRECT_BINDING_URI.equals(binding)) {
@@ -220,17 +199,6 @@ public class TestUtils {
         } else {
             return new String(org.apache.commons.codec.binary.Base64.encodeBase64(rspWrt.toString().getBytes(), false));
         }
-    }
-    private static String encodeRequestMessage(RequestAbstractType requestMessage, String binding) throws
-            MarshallingException, IOException {
-
-        return encode(requestMessage,binding);
-    }
-
-    public static String encodeResponseMessage(LogoutResponse responseMessage, String binding) throws
-            MarshallingException, IOException {
-
-        return encode(responseMessage,binding);
     }
 
     public static XMLObject unmarshall(String authReqStr) throws Exception {

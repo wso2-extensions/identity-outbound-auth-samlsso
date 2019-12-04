@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 
 import java.sql.Connection;
@@ -46,11 +46,11 @@ public class SessionInfoDAO {
      *
      * @param samlIndex Session Index of the SAML Logout Request.
      * @return Map of session details.
-     * @throws SAMLIdentityException If DB execution fails.
+     * @throws SAMLLogoutException If DB execution fails.
      */
-    public Map<String, String> getSessionDetails(String samlIndex) throws SAMLIdentityException {
+    public Map<String, String> getSessionDetails(String samlIndex) throws SAMLLogoutException {
 
-        final String query = "SELECT * FROM IDN_FEDERATED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID =?";
+        final String query = "SELECT * FROM IDN_FEDERATED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID = ?";
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -65,16 +65,11 @@ public class SessionInfoDAO {
                     log.debug("Retrieved session index: " + resultSet.getString("SESSION_ID") +
                             " for federated idp session index: " + samlIndex);
                 }
-
                 return sessionDetails;
             }
         } catch (SQLException e) {
-            String notification = "Unable to retrieve session details from the database with SAML Index: "
-                    + samlIndex;
-            if (log.isDebugEnabled()) {
-                log.debug(notification, e);
-            }
-            throw new SAMLIdentityException(notification, e);
+            throw new SAMLLogoutException("Unable to retrieve session details from the database with SAML Index: "
+                    + samlIndex, e);
         }
     }
 }

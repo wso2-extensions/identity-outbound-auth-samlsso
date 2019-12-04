@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * This class holds the necessary parameters of the HTTPServletRequest.
- * <p>
  * SAMLLogoutRequestBuilder is an inner class of this class and it is responsible
  * for building a concrete instance of SAMLLogoutRequest for the framework when needed.
  */

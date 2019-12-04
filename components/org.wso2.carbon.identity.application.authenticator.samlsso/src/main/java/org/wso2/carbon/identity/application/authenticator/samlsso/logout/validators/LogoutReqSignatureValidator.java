@@ -119,6 +119,7 @@ public class LogoutReqSignatureValidator {
      * @return CriteriaSet.
      */
     private static CriteriaSet buildCriteriaSet(String issuer) {
+
         CriteriaSet criteriaSet = new CriteriaSet();
         if (StringUtils.isNotBlank(issuer)) {
             criteriaSet.add(new EntityIdCriterion(issuer));
@@ -133,7 +134,7 @@ public class LogoutReqSignatureValidator {
      * @param queryString SAML request (passed an an HTTP query parameter).
      * @return String     Signature Algorithm of the request.
      * @throws SecurityException If process of extracting signature algorithm fails.
-     * @throws IdentityException       If decoding not supproted
+     * @throws IdentityException If decoding not supproted
      */
     private static String getSignatureAlgorithm(String queryString) throws SecurityException,
             IdentityException {
@@ -144,8 +145,7 @@ public class LogoutReqSignatureValidator {
         }
 
         try {
-            /* Split 'SigAlg=<sigalg_value>' query param using '=' as the delimiter,
-            and get the Signature Algorithm. */
+            // Split 'SigAlg=<sigalg_value>' query param using '=' as the delimiter,and get the Signature Algorithm.
             if (StringUtils.isNotBlank(sigAlgQueryParam.split("=")[1])) {
                 return URLDecoder.decode(sigAlgQueryParam.split("=")[1], StandardCharsets.UTF_8.name());
             }
@@ -172,14 +172,12 @@ public class LogoutReqSignatureValidator {
         }
 
         try {
-            /* Split 'Signature=<sig_value>' query param using '=' as the delimiter,
-		      and get the Signature value. */
+            // Split 'Signature=<sig_value>' query param using '=' as the delimiter,and get the Signature value.
             if (StringUtils.isNotBlank(signatureQueryParam.split("=")[1])) {
                 return Base64Support.decode(URLDecoder.decode(signatureQueryParam.split("=")[1],
                         StandardCharsets.UTF_8.name()));
             }
             throw new SecurityException("Couldn't extract the signature value from the query string parameter: "
-
                     + signatureQueryParam);
         } catch (UnsupportedEncodingException e) {
             throw new IdentityException("Error occurred while decoding signature query parameter: "
@@ -218,7 +216,6 @@ public class LogoutReqSignatureValidator {
     private static String buildSignedContentString(String queryString) throws SecurityException {
 
         StringBuilder builder = new StringBuilder();
-
         if (StringUtils.isBlank(URISupport.getRawQueryStringParameter(queryString,
                 HTTP_POST_PARAM_SAML2_AUTH_REQ))) {
             throw new SecurityException("Process of extracting SAMLRequest from query string failed: "
@@ -229,7 +226,6 @@ public class LogoutReqSignatureValidator {
         appendParameter(builder, queryString, RELAY_STATE);
         // This is mandatory, but has already been checked in superclass.
         appendParameter(builder, queryString, SIGNATURE_ALGORITHM);
-
         return builder.toString();
     }
 

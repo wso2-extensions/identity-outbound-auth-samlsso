@@ -36,7 +36,7 @@ import org.wso2.carbon.identity.application.authentication.framework.util.Framew
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao.SessionInfoDAO;
-import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SAMLLogoutUtil;
@@ -87,11 +87,11 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      *
      * @param identityRequest {@link IdentityRequest} Identity Request of SAML Logout Request type.
      * @return FrameworkLogoutResponse.FrameworkLogoutResponseBuilder instance.
-     * @throws SAMLIdentityException Error when processing the Logout Request.
+     * @throws SAMLLogoutException Error when processing the Logout Request.
      */
     @Override
     public FrameworkLogoutResponse.FrameworkLogoutResponseBuilder process(IdentityRequest identityRequest)
-            throws SAMLIdentityException {
+            throws SAMLLogoutException {
 
         SAMLMessageContext<String, String> samlMessageContext = new SAMLMessageContext<>(identityRequest,
                 new HashMap<>());
@@ -112,7 +112,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
                 samlMessageContext.setValidStatus(true);
             } else {
                 samlMessageContext.setValidStatus(false);
-                throw new SAMLIdentityException("Invalid Single Logout SAML Request");
+                throw new SAMLLogoutException("Invalid Single Logout SAML Request");
             }
 
             samlMessageContext.setIdPSessionID(SAMLLogoutUtil.getSessionIndex(logoutRequest));
@@ -121,7 +121,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             }
 
             if (!Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_SLO_REQUEST_ACCEPTED))) {
-                throw new SAMLIdentityException("Single logout requests from the federated IdP: "
+                throw new SAMLLogoutException("Single logout requests from the federated IdP: "
                         + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " are not accepted");
             }
 
@@ -135,7 +135,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             return buildResponseForFrameworkLogout(samlMessageContext);
 
         } catch (SAMLSSOException e) {
-            throw new SAMLIdentityException("Error when processing the Logout Request.", e);
+            throw new SAMLLogoutException("Error when processing the Logout Request.", e);
         }
     }
 
@@ -190,10 +190,10 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
      * Populate SAMLMessageContext with session details of the SAML index.
      *
      * @param samlMessageContext {@link SAMLMessageContext} object which has details on logout flow.
-     * @throws SAMLIdentityException Error while retrieving the session details.
+     * @throws SAMLLogoutException Error while retrieving the session details.
      */
     private void populateContextWithSessionDetails(SAMLMessageContext<String, String> samlMessageContext)
-            throws SAMLIdentityException {
+            throws SAMLLogoutException {
 
         SessionInfoDAO sessionInfoDAO = new SessionInfoDAO();
         Map<String, String> sessionDetails = sessionInfoDAO.getSessionDetails
@@ -209,12 +209,9 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
                 identityProvider = IdentityProviderManager.getInstance().getIdPByName(
                         sessionDetails.get(IDP_NAME), samlMessageContext.getTenantDomain());
             } catch (IdentityProviderManagementException e) {
-                String notification = "Error when getting the Identity Provider by IdP name : "
-                        + sessionDetails.get(IDP_NAME) + "with tenant domain: " + samlMessageContext.getTenantDomain();
-                if (log.isDebugEnabled()) {
-                    log.debug(notification);
-                }
-                throw new SAMLIdentityException(notification, e);
+                throw new SAMLLogoutException("Error when getting the Identity Provider by IdP name: "
+                        + sessionDetails.get(IDP_NAME) + "with tenant domain: "
+                            + samlMessageContext.getTenantDomain(), e);
             }
             samlMessageContext.setSessionID(sessionDetails.get(SESSION_ID));
             samlMessageContext.setFederatedIdP(identityProvider);

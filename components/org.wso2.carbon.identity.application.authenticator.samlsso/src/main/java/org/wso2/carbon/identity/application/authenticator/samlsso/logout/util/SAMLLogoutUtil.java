@@ -40,7 +40,7 @@ import org.opensaml.saml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.security.SecurityException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
-import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLIdentityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutReqSignatureValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
@@ -92,7 +92,7 @@ public class SAMLLogoutUtil {
      */
     public static void doBootstrap() {
 
-        /* Initializing the OpenSAML library */
+        // Initializing the OpenSAML library.
         if (!bootStrapped) {
             Thread thread = Thread.currentThread();
             ClassLoader loader = thread.getContextClassLoader();
@@ -106,7 +106,6 @@ public class SAMLLogoutUtil {
                 thread.setContextClassLoader(loader);
             }
         }
-
     }
 
     /**
@@ -170,16 +169,16 @@ public class SAMLLogoutUtil {
      * @param statusCode         Status Code of the Error Response.
      * @param statusMsg          Status Message of the Error Response.
      * @return String            Encoded Error Response.
-     * @throws SAMLIdentityException Error when building the Error Response.
+     * @throws SAMLLogoutException Error when building the Error Response.
      */
     public static String buildErrorResponse(SAMLMessageContext samlMessageContext, String
-            inResponseTo, String statusCode, String statusMsg) throws SAMLIdentityException {
+            inResponseTo, String statusCode, String statusMsg) throws SAMLLogoutException {
 
         try {
             LogoutResponse errorResponse = buildResponse(samlMessageContext, inResponseTo, statusCode, statusMsg);
             return SSOUtils.encode(SSOUtils.marshall(errorResponse));
         } catch (SAMLSSOException e) {
-            throw new SAMLIdentityException("Error Serializing the SAML Response", e);
+            throw new SAMLLogoutException("Error Serializing the SAML Response", e);
         }
     }
 
@@ -191,10 +190,10 @@ public class SAMLLogoutUtil {
      * @param statusCode         Status Code of the Error Response.
      * @param statusMsg          Status Message of the Error Response.
      * @return Logout Response   Built Logout Response.
-     * @throws SAMLIdentityException Error when building the Logout Response.
+     * @throws SAMLLogoutException Error when building the Logout Response.
      */
     public static LogoutResponse buildResponse(SAMLMessageContext samlMessageContext, String inResponseTo,
-                                               String statusCode, String statusMsg) throws SAMLIdentityException {
+                                               String statusCode, String statusMsg) throws SAMLLogoutException {
 
         try {
             doBootstrap();
@@ -219,9 +218,8 @@ public class SAMLLogoutUtil {
                         new X509CredentialImpl(samlMessageContext.getTenantDomain(), null));
             }
             return logoutResp;
-
         } catch (SAMLSSOException e) {
-            throw new SAMLIdentityException("Error occurred while setting the signature of logout response", e);
+            throw new SAMLLogoutException("Error occurred while setting the signature of logout response", e);
         }
     }
 
@@ -244,10 +242,10 @@ public class SAMLLogoutUtil {
      *
      * @param logoutRequest {@link LogoutRequest}object to be validated.
      * @return true           If signature of the Logout Request is valid.
-     * @throws SAMLIdentityException Error when validating the signature.
+     * @throws SAMLLogoutException Error when validating the signature.
      */
     public static boolean isValidSignature(LogoutRequest logoutRequest, SAMLMessageContext
-            samlMessageContext) throws SAMLIdentityException {
+            samlMessageContext) throws SAMLLogoutException {
 
         String issuer = logoutRequest.getIssuer().getValue();
         X509Certificate x509Certificate = generateX509Certificate(samlMessageContext.
@@ -263,7 +261,7 @@ public class SAMLLogoutUtil {
                         issuer, x509Certificate);
             }
         } catch (SecurityException | IdentityException e) {
-            throw new SAMLIdentityException("Process of validating the signature failed for the logout request with" +
+            throw new SAMLLogoutException("Process of validating the signature failed for the logout request with" +
                     "issuer: " + logoutRequest.getIssuer().getValue(), e);
         }
     }
@@ -272,17 +270,17 @@ public class SAMLLogoutUtil {
      * Generate the X509Certificate using the certificate string value in the identity provider's configuration.
      *
      * @param certificate String value of the certificate in the IdP's configurations.
-     * @throws SAMLIdentityException Error while generating the X509Certificate.
+     * @throws SAMLLogoutException Error while generating the X509Certificate.
      */
     private static X509Certificate generateX509Certificate(String certificate)
-            throws SAMLIdentityException {
+            throws SAMLLogoutException {
 
         byte[] certificateData = java.util.Base64.getDecoder().decode(certificate);
         try {
             return (java.security.cert.X509Certificate) CertificateFactory.getInstance(CERTIFICATE_TYPE).
                     generateCertificate(new ByteArrayInputStream(certificateData));
         } catch (CertificateException e) {
-            throw new SAMLIdentityException("Error occurred while generating X509Certificate using the " +
+            throw new SAMLLogoutException("Error occurred while generating X509Certificate using the " +
                     "string value of the certificate in IdP's properties: " + certificate, e);
         }
     }
@@ -290,19 +288,18 @@ public class SAMLLogoutUtil {
     /**
      * @param logoutRequest {@link LogoutRequest} object.
      * @return String               Session Index of the Logout Request.
-     * @throws SAMLIdentityException Error while extracting the Session Index.
+     * @throws SAMLLogoutException Error while extracting the Session Index.
      */
-    public static String getSessionIndex(LogoutRequest logoutRequest) throws SAMLIdentityException {
+    public static String getSessionIndex(LogoutRequest logoutRequest) throws SAMLLogoutException {
 
-        if (CollectionUtils.isNotEmpty(logoutRequest.getSessionIndexes())) {
-            if (StringUtils.isNotBlank(logoutRequest.getSessionIndexes().get(0).getSessionIndex())) {
-                return logoutRequest.getSessionIndexes().get(0).getSessionIndex();
-            }
+        if (CollectionUtils.isNotEmpty(logoutRequest.getSessionIndexes()) &&
+                StringUtils.isNotBlank(logoutRequest.getSessionIndexes().get(0).getSessionIndex())) {
+            return logoutRequest.getSessionIndexes().get(0).getSessionIndex();
         }
         String notification = "Could not extract the session index from the logout request";
         if (log.isDebugEnabled()) {
             log.debug(notification);
         }
-        throw new SAMLIdentityException(notification);
+        throw new SAMLLogoutException(notification);
     }
 }

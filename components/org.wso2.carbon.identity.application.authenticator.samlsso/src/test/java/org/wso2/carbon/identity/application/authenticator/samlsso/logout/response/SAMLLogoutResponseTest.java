@@ -23,6 +23,9 @@ import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_ACS_URL;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.RELAY_STATE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.HTTP_POST_PARAM_SAML2_RESP;
 
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 
@@ -38,13 +41,13 @@ public class SAMLLogoutResponseTest extends PowerMockTestCase {
     public void testBuildResponse() {
 
         SAMLLogoutResponse.SAMLLogoutResponseBuilder builder = new SAMLLogoutResponse.SAMLLogoutResponseBuilder(mockedContext);
-        builder.setRelayState("1234");
-        builder.setAcsUrl("/travelocity.com");
-        builder.setResponse("SAMLResponse");
+        builder.setRelayState(RELAY_STATE);
+        builder.setAcsUrl(INBOUND_ACS_URL);
+        builder.setResponse(HTTP_POST_PARAM_SAML2_RESP);
 
         SAMLLogoutResponse response = builder.build();
-        assertEquals("1234", response.getRelayState(),"Failed to handle for valid input");
-        assertEquals("/travelocity.com", response.getAcsUrl(),"Failed to handle for valid input");
-        assertEquals("SAMLResponse", response.getResponse(),"Failed to handle for valid input");
+        assertEquals(RELAY_STATE, response.getRelayState(),"Failed to handle for valid input");
+        assertEquals(INBOUND_ACS_URL, response.getAcsUrl(),"Failed to handle for valid input");
+        assertEquals(HTTP_POST_PARAM_SAML2_RESP, response.getResponse(),"Failed to handle for valid input");
     }
 }

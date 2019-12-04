@@ -50,7 +50,8 @@ import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.wso2.carbon.identity.common.testng.TestConstants.CARBON_HOST_LOCALHOST;
 
 /**
