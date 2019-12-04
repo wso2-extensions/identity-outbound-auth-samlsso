@@ -41,8 +41,12 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.model.StateInf
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
+import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.application.common.model.SubProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -50,11 +54,10 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_RESP;
@@ -462,6 +465,380 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                                          HttpServletResponse response, AuthenticationContext context)
             throws LogoutFailedException {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Get Configuration Properties.
+     */
+    @Override
+    public List<Property> getConfigurationProperties() {
+
+        List<Property> configProperties = new ArrayList<>();
+        Property spEntityId = new Property();
+        spEntityId.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID);
+        spEntityId.setDisplayName("Service Provider Entity ID");
+        spEntityId.setRequired(true);
+        spEntityId.setDescription("Enter the service provider's entity identifier value");
+        spEntityId.setType("string");
+        spEntityId.setDisplayOrder(1);
+        configProperties.add(spEntityId);
+
+        Property nameIdFormat = new Property();
+        nameIdFormat.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.NAME_ID_TYPE);
+        nameIdFormat.setDisplayName("NameID format");
+        nameIdFormat.setRequired(true);
+        nameIdFormat.setDescription("NameID format to be used in the SAML request");
+        nameIdFormat.setType("string");
+        nameIdFormat.setDisplayOrder(2);
+        nameIdFormat.setDefaultValue(IdentityApplicationConstants.Authenticator.SAML2SSO.UNSPECIFIED_NAME_ID_FORMAT);
+        configProperties.add(nameIdFormat);
+
+        Property selectMode = new Property();
+        selectMode.setName("selectMode");
+        selectMode.setDisplayName("Select Mode");
+        selectMode.setDescription("Select the input method for SAML configuration");
+        selectMode.setType("string");
+        selectMode.setOptions(new String[]{"Manual Configuration", "Metadata File Configuration"});
+        selectMode.setDefaultValue("Manual Configuration");
+        selectMode.setDisplayOrder(3);
+        configProperties.add(selectMode);
+
+        Property samlMetadata = new Property();
+        samlMetadata.setName("meta_data_saml");
+        samlMetadata.setDisplayName("SAML Metadata File");
+        samlMetadata.setDescription("Base-64 encoded metadata file content for SAML configuration");
+        samlMetadata.setType("string");
+        samlMetadata.setDisplayOrder(4);
+        configProperties.add(samlMetadata);
+
+        Property idpEntityId = new Property();
+        idpEntityId.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID);
+        idpEntityId.setDisplayName("Identity Provider Entity ID");
+        idpEntityId.setRequired(true);
+        idpEntityId.setDescription("Enter identity provider's entity identifier value. This should be a valid URI/URL.");
+        idpEntityId.setType("string");
+        idpEntityId.setDisplayOrder(5);
+        configProperties.add(idpEntityId);
+
+        Property ssoUrl = new Property();
+        ssoUrl.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL);
+        ssoUrl.setDisplayName("SSO URL");
+        ssoUrl.setRequired(true);
+        ssoUrl.setDescription("Enter identity provider's SAML2 Web SSO URL value");
+        ssoUrl.setType("string");
+        ssoUrl.setDisplayOrder(6);
+        configProperties.add(ssoUrl);
+
+        Property authnReqSign = new Property();
+        authnReqSign.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_AUTHN_REQ_SIGNED);
+        authnReqSign.setDisplayName("Enable Authentication Request Signing");
+        authnReqSign.setRequired(false);
+        authnReqSign.setDescription("Specifies if the SAML2 authentication request to the identity provider must be signed or not");
+        authnReqSign.setType("boolean");
+        authnReqSign.setDisplayOrder(7);
+        configProperties.add(authnReqSign);
+
+        Property assertionEncryption = new Property();
+        assertionEncryption.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ENABLE_ASSERTION_ENCRYPTION);
+        assertionEncryption.setDisplayName("Enable Assertion Encryption");
+        assertionEncryption.setRequired(false);
+        assertionEncryption.setDescription("Specify if SAMLAssertion element is encrypted");
+        assertionEncryption.setType("boolean");
+        assertionEncryption.setDisplayOrder(8);
+        configProperties.add(assertionEncryption);
+
+        Property assertionSigning = new Property();
+        assertionSigning.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ENABLE_ASSERTION_SIGNING);
+        assertionSigning.setDisplayName("Enable Assertion Signing");
+        assertionSigning.setRequired(false);
+        assertionSigning.setDescription("Specify if SAMLAssertion element is signed");
+        assertionSigning.setType("boolean");
+        assertionSigning.setDisplayOrder(9);
+        configProperties.add(assertionSigning);
+
+        Property enableLogout = new Property();
+        enableLogout.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_LOGOUT_ENABLED);
+        enableLogout.setDisplayName("Enable Logout");
+        enableLogout.setRequired(false);
+        enableLogout.setDescription("Specifies if logout/single Logout is enabled for this identity provider");
+        enableLogout.setType("boolean");
+        enableLogout.setDisplayOrder(10);
+        configProperties.add(enableLogout);
+
+        Property logoutUrl = new Property();
+        logoutUrl.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.LOGOUT_REQ_URL);
+        logoutUrl.setDisplayName("Logout Url");
+        logoutUrl.setRequired(false);
+        logoutUrl.setDescription("Enter identity provider's logout URL value if it is different from the SSO Url");
+        logoutUrl.setType("string");
+        logoutUrl.setDisplayOrder(11);
+        configProperties.add(logoutUrl);
+
+        Property logoutReqSign = new Property();
+        logoutReqSign.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_LOGOUT_REQ_SIGNED);
+        logoutReqSign.setDisplayName("Enable Logout Request Signing");
+        logoutReqSign.setRequired(false);
+        logoutReqSign.setDescription("Specifies if SAML2 logout request to the identity provider must be signed or not");
+        logoutReqSign.setType("boolean");
+        logoutReqSign.setDisplayOrder(12);
+        configProperties.add(logoutReqSign);
+
+        Property authnResSign = new Property();
+        authnResSign.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_AUTHN_RESP_SIGNED);
+        authnResSign.setDisplayName("Enable Authentication Response Signing");
+        authnResSign.setRequired(false);
+        authnResSign.setDescription("Specifies if SAML2 authentication response from the identity provider must be " +
+                "signed or not");
+        authnResSign.setType("boolean");
+        authnResSign.setDisplayOrder(13);
+        configProperties.add(authnResSign);
+
+        Property enableArtifactBinding = new Property();
+        enableArtifactBinding.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_BINDING_ENABLED);
+        enableArtifactBinding.setDisplayName(" Enable Artifact Binding");
+        enableArtifactBinding.setRequired(false);
+        enableArtifactBinding.setDescription("Specifies if SAML2 Artifact Binding is enabled from IDP");
+        enableArtifactBinding.setType("boolean");
+        enableArtifactBinding.setDisplayOrder(14);
+
+        SubProperty artifactResolveUrl = new SubProperty();
+        artifactResolveUrl.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.ARTIFACT_RESOLVE_URL);
+        artifactResolveUrl.setDisplayName("Artifact Resolve Endpoint Url");
+        artifactResolveUrl.setRequired(false);
+        artifactResolveUrl.setDescription("Specify the Artifact Resolve Endpoint Url");
+        artifactResolveUrl.setType("string");
+        artifactResolveUrl.setDisplayOrder(15);
+
+        SubProperty artifactResolveReqSign = new SubProperty();
+        artifactResolveReqSign.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESOLVE_REQ_SIGNED);
+        artifactResolveReqSign.setDisplayName("Enable Artifact Resolve Request Signing");
+        artifactResolveReqSign.setRequired(false);
+        artifactResolveReqSign.setDescription(" Specifies if the SAML2 artifact resolve request to the identity provider must " +
+                "be signed or not");
+        artifactResolveReqSign.setType("boolean");
+        artifactResolveReqSign.setDisplayOrder(16);
+
+        SubProperty enableArtifactResSign = new SubProperty();
+        enableArtifactResSign.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_RESPONSE_SIGNED);
+        enableArtifactResSign.setDisplayName("Enable Artifact Response Signing");
+        enableArtifactResSign.setRequired(false);
+        enableArtifactResSign.setDescription("Specifies if the SAML2 artifact response from the identity provider will be " +
+                "signed or not");
+        enableArtifactResSign.setType("boolean");
+        enableArtifactResSign.setDisplayOrder(17);
+        SubProperty[] enableArtifactBindingSubProps = new SubProperty[]{artifactResolveUrl, artifactResolveReqSign,
+                enableArtifactResSign};
+        enableArtifactBinding.setSubProperties(enableArtifactBindingSubProps);
+        configProperties.add(enableArtifactBinding);
+
+        Property signatureAlgo = new Property();
+        signatureAlgo.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
+        signatureAlgo.setDisplayName("Signature Algorithm");
+        signatureAlgo.setRequired(false);
+        signatureAlgo.setDescription("Specifies the SignatureMethod Algorithm");
+        signatureAlgo.setType("string");
+        signatureAlgo.setDisplayOrder(18);
+
+        List<String> signatureAlgoOptions = new ArrayList<>();
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.DSA_SHA1);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.ECDSA_SHA1);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.ECDSA_SHA256);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.ECDSA_SHA384);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.ECDSA_SHA512);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_MD5);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_RIPEMD160);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA256);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA384);
+        signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA512);
+
+        signatureAlgo.setOptions(signatureAlgoOptions.toArray(new String[0]));
+        signatureAlgo.setDefaultValue(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1);
+        configProperties.add(signatureAlgo);
+
+        Property digestAlgo = new Property();
+        digestAlgo.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
+        digestAlgo.setDisplayName("Digest Algorithm");
+        digestAlgo.setRequired(false);
+        digestAlgo.setDescription("Specifies the DigestMethod Algorithm. Applicable only in POST Binding");
+        digestAlgo.setType("string");
+        digestAlgo.setDisplayOrder(19);
+
+        List<String> digestAlgoOptions = new ArrayList<>();
+        digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.MD5);
+        digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.RIPEMD160);
+        digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.SHA1);
+        digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.SHA256);
+        digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.SHA384);
+        digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.SHA512);
+
+        digestAlgo.setOptions(digestAlgoOptions.toArray(new String[0]));
+        digestAlgo.setDefaultValue(IdentityApplicationConstants.XML.DigestAlgorithm.SHA1);
+        configProperties.add(digestAlgo);
+
+        Property attributeConsumeIndex = new Property();
+        attributeConsumeIndex.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        attributeConsumeIndex.setDisplayName("Attribute Consuming Service Index");
+        attributeConsumeIndex.setRequired(false);
+        attributeConsumeIndex.setDescription("Specify the Attribute Consuming Service Index");
+        attributeConsumeIndex.setType("string");
+        attributeConsumeIndex.setDisplayOrder(20);
+        configProperties.add(attributeConsumeIndex);
+
+        Property forceAuthn = new Property();
+        forceAuthn.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.FORCE_AUTHENTICATION);
+        forceAuthn.setDisplayName("Enable Force Authentication");
+        forceAuthn.setRequired(false);
+        forceAuthn.setDescription("Enable force authentication or decide from the in coming request");
+        forceAuthn.setType("string");
+        forceAuthn.setDisplayOrder(21);
+        forceAuthn.setOptions(new String[]{"yes", "no", "as_request"});
+        forceAuthn.setDefaultValue("as_request");
+        configProperties.add(forceAuthn);
+
+        Property includeCert = new Property();
+        includeCert.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_CERT);
+        includeCert.setDisplayName(" Include Public Certificate");
+        includeCert.setRequired(false);
+        includeCert.setDescription("Include Public Certificate in the the request");
+        includeCert.setType("boolean");
+        includeCert.setDisplayOrder(22);
+        configProperties.add(includeCert);
+
+        Property includeProtocolBinding = new Property();
+        includeProtocolBinding.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_PROTOCOL_BINDING);
+        includeProtocolBinding.setDisplayName(" Include Protocol Binding");
+        includeProtocolBinding.setRequired(false);
+        includeProtocolBinding.setDescription("Include ProtocolBinding in the request");
+        includeProtocolBinding.setType("boolean");
+        includeProtocolBinding.setDisplayOrder(23);
+        configProperties.add(includeProtocolBinding);
+
+        Property includeNameIdPolicy = new Property();
+        includeNameIdPolicy.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
+        includeNameIdPolicy.setDisplayName(" Include NameID Policy");
+        includeNameIdPolicy.setRequired(false);
+        includeNameIdPolicy.setDescription("Include NameIDPolicy in the request");
+        includeNameIdPolicy.setType("boolean");
+        includeNameIdPolicy.setDisplayOrder(24);
+        configProperties.add(includeNameIdPolicy);
+
+        Property includeAuthnContext = new Property();
+        includeAuthnContext.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.FORCE_AUTHENTICATION);
+        includeAuthnContext.setDisplayName(" Include Authentication Context");
+        includeAuthnContext.setRequired(false);
+        includeAuthnContext.setDescription("Include a new RequestedAuthnContext in the request, or decide from the incoming request");
+        includeAuthnContext.setType("string");
+        includeAuthnContext.setDisplayOrder(25);
+        includeAuthnContext.setOptions(new String[]{"yes", "no", "as_request"});
+        includeAuthnContext.setDefaultValue("yes");
+        configProperties.add(includeAuthnContext);
+
+        Property authnContextClass = new Property();
+        authnContextClass.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.AUTHENTICATION_CONTEXT_CLASS);
+        authnContextClass.setDisplayName("Authentication Context Class");
+        authnContextClass.setRequired(false);
+        authnContextClass.setDescription(" Choose AuthnContextClassRef to be sent");
+        authnContextClass.setType("string");
+
+        List<String> authnContextOptions = new ArrayList<>();
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.AUTHENTICATED_TELEPHONY);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.IP);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.IP_PASSWORD);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.KERBEROS);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.MOBILE_ONE_FACTOR_CONTRACT);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.MOBILE_ONE_FACTOR_UNREGISTERED);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.MOBILE_TWO_FACTOR_CONTRACT);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.MOBILE_TWO_FACTOR_UNREGISTERED);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.NOMAD_TELEPHONY);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.PASSWORD);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.PASSWORD_PROTECTED_TRANSPORT);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.PERSONAL_TELEPHONY);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.PGP);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.PREVIOUS_SESSION);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.SECURE_REMOTE_PASSWORD);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.SMARTCARD);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.SMARTCARD_PKI);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.SOFTWARE_PKI);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.SPKI);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.TELEPHONY);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.TIME_SYNC_TOKEN);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.TLS_CLIENT);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.UNSPECIFIED);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.X509);
+        authnContextOptions.add(IdentityApplicationConstants.SAML2.AuthnContextClass.XML_DSIG);
+        authnContextOptions.add(IdentityApplicationConstants.Authenticator.SAML2SSO
+                .CUSTOM_AUTHENTICATION_CONTEXT_CLASS_OPTION);
+
+        authnContextClass.setOptions(authnContextOptions.toArray(new String[0]));
+        authnContextClass.setDefaultValue(IdentityApplicationConstants.SAML2.AuthnContextClass.UNSPECIFIED);
+        authnContextClass.setDisplayOrder(26);
+        configProperties.add(authnContextClass);
+
+        Property customAuthnContextClass = new Property();
+        customAuthnContextClass.setName(IdentityApplicationConstants.Authenticator.SAML2SSO
+                .ATTRIBUTE_CUSTOM_AUTHENTICATION_CONTEXT_CLASS);
+        customAuthnContextClass.setDisplayName(null);
+        customAuthnContextClass.setRequired(false);
+        customAuthnContextClass.setDescription("Custom AuthnContextClassRef to be sent");
+        customAuthnContextClass.setType("string");
+        customAuthnContextClass.setDisplayOrder(27);
+        configProperties.add(customAuthnContextClass);
+
+        Property authnContextComparison = new Property();
+        authnContextComparison.setName(IdentityApplicationConstants.Authenticator.SAML2SSO
+                .AUTHENTICATION_CONTEXT_COMPARISON_LEVEL);
+        authnContextComparison.setDisplayName("Authentication Context Comparison Level");
+        authnContextComparison.setRequired(false);
+        authnContextComparison.setDescription("Choose RequestedAuthnContext Comparison to be sent");
+        authnContextComparison.setType("string");
+        authnContextComparison.setDisplayOrder(28);
+        authnContextComparison.setOptions(new String[]{"Exact", "Mininum", "Maximum", "Better"});
+        authnContextComparison.setDefaultValue("Exact");
+        configProperties.add(authnContextComparison);
+
+        Property userIdLocation = new Property();
+        userIdLocation.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_USER_ID_IN_CLAIMS);
+        userIdLocation.setDisplayName("SAML2 Web SSO User ID Location");
+        userIdLocation.setRequired(false);
+        userIdLocation.setDescription("Specifies the location to find the user identifier in the SAML2 assertion");
+        userIdLocation.setType("boolean");
+        userIdLocation.setDisplayOrder(29);
+        userIdLocation.setDefaultValue("false");
+        configProperties.add(userIdLocation);
+
+        Property httpBinding = new Property();
+        httpBinding.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD);
+        httpBinding.setDisplayName("HTTP Binding");
+        httpBinding.setRequired(false);
+        httpBinding.setDescription("Choose the HTTP Binding or decide from incoming request");
+        httpBinding.setType("string");
+        httpBinding.setDisplayOrder(30);
+        httpBinding.setOptions(new String[]{"redirect", "post", "as_request"});
+        httpBinding.setDefaultValue("redirect");
+        configProperties.add(httpBinding);
+
+        Property resAuthnContextClass = new Property();
+        resAuthnContextClass.setName(IdentityApplicationConstants.Authenticator.SAML2SSO.RESPONSE_AUTHN_CONTEXT_CLASS_REF);
+        resAuthnContextClass.setDisplayName("Response Authentication Context Class");
+        resAuthnContextClass.setRequired(false);
+        resAuthnContextClass.setDescription("Choose the AuthnContextClassRef sent back to the service provider");
+        resAuthnContextClass.setType("string");
+        resAuthnContextClass.setDisplayOrder(31);
+        resAuthnContextClass.setOptions(new String[]{"default", "as_response"});
+        resAuthnContextClass.setDefaultValue("default");
+        configProperties.add(resAuthnContextClass);
+
+        Property queryParams = new Property();
+        queryParams.setName("commonAuthQueryParams");
+        queryParams.setDisplayName("Additional Query Parameters");
+        queryParams.setRequired(false);
+        queryParams.setDescription("Additional query parameters. e.g: paramName1=value1");
+        queryParams.setType("string");
+        queryParams.setDisplayOrder(32);
+        configProperties.add(queryParams);
+
+        return configProperties;
     }
 
     private void sendPostRequest(HttpServletRequest request, HttpServletResponse response,
