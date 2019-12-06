@@ -77,6 +77,49 @@ public final class TestConstants {
                     "cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6YWM6Y2xhc3NlczpQYXNzd29yZFByb3RlY3RlZFRyYW5zcG9ydDwvc2FtbDp" +
                     "BdXRobkNvbnRleHRDbGFzc1JlZj48L3NhbWwycDpSZXF1ZXN0ZWRBdXRobkNvbnRleHQ+PC9zYW1scDpBdXRoblJlcXVlc3Q+";
 
+    public static final String SAML2_SLO_POST_REQUEST = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNhbWw" +
+            "ycDpMb2dvdXRSZXF1ZXN0IERlc3RpbmF0aW9uPSJodHRwczovL2xvY2FsaG9zdDo5NDQzL2lkZW50aXR5L3NhbWwvc2xvIiBJRD0iX2" +
+            "E4NzE3NmY0MDA2ZWYxNDI5ODJhNGZhNDllZWY5MmM0IiBJc3N1ZUluc3RhbnQ9IjIwMTktMTEtMzBUMTg6NTk6MzUuOTU0WiIgTm90T" +
+            "25PckFmdGVyPSIyMDE5LTExLTMwVDE5OjA0OjM1Ljk1NFoiIFJlYXNvbj0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmxvZ291" +
+            "dDp1c2VyIiBWZXJzaW9uPSIyLjAiIHhtbG5zOnNhbWwycD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOnByb3RvY29sIj48c2F" +
+            "tbDI6SXNzdWVyIEZvcm1hdD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOm5hbWVpZC1mb3JtYXQ6ZW50aXR5IiB4bWxuczpzYW" +
+            "1sMj0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmFzc2VydGlvbiI+bG9jYWxob3N0PC9zYW1sMjpJc3N1ZXI+PGRzOlNpZ25hd" +
+            "HVyZSB4bWxuczpkcz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wOS94bWxkc2lnIyI+CjxkczpTaWduZWRJbmZvPgo8ZHM6Q2Fub25p" +
+            "Y2FsaXphdGlvbk1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMTAveG1sLWV4Yy1jMTRuIyIvPgo8ZHM6U2l" +
+            "nbmF0dXJlTWV0aG9kIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wOS94bWxkc2lnI3JzYS1zaGExIi8+CjxkczpSZW" +
+            "ZlcmVuY2UgVVJJPSIjX2E4NzE3NmY0MDA2ZWYxNDI5ODJhNGZhNDllZWY5MmM0Ij4KPGRzOlRyYW5zZm9ybXM+CjxkczpUcmFuc2Zvc" +
+            "m0gQWxnb3JpdGhtPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwLzA5L3htbGRzaWcjZW52ZWxvcGVkLXNpZ25hdHVyZSIvPgo8ZHM6VHJh" +
+            "bnNmb3JtIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS8xMC94bWwtZXhjLWMxNG4jIi8+CjwvZHM6VHJhbnNmb3Jtcz4" +
+            "KPGRzOkRpZ2VzdE1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1sZHNpZyNzaGExIi8+CjxkczpEaW" +
+            "dlc3RWYWx1ZT5mNTRyNmF4OWtGR2hhazFPdW55dXN5a0ttUWM9PC9kczpEaWdlc3RWYWx1ZT4KPC9kczpSZWZlcmVuY2U+CjwvZHM6U" +
+            "2lnbmVkSW5mbz4KPGRzOlNpZ25hdHVyZVZhbHVlPgp2R01KOEhTeE1vTDMvTXp1c3BSVmhJSEVhN0tqdE8rbVBwOG05U3FaL3BwWmpV" +
+            "K3lCb3BnRHBJUWZya2Nwa0cvb0ZiaDF3Z3FJSVJJCm5rbllKd1JQdU9tZWNMYmI4T3R0VSt3R0R5L0FuemV0a01jME55M2tsWUQ5SlU" +
+            "rZ3BIcEtmZW4xMHZidFBVTDZpWjg3R3dvNndDWC8KbXNqREVPWk1uSnpNN0JVVm1vdU5HOG94M0c1SXhaVk5vNStGbGI0SlhUNG05bi" +
+            "trZWljVmtaREhRREROWW9PSjhuUTErZHlqU2JMagpxN1BFMFRoQ0ZVOU5oTzl0c04xUkEzTzh6aUpPQjZxM0ZmSng3VjVkU0tXakYra" +
+            "3ozamZsQkZCNnlnL1EzcUE5ZVA0WjVrS1FJRWFrClRCRnR4YnV4YkxFQlJyRVB3R0pvQ25aTCt6WDAxL1VvYUtpakVRPT0KPC9kczpT" +
+            "aWduYXR1cmVWYWx1ZT4KPGRzOktleUluZm8+PGRzOlg1MDlEYXRhPjxkczpYNTA5Q2VydGlmaWNhdGU+TUlJRHFUQ0NBcEdnQXdJQkF" +
+            "nSUVYYkFCb3pBTkJna3Foa2lHOXcwQkFRc0ZBREJrTVFzd0NRWURWUVFHRXdKVlV6RUxNQWtHQTFVRQpDQXdDUTBFeEZqQVVCZ05WQk" +
+            "FjTURVMXZkVzUwWVdsdUlGWnBaWGN4RFRBTEJnTlZCQW9NQkZkVFR6SXhEVEFMQmdOVkJBc01CRmRUClR6SXhFakFRQmdOVkJBTU1DV" +
+            "3h2WTJGc2FHOXpkREFlRncweE9URXdNak13TnpNd05ETmFGdzB5TWpBeE1qVXdOek13TkROYU1HUXgKQ3pBSkJnTlZCQVlUQWxWVE1R" +
+            "c3dDUVlEVlFRSURBSkRRVEVXTUJRR0ExVUVCd3dOVFc5MWJuUmhhVzRnVm1sbGR6RU5NQXNHQTFVRQpDZ3dFVjFOUE1qRU5NQXNHQTF" +
+            "VRUN3d0VWMU5QTWpFU01CQUdBMVVFQXd3SmJHOWpZV3hvYjNOME1JSUJJakFOQmdrcWhraUc5dzBCCkFRRUZBQU9DQVE4QU1JSUJDZ0" +
+            "tDQVFFQXhlcW9aWWJRL1NyOERPRlErL3FiRWJDcDZWemI1aHpIN29hM2hmMkZaeFJLRjBINmI4Q08KTXp6OCswbXZFZFlWdmIvMzFqT" +
+            "UVMMkNJUWhrUVJvbDFJcnVENm5CT21ranVYSlNCZmlja2xNYUpaT1JodUNyQjRyb0h4em9HMTlhVwptc2NBMGduZkJLbzJvR1hTakpt" +
+            "blp4SWgrMlg2c3lIQ2Z5TVpaMDBMekR5cmdvWFdRWHlGdkNBMmF4NTRzN3NLaUhPTTNQNEE5VzRRClV3bW9FaTRIUW1QZ0pqSU00ZUd" +
+            "WUGgwR3RJQU5OK0JPUTFLa1VJN096dGVIQ1RMdTNWanhNMHN3OFFSYXlaZGhuaVBGK1U5bjNmYTEKbU80S0xCc1c0bURMamc4Ui9KdU" +
+            "FHVFgvU0VFR2owQjVIV1FBUDZteXhLRnoyeHdEYUNHdlQrcmR2a2t0T3dJREFRQUJvMk13WVRBVQpCZ05WSFJFRURUQUxnZ2xzYjJOa" +
+            "GJHaHZjM1F3SFFZRFZSME9CQllFRkVEcExCNFBEZ3pzZHhEMkZWM3JWbk9yL0EwRE1CMEdBMVVkCkpRUVdNQlFHQ0NzR0FRVUZCd01C" +
+            "QmdnckJnRUZCUWNEQWpBTEJnTlZIUThFQkFNQ0JQQXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUIKQUU4SC9heEFnWGp0OTNIR0NZR3V" +
+            "tVUxXMmxLa2dxRXZYcnlQMlFrUnBieVFTc1RZY0w3WkxTVkI3TVZWSHRJc0hoOGYxQzRYcTZRdQo4TlVycXU1WkxDMXBVQnlhcVIyWk" +
+            "l6Y2ovT1dMR1lSalNUSFNWbVZJcTlRcUJxMWo3cjZmM0JXcWFPSWlrbm1UekV1cUlWbE9UWTBnCk8rU0hkUzYydnIyRkN6NHlPckJFd" +
+            "WxHQXZvbXNVOHNxZzRQaEZua2h4STRNOTEyTHkrMlJnTjlMN0FraHpLK0V6WFkxL1F0bEkvVnkKc05mUzZ6ckhhc0t6NkNyS0tDR3FR" +
+            "bkJuU3ZTVHlGOU9SNUtGSG5rQXdFOTk1SVpyY1NRaWNNeHNMaFRNVUhETFEvZ1J5eTdWL1pwRApNZkFXUis1T2VRaU5BcC9iRzRmakp" +
+            "vVGRvcWt1bDUxKzJiSEhWclU9PC9kczpYNTA5Q2VydGlmaWNhdGU+PC9kczpYNTA5RGF0YT48L2RzOktleUluZm8+PC9kczpTaWduYX" +
+            "R1cmU+PHNhbWwyOk5hbWVJRCBGb3JtYXQ9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjEuMTpuYW1laWQtZm9ybWF0OmVtYWlsQWRkc" +
+            "mVzcyIgeG1sbnM6c2FtbDI9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDphc3NlcnRpb24iPmFkbWluQGNhcmJvbi5zdXBlcjwv" +
+            "c2FtbDI6TmFtZUlEPjxzYW1sMnA6U2Vzc2lvbkluZGV4Pjk0OTExNjg0LThlZjgtNDA3Yi1iYzU5LWU0MzViNjI3MDg1ODwvc2FtbDJ" +
+            "wOlNlc3Npb25JbmRleD48L3NhbWwycDpMb2dvdXRSZXF1ZXN0Pg==";
+
     public static final String SAML2_REDIRECT_REQUEST = "nVNhb9owEP0rkb+ThLTqwCJUDFQNqZsY0H3YN+NcwNSxPd+F0n8/Jykdmza" +
             "E9vV89+7de8+j+2OlowN4VNbkrB+nLAIjbaHMNmdP64fegN2PRygq7fikpp1Zwo8akKIwZ5C3DzmrveFWoEJuRAXISfLV5PMjz+KUO2" +
             "/JSqtZNEEET2HR1BqsK/Ar8Acl4Wn5mLMdkeNJoq0UemeR+CAdpAl5cYBQU/QaS1slO1tBvEfHolkgoYyglnczjL9ND29vb5KGHaJl0" +
@@ -343,6 +386,8 @@ public final class TestConstants {
 
     public static final String INBOUND_IDP_URL = "https://localhost:9443/samlsso";
 
+    public static final String INBOUND_SAML_SLO_URL = "https://localhost:9443/identity/saml/slo";
+
     public static final String AUTHENTICATED_USER = "admin";
 
     public static final String SP_ENTITY_ID = "wso2is";
@@ -350,6 +395,8 @@ public final class TestConstants {
     public static final String ACS_URL = "http://localhost:9443/commonauth";
 
     public static final String ACS_INDEX = "123456789";
+
+    public static final String IDP_NAME = "secondary";
 
     public static final String IDP_URL = "https://localhost:9444/samlsso";
 

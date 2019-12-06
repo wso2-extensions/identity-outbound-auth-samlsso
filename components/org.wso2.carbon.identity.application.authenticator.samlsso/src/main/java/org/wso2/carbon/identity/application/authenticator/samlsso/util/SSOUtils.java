@@ -26,6 +26,7 @@ import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.saml.common.SAMLObjectContentReference;
 import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
+import org.opensaml.saml.saml2.core.LogoutResponse;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.XMLObjectBuilder;
 import org.opensaml.core.xml.io.Marshaller;
@@ -39,6 +40,7 @@ import org.opensaml.xmlsec.crypto.XMLSigningUtil;
 import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.signature.KeyInfo;
 import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.SignableXMLObject;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidationProvider;
 import org.opensaml.xmlsec.signature.support.Signer;
@@ -105,18 +107,52 @@ public class SSOUtils {
     }
 
     /**
-     * Sign the SAML Request message
-     * 
-     * @param request
-     * @param signatureAlgorithm
-     * @param digestAlgorithm
-     * @param includeCert
-     * @param x509Credential
-     * @return
-     * @throws SAMLSSOException
+     * Sign the SAML Logout Response.
+     *
+     * @param response           Generic xml request.
+     * @param signatureAlgorithm Signature algorithm.
+     * @param digestAlgorithm    Cryptographic hash algorithm.
+     * @param includeCert        Whether to include certificate.
+     * @param cred               X509credential instance.
+     * @return LogoutResponse    Signed XML object.
+     * @throws SAMLSSOException  If unable to set signature.
      */
-    public static void setSignature(RequestAbstractType request, String signatureAlgorithm,
-            String digestAlgorithm, boolean includeCert, X509Credential x509Credential)
+    public static void setSignature(LogoutResponse response, String signatureAlgorithm, String digestAlgorithm,
+                                    boolean includeCert, X509Credential cred) throws SAMLSSOException {
+
+        doSetSignature(response, signatureAlgorithm, digestAlgorithm, includeCert, cred);
+    }
+
+    /**
+     * Sign the SAML Request message.
+     *
+     * @param request              Generic xml request.
+     * @param signatureAlgorithm   Signature algorithm.
+     * @param digestAlgorithm      Cryptographic hash algorithm.
+     * @param includeCert          Whether to include certificate.
+     * @param cred                 X509credential instance.
+     * @return RequestAbstractType Signed XML object.
+     * @throws SAMLSSOException    If unable to set signature.
+     */
+    public static void setSignature(RequestAbstractType request, String signatureAlgorithm, String
+            digestAlgorithm, boolean includeCert, X509Credential cred) throws SAMLSSOException {
+
+        doSetSignature(request, signatureAlgorithm, digestAlgorithm, includeCert, cred);
+    }
+
+    /**
+     * Generic method to sign SAML2.0 Assertion or Response.
+     *
+     * @param request            Generic xml request.
+     * @param signatureAlgorithm Signature algorithm.
+     * @param digestAlgorithm    Cryptographic hash algorithm.
+     * @param includeCert        Whether to include certificate.
+     * @param x509Credential     X509credential instance.
+     * @return SignableXMLObject Signed XML object.
+     * @throws SAMLSSOException  If unable to set signature.
+     */
+    public static void doSetSignature(SignableXMLObject request, String signatureAlgorithm,
+                                      String digestAlgorithm, boolean includeCert, X509Credential x509Credential)
             throws SAMLSSOException {
         
         if (request == null) {
@@ -162,7 +198,7 @@ public class SSOUtils {
         }
 
         request.setSignature(signature);
-        ((SAMLObjectContentReference)signature.getContentReferences().get(0))
+        ((SAMLObjectContentReference) signature.getContentReferences().get(0))
               .setDigestAlgorithm(digestAlgorithm);
         
         List<Signature> signatureList = new ArrayList<Signature>();

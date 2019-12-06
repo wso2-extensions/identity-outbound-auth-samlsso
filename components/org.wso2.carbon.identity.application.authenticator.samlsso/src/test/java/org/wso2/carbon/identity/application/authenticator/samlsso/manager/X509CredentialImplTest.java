@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.mockito.Mock;
+import org.opensaml.security.credential.UsageType;
 import org.opensaml.security.x509.X509Credential;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
@@ -51,6 +52,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.wso2.carbon.identity.common.testng.TestConstants.CARBON_HOST_LOCALHOST;
 
 /**
  * Unit tests for X509CredentialImpl.
@@ -230,7 +232,7 @@ public class X509CredentialImplTest {
     @Test(priority = 12)
     public void getEntityId() {
 
-        assertNull(x509CredentialImpl.getEntityId(), "Need to implement the unit test.");
+        assert CARBON_HOST_LOCALHOST.equals(x509CredentialImpl.getEntityId()) || ("").equals(x509CredentialImpl.getEntityId());
     }
 
     @Test(priority = 13)
@@ -248,7 +250,7 @@ public class X509CredentialImplTest {
     @Test(priority = 15)
     public void getUsageType() {
 
-        assertNull(x509CredentialImpl.getUsageType(), "Need to implement the unit test.");
+        assertEquals(x509CredentialImpl.getUsageType(), UsageType.UNSPECIFIED);
     }
 
     @ObjectFactory
