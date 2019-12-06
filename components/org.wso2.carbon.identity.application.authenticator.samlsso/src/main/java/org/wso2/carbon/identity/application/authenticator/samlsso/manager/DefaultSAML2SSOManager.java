@@ -1175,7 +1175,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         X509Credential credential = new X509CredentialImpl(tenantDomain, null);
         KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(credential);
-        EncryptedKey key = encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
+        EncryptedKey key = getKey(encryptedAssertion);
         Decrypter decrypter = new Decrypter(null, keyResolver, null);
         SecretKey dkey = (SecretKey) decrypter.decryptKey(key, encryptedAssertion.getEncryptedData().
                 getEncryptionMethod().getAlgorithm());
@@ -1228,4 +1228,16 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID);
     }
 
+    private EncryptedKey getKey(EncryptedAssertion encryptedAssertion) throws Exception {
+
+        try {
+            if (encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().isEmpty()) {
+                return encryptedAssertion.getEncryptedKeys().get(0);
+            } else {
+                return encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
+            }
+        } catch (Exception e) {
+            throw new Exception(" Can not get the encrypted key ", e);
+        }
+    }
 }
