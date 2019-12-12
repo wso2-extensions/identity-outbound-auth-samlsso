@@ -406,6 +406,8 @@ public final class TestConstants {
 
     public static final String SAML_ARTIFACT_RESOLVE_SERVICE = "";
 
+    public static final String IDP_ACS_URL = "https://wso2is.com:9443/commonauth";
+
     public static final String SIGNATURE_ALGO = "SignatureAlgorithm";
     public static final String SIGNATURE_ALGO_SHA256 = "RSA with SHA256";
     public static final String SIGNATURE_ALGO_XML_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";

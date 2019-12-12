@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.carbon.identity.outbound.auth.saml2</groupId>
     <artifactId>identity-application-auth-samlsso</artifactId>
-    <version>5.3.2-SNAPSHOT</version>
+    <version>5.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - SAML SSO Application Authenticator Feature Aggregator Module</name>
     <description> WSO2 Carbon - Identity Application Authentication SAMLSSO</description>
@@ -360,8 +360,8 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.15.28</carbon.identity.framework.version>
-        <carbon.identity.framework.imp.pkg.version.range>[5.15.0, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
+        <carbon.identity.framework.version>5.15.44</carbon.identity.framework.version>
+        <carbon.identity.framework.imp.pkg.version.range>[5.14.97, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
         <!--SAML Common Util Version-->
         <saml.common.util.version>1.0.3</saml.common.util.version>
