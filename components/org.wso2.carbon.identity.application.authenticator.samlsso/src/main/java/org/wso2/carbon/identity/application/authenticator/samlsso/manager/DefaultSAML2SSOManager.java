@@ -120,7 +120,6 @@ import java.util.zip.DeflaterOutputStream;
 import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
 
-import static org.apache.commons.collections.CollectionUtils.*;
 import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 import static org.opensaml.saml.saml2.core.StatusCode.SUCCESS;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
@@ -1238,6 +1237,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         if (isNotEmpty(encryptedAssertion.getEncryptedKeys())) {
             return encryptedAssertion.getEncryptedKeys().get(0);
         }
-        throw new Exception("Can not get the encrypted key");
+        throw new Exception("Can not get the encrypted key from the encrypted assertion.");
     }
 }
