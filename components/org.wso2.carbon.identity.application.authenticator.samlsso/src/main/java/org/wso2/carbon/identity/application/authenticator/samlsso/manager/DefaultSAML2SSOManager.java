@@ -120,6 +120,8 @@ import java.util.zip.DeflaterOutputStream;
 import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
 
+import static org.apache.commons.collections.CollectionUtils.*;
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 import static org.opensaml.saml.saml2.core.StatusCode.SUCCESS;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 
@@ -513,7 +515,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         if (SSOUtils.isAssertionEncryptionEnabled(properties)) {
             List<EncryptedAssertion> encryptedAssertions = samlResponse.getEncryptedAssertions();
             EncryptedAssertion encryptedAssertion = null;
-            if (CollectionUtils.isNotEmpty(encryptedAssertions)) {
+            if (isNotEmpty(encryptedAssertions)) {
                 encryptedAssertion = encryptedAssertions.get(0);
                 try {
                     assertion = getDecryptedAssertion(encryptedAssertion);
@@ -523,7 +525,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             }
         } else {
             List<Assertion> assertions = samlResponse.getAssertions();
-            if (CollectionUtils.isNotEmpty(assertions)) {
+            if (isNotEmpty(assertions)) {
                 assertion = assertions.get(0);
             }
         }
@@ -1004,7 +1006,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 List<AudienceRestriction> audienceRestrictions = conditions.getAudienceRestrictions();
                 if (audienceRestrictions != null && !audienceRestrictions.isEmpty()) {
                     for (AudienceRestriction audienceRestriction : audienceRestrictions) {
-                        if (CollectionUtils.isNotEmpty(audienceRestriction.getAudiences())) {
+                        if (isNotEmpty(audienceRestriction.getAudiences())) {
                             boolean audienceFound = false;
                             for (Audience audience : audienceRestriction.getAudiences()) {
                                 if (issuer != null && issuer.equals(audience.getAudienceURI())) {
@@ -1230,14 +1232,12 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     private EncryptedKey getEncryptedKey(EncryptedAssertion encryptedAssertion) throws Exception {
 
-        try {
-            if (encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().isEmpty()) {
-                return encryptedAssertion.getEncryptedKeys().get(0);
-            } else {
-                return encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
-            }
-        } catch (Exception e) {
-            throw new Exception(" Can not get the encrypted key ", e);
+        if (isNotEmpty(encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys())) {
+            return encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
         }
+        if (isNotEmpty(encryptedAssertion.getEncryptedKeys())) {
+            return encryptedAssertion.getEncryptedKeys().get(0);
+        }
+        throw new Exception("Can not get the encrypted key");
     }
 }
