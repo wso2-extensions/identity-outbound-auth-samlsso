@@ -546,14 +546,14 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         // validate the assertion validity period
         validateAssertionValidityPeriod(assertion);
-        
+
         // this request attribute is populated in processAuthenticationResponse of SAMLSSOAuthenticator
         AuthenticationContext context = (AuthenticationContext) request
                 .getAttribute(SAMLSSOAuthenticator.AUTHENTICATION_CONTEXT);
 
         // validate audience restriction
         validateAudienceRestriction(assertion, getIssuer(context));
-        
+
         // validate signature this SP only looking for assertion signature
         validateSignature(samlResponse, assertion);
 
@@ -727,19 +727,29 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             authRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
         }
 
-        String acsUrl = null;
+        String acsUrl = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.ACS_URL);
+        if (StringUtils.isNotEmpty(acsUrl) && log.isDebugEnabled()) {
+            log.debug("Picking SAML acs URL from " + identityProvider.getIdentityProviderName() + " IDP's "
+                    + "configuration: " + acsUrl);
+        }
         AuthenticatorConfig authenticatorConfig =
                 FileBasedConfigurationBuilder.getInstance().getAuthenticatorConfigMap()
                         .get(SSOConstants.AUTHENTICATOR_NAME);
-        if (authenticatorConfig != null) {
+        if (StringUtils.isEmpty(acsUrl) && authenticatorConfig != null) {
             String tmpAcsUrl = authenticatorConfig.getParameterMap().get(SSOConstants.ServerConfig.SAML_SSO_ACS_URL);
             if (StringUtils.isNotBlank(tmpAcsUrl)) {
                 acsUrl = tmpAcsUrl;
+                if (log.isDebugEnabled()) {
+                    log.debug("Picking SAML acs URL from application-authentication.xml: " + acsUrl);
+                }
             }
         }
 
-        if (acsUrl == null) {
+        if (StringUtils.isEmpty(acsUrl)) {
             acsUrl = IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true);
+            if (log.isDebugEnabled()) {
+                log.debug("Falling back to default SAML acs URL of the server: " + acsUrl);
+            }
         }
 
         authRequest.setAssertionConsumerServiceURL(acsUrl);
@@ -1218,11 +1228,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
         return false;
     }
-    
+
     /**
      * finds the issuer of the SAML request. this is used at the time we build the request and also
      * at the time we validate the audience in the SAML response.
-     * 
+     *
      * @param context
      * @return
      */

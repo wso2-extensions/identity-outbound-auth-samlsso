@@ -353,6 +353,8 @@ public final class TestConstants {
 
     public static final String IDP_URL = "https://localhost:9444/samlsso";
 
+    public static final String IDP_ACS_URL = "https://wso2is.com:9443/commonauth";
+
     public static final String SUPER_TENANT_DOMAIN = "carbon.super";
 
     public static final String SAML_ART = "AAQAAM1OZiCJt3Va5A1W4dyuSepX9Q6clxUTA4vGKbi/bFCqu6Vm+NTZMDE=";
