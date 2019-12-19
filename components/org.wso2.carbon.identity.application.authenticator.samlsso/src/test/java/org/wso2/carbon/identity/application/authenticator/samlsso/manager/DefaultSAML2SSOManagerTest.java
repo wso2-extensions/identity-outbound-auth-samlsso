@@ -76,7 +76,6 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.TestCon
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDOMImplementationRegistry;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDocumentBuilderFactory;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockXPathFactory;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.ACS_URL;
 import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 
 /**
@@ -301,33 +300,6 @@ public class DefaultSAML2SSOManagerTest {
         }
     }
 
-    @Test(dataProvider = "redirectRequestBuilderDataProvider")
-    public void testBuildRequestWithIdpAccessURL(boolean isLogout, String tenantDomain, Object inboundRequestData,
-                                                 Object outboundRequestData) throws Exception {
-
-        DefaultSAML2SSOManager.doBootstrap();
-        when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
-        mockXPathFactory();
-        RequestData requestData = (RequestData) outboundRequestData;
-        Map<String, String> authenticatorProperties = new HashMap<>();
-        authenticatorProperties.put(ACS_URL, TestConstants.IDP_ACS_URL);
-        setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
-                authenticatorProperties);
-        DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
-        defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
-        String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
-                TestConstants.IDP_URL, mockedAuthenticationContext);
-        assertNotNull(generatedRequest, "Failed to build federated authentication request.");
-
-        String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
-        assertNotNull(decodedRequest, "Failed to decode the generated request.");
-
-        XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
-        if (!isLogout) {
-            assertAuthnRequest((AuthnRequest) xmlObject, requestData);
-        }
-    }
-
     @DataProvider(name = "postRequestBuilderDataProvider")
     public Object[][] postRequestBuilderData() {
 
@@ -523,13 +495,8 @@ public class DefaultSAML2SSOManagerTest {
             assertTrue("carbonServer".equals(authnRequest.getIssuer().getValue()), "Failed to set the " +
                     "issuer value");
         }
-        if (TestConstants.ACS_URL.equals(authnRequest.getAssertionConsumerServiceURL())) {
-            assertTrue(TestConstants.ACS_URL.equals(authnRequest.getAssertionConsumerServiceURL()), "Failed to " +
-                    "set the acs url");
-        } else {
-            assertTrue(TestConstants.IDP_ACS_URL.equals(authnRequest.getAssertionConsumerServiceURL()), "Failed" +
-                    " to set the acs url");
-        }
+        assertTrue(TestConstants.ACS_URL.equals(authnRequest.getAssertionConsumerServiceURL()), "Failed to set " +
+                "the acs url");
         assertTrue(TestConstants.IDP_URL.equals(authnRequest.getDestination()), "Failed to set the idp url.");
         if (StringUtils.isEmpty(requestData.getProtocolBinding()) || Boolean.parseBoolean(requestData.getProtocolBinding())) {
             assertTrue(SAMLConstants.SAML2_POST_BINDING_URI.equals(authnRequest.getProtocolBinding()), "Failed" +
@@ -597,8 +564,7 @@ public class DefaultSAML2SSOManagerTest {
             parameterMap.put(SSOConstants.ServerConfig.SAML_SSO_ACS_URL, requestData.getAcsUrl());
             parameterMap.put("SignAuth2SAMLUsingSuperTenant", "true");
             when(mockedAuthenticatorConfig.getParameterMap()).thenReturn(parameterMap);
-            if (StringUtils.isEmpty(authenticatorProperties.get(ACS_URL)) &&
-                    StringUtils.isEmpty(requestData.getAcsUrl())) {
+            if (StringUtils.isEmpty(requestData.getAcsUrl())) {
                 when(IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true)).thenReturn(TestConstants
                         .ACS_URL);
             }
