@@ -349,6 +349,8 @@ public final class TestConstants {
 
     public static final String ACS_URL = "http://localhost:9443/commonauth";
 
+    public static final String IDP_ACS_URL = "https://wso2is.com:9443/commonauth";
+
     public static final String ACS_INDEX = "123456789";
 
     public static final String IDP_URL = "https://localhost:9444/samlsso";
