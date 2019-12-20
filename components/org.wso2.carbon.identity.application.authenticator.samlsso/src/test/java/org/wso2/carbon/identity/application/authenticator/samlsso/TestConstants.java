@@ -386,6 +386,8 @@ public final class TestConstants {
 
     public static final String INBOUND_IDP_URL = "https://localhost:9443/samlsso";
 
+    public static final String IDP_ACS_URL = "https://wso2is.com:9443/commonauth";
+
     public static final String INBOUND_SAML_SLO_URL = "https://localhost:9443/identity/saml/slo";
 
     public static final String AUTHENTICATED_USER = "admin";
