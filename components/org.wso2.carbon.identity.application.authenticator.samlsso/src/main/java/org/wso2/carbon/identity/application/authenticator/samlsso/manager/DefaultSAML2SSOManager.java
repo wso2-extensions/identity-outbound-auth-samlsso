@@ -740,6 +740,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String tmpAcsUrl = authenticatorConfig.getParameterMap().get(SSOConstants.ServerConfig.SAML_SSO_ACS_URL);
             if (StringUtils.isNotBlank(tmpAcsUrl)) {
                 acsUrl = tmpAcsUrl;
+                if (log.isDebugEnabled()) {
+                    log.debug("Picking SAML acs URL from application-authentication.xml: " + acsUrl);
+                }
             }
         }
 
