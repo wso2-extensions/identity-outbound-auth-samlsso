@@ -1231,17 +1231,19 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
     private EncryptedKey getEncryptedKey(EncryptedAssertion encryptedAssertion) throws Exception {
 
-        if (isNotEmpty(encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys())) {
+        List<EncryptedKey> encryptedKeys = encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys();
+        if (isNotEmpty(encryptedKeys)) {
             if (log.isDebugEnabled()) {
                 log.debug("EncryptedKey obtain from the encrypted data element.");
             }
-            return encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
+            return encryptedKeys.get(0);
         }
-        if (isNotEmpty(encryptedAssertion.getEncryptedKeys())) {
+        encryptedKeys = encryptedAssertion.getEncryptedKeys();
+        if (isNotEmpty(encryptedKeys)) {
             if (log.isDebugEnabled()) {
                 log.debug("EncryptedKey obtained from the Assertion.");
             }
-            return encryptedAssertion.getEncryptedKeys().get(0);
+            return encryptedKeys.get(0);
         }
         throw new Exception("Could not obtain the encrypted key from the encrypted assertion.");
     }
