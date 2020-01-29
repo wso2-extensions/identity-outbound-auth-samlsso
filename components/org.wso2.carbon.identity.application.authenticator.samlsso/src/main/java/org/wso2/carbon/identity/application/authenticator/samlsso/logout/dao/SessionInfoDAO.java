@@ -50,7 +50,7 @@ public class SessionInfoDAO {
      */
     public Map<String, String> getSessionDetails(String samlIndex) throws SAMLLogoutException {
 
-        final String query = "SELECT * FROM IDN_FEDERATED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID = ?";
+        final String query = "SELECT * FROM IDN_FED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID = ?";
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
