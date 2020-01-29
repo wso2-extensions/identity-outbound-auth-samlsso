@@ -60,7 +60,7 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
         try (Connection connection1 = getConnection(DB_NAME)) {
             prepareConnection(connection1, false);
 
-            String sql = "INSERT INTO IDN_FEDERATED_AUTH_SESSION_MAPPING " +
+            String sql = "INSERT INTO IDN_FED_AUTH_SESSION_MAPPING " +
                     "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE) VALUES ( '" +
                     SAML_INDEX + "' , '" + INBOUND_SESSION_INDEX + "' , '" + IDP_NAME + "' , " +
                     "'samlssoAuthenticator', 'samlsso');";
@@ -70,7 +70,7 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
 
         try (Connection connection1 = getConnection(DB_NAME)) {
             prepareConnection(connection1, false);
-            String query = "SELECT * FROM IDN_FEDERATED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID=?";
+            String query = "SELECT * FROM IDN_FED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID=?";
             PreparedStatement statement2 = connection1.prepareStatement(query);
             statement2.setString(1, "94911684-8ef8-407b-bc59-e435b6270858");
             ResultSet resultSet = statement2.executeQuery();
