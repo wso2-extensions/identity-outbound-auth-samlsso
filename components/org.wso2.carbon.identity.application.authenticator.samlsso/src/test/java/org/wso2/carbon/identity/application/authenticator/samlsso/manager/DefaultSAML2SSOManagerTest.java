@@ -20,9 +20,9 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
+import org.opensaml.core.xml.XMLObject;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.core.AuthnRequest;
-import org.opensaml.core.xml.XMLObject;
 import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.signature.impl.SignatureImpl;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -49,6 +49,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConsta
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
@@ -64,6 +65,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPathFactory;
@@ -71,11 +73,47 @@ import javax.xml.xpath.XPathFactory;
 import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.*;
+import static org.testng.Assert.fail;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.INBOUND_LOGOUT_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.INBOUND_POST_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.INBOUND_REDIRECT_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_AUTH_CONFIG_ACS_EMPTY;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_AUTH_CONFIG_AVAILABLE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_EMPTRY_SP;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_EMPTY_PROTOCOL_BINDING;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_FORCE_AUTH_AS_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_FORCE_AUTH_YES;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_INCLUDE_NAME_ID_POLICY;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_NOT_INCLUDE_NAME_ID_POLICY;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_NULL_SP;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_PROTOCOL_BINDING_FALSE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_PROTOCOL_BINDING_TRUE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_SIGNED;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_SIGNED_CERT_NOT_INCLUDED;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_UNSIGNED;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_POST_REQUEST_WITH_ACS_INDEX;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_EMPTRY_SP;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_EMPTY_PROTOCOL_BINDING;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_FORCE_AUTH_AS_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_FORCE_AUTH_YES;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_INCLUDE_NAME_ID_POLICY;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_INCLUDE_POST_PARAM;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_NOT_INCLUDE_NAME_ID_POLICY;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_NULL_SP;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_PROTOCOL_BINDING_FALSE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_PROTOCOL_BINDING_TRUE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_SIGNED;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_SIGNED_CERT_NOT_INCLUDED;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_UNSIGNED;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.InboundRequestData.OUTBOUND_REDIRECT_REQUEST_WITH_ACS_INDEX;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDOMImplementationRegistry;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockDocumentBuilderFactory;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockServiceURLBuilder;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockXPathFactory;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.ACS_URL;
 import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
@@ -85,7 +123,8 @@ import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENA
  */
 @PowerMockIgnore({"javax.xml.datatype.*"})
 @PrepareForTest({FileBasedConfigurationBuilder.class, IdentityUtil.class, DocumentBuilderFactory.class,
-        KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class, FrameworkUtils.class})
+        KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class, FrameworkUtils.class,
+        ServiceURLBuilder.class})
 public class DefaultSAML2SSOManagerTest {
 
     @Mock
@@ -452,12 +491,12 @@ public class DefaultSAML2SSOManagerTest {
 
         mockXPathFactory();
 
-        RequestData requestData = (RequestData) outboundRequestData;
-
         Map<String, String> authenticatorProperties = new HashMap<>();
+        RequestData inboundData = (RequestData) inboundRequestData;
+        RequestData outboundData = (RequestData) outboundRequestData;
 
-        setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
-                authenticatorProperties);
+        setParametersForBuildAuthnRequest(isLogout, outboundData, inboundData, authenticatorProperties);
+        mockServiceURLBuilder();
 
         DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
         defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
@@ -472,11 +511,11 @@ public class DefaultSAML2SSOManagerTest {
         if (!isLogout) {
 
             AuthnRequest authnRequest = (AuthnRequest) xmlObject;
-            assertAuthnRequest(authnRequest, requestData);
+            assertAuthnRequest(authnRequest, outboundData);
 
-            if (requestData.isSignRequest()) {
+            if (outboundData.isSignRequest()) {
                 assertNotNull(authnRequest.getSignature(), "Failed to sign the request");
-                if (requestData.isIncludeCertProperty()) {
+                if (outboundData.isIncludeCertProperty()) {
                     assertNotNull(authnRequest.getSignature().getKeyInfo(), "Failed to add signing cert data");
                 }
             } else {
@@ -526,10 +565,10 @@ public class DefaultSAML2SSOManagerTest {
                     "issuer value");
         }
         if (TestConstants.ACS_URL.equals(authnRequest.getAssertionConsumerServiceURL())) {
-            assertTrue(TestConstants.ACS_URL.equals(authnRequest.getAssertionConsumerServiceURL()), "Failed to " +
+            assertEquals(authnRequest.getAssertionConsumerServiceURL(), TestConstants.ACS_URL, "Failed to " +
                     "set the acs url");
         } else {
-            assertTrue(TestConstants.IDP_ACS_URL.equals(authnRequest.getAssertionConsumerServiceURL()), "Failed" +
+            assertEquals(authnRequest.getAssertionConsumerServiceURL(), TestConstants.IDP_ACS_URL, "Failed" +
                     " to set the acs url");
         }
         assertTrue(TestConstants.IDP_URL.equals(authnRequest.getDestination()), "Failed to set the idp url.");
@@ -599,11 +638,6 @@ public class DefaultSAML2SSOManagerTest {
             parameterMap.put(SSOConstants.ServerConfig.SAML_SSO_ACS_URL, requestData.getAcsUrl());
             parameterMap.put("SignAuth2SAMLUsingSuperTenant", "true");
             when(mockedAuthenticatorConfig.getParameterMap()).thenReturn(parameterMap);
-            if (StringUtils.isEmpty(authenticatorProperties.get(ACS_URL)) &&
-                    StringUtils.isEmpty(requestData.getAcsUrl())) {
-                when(IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true)).thenReturn(TestConstants
-                        .ACS_URL);
-            }
         } else {
             when(mockedFileBasedConfigurationBuilder.getAuthenticatorBean(SSOConstants.AUTHENTICATOR_NAME))
                     .thenReturn(null);

@@ -18,19 +18,20 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
+import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
-import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.core.config.InitializationException;
+import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.core.xml.io.Marshaller;
+import org.opensaml.core.xml.io.MarshallingException;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.common.xml.SAMLConstants;
-import org.opensaml.saml.saml2.core.Extensions;
-import org.opensaml.saml.saml2.core.impl.ExtensionsBuilder;
 import org.opensaml.saml.saml2.core.ArtifactResponse;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.Attribute;
@@ -44,6 +45,7 @@ import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.opensaml.saml.saml2.core.AuthnStatement;
 import org.opensaml.saml.saml2.core.Conditions;
 import org.opensaml.saml.saml2.core.EncryptedAssertion;
+import org.opensaml.saml.saml2.core.Extensions;
 import org.opensaml.saml.saml2.core.Issuer;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.LogoutResponse;
@@ -58,6 +60,7 @@ import org.opensaml.saml.saml2.core.Status;
 import org.opensaml.saml.saml2.core.StatusCode;
 import org.opensaml.saml.saml2.core.impl.AuthnContextClassRefBuilder;
 import org.opensaml.saml.saml2.core.impl.AuthnRequestBuilder;
+import org.opensaml.saml.saml2.core.impl.ExtensionsBuilder;
 import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml.saml2.core.impl.LogoutRequestBuilder;
 import org.opensaml.saml.saml2.core.impl.NameIDBuilder;
@@ -67,19 +70,15 @@ import org.opensaml.saml.saml2.core.impl.SessionIndexBuilder;
 import org.opensaml.saml.saml2.core.impl.StatusCodeImpl;
 import org.opensaml.saml.saml2.encryption.Decrypter;
 import org.opensaml.saml.security.impl.SAMLSignatureProfileValidator;
-import org.opensaml.core.xml.XMLObject;
-import org.opensaml.xmlsec.encryption.EncryptedKey;
-import org.opensaml.core.xml.io.Marshaller;
-import org.opensaml.core.xml.io.MarshallingException;
-import org.opensaml.security.credential.CredentialSupport;
 import org.opensaml.security.credential.Credential;
+import org.opensaml.security.credential.CredentialSupport;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.encryption.EncryptedKey;
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver;
 import org.opensaml.xmlsec.keyinfo.impl.StaticKeyInfoCredentialResolver;
-import org.opensaml.security.x509.X509Credential;
-import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.opensaml.xmlsec.signature.impl.SignatureImpl;
-import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -100,6 +99,8 @@ import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.saml.common.util.SAMLInitializer;
 import org.wso2.carbon.user.api.UserRealm;
@@ -117,6 +118,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+
 import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
 
@@ -728,32 +730,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             authRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
         }
 
-        String acsUrl = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.ACS_URL);
-
-        if (StringUtils.isNotEmpty(acsUrl) && log.isDebugEnabled()) {
-            log.debug("Picking SAML acs URL from " + identityProvider.getIdentityProviderName() + " IDP's "
-                    + "configuration: " + acsUrl);
-        }
         AuthenticatorConfig authenticatorConfig =
                 FileBasedConfigurationBuilder.getInstance().getAuthenticatorConfigMap()
                         .get(SSOConstants.AUTHENTICATOR_NAME);
-        if (StringUtils.isEmpty(acsUrl) && authenticatorConfig != null) {
-            String tmpAcsUrl = authenticatorConfig.getParameterMap().get(SSOConstants.ServerConfig.SAML_SSO_ACS_URL);
-            if (StringUtils.isNotBlank(tmpAcsUrl)) {
-                acsUrl = tmpAcsUrl;
-                if (log.isDebugEnabled()) {
-                    log.debug("Picking SAML acs URL from application-authentication.xml: " + acsUrl);
-                }
-            }
-        }
 
-        if (StringUtils.isEmpty(acsUrl)) {
-            acsUrl = IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true);
-            if (log.isDebugEnabled()) {
-                log.debug("Falling back to default SAML acs URL of the server: " + acsUrl);
-            }
-        }
-
+        String acsUrl = getAcsUrl(authenticatorConfig);
         authRequest.setAssertionConsumerServiceURL(acsUrl);
         authRequest.setIssuer(issuer);
         authRequest.setID(SSOUtils.createID());
@@ -813,6 +794,40 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 
         return authRequest;
+    }
+
+    private String getAcsUrl(AuthenticatorConfig authenticatorConfig) throws SAMLSSOException {
+
+        String acsUrl = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.ACS_URL);
+
+        if (StringUtils.isNotEmpty(acsUrl) && log.isDebugEnabled()) {
+            log.debug("Picking SAML acs URL from " + identityProvider.getIdentityProviderName() + " IDP's "
+                    + "configuration: " + acsUrl);
+        }
+
+        if (StringUtils.isEmpty(acsUrl) && authenticatorConfig != null) {
+            String tmpAcsUrl = authenticatorConfig.getParameterMap().get(SSOConstants.ServerConfig.SAML_SSO_ACS_URL);
+            if (StringUtils.isNotBlank(tmpAcsUrl)) {
+                acsUrl = tmpAcsUrl;
+                if (log.isDebugEnabled()) {
+                    log.debug("Picking SAML acs URL from application-authentication.xml: " + acsUrl);
+                }
+            }
+        }
+
+        if (StringUtils.isEmpty(acsUrl)) {
+            try {
+                acsUrl = ServiceURLBuilder.create().addPath(FrameworkConstants.COMMONAUTH).build()
+                        .getAbsolutePublicURL();
+            } catch (URLBuilderException e) {
+                throw new SAMLSSOException("Error while building the acs url.", e);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Falling back to default SAML acs URL of the server: " + acsUrl);
+            }
+        }
+
+        return acsUrl;
     }
 
     private RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws SAMLSSOException {

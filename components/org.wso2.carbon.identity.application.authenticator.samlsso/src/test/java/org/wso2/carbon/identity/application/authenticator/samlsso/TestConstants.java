@@ -394,7 +394,7 @@ public final class TestConstants {
 
     public static final String SP_ENTITY_ID = "wso2is";
 
-    public static final String ACS_URL = "http://localhost:9443/commonauth";
+    public static final String ACS_URL = "https://localhost:9443/commonauth";
 
     public static final String ACS_INDEX = "123456789";
 
