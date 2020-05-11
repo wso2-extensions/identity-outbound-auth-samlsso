@@ -21,15 +21,15 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.proces
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.opensaml.core.xml.XMLObject;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.LogoutResponse;
-import org.opensaml.core.xml.XMLObject;
 import org.wso2.carbon.identity.application.authentication.framework.cache.AuthenticationRequestCacheEntry;
+import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkLogoutResponse;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkRuntimeException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityMessageContext;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
-import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkLogoutResponse;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.InboundUtil;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
@@ -38,12 +38,13 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao.SessionInfoDAO;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
-
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SAMLLogoutUtil;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutRequestValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
@@ -56,13 +57,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AnalyticsAttributes.SESSION_ID;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.LOGOUT;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.
-        AnalyticsAttributes.SESSION_ID;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_URL;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.StatusCodes.SUCCESS_CODE;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.
-        SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.COMMONAUTH;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_NAME;
 import static org.wso2.carbon.identity.base.IdentityConstants.ServerConfig.SAMLSSO;
@@ -181,7 +180,13 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
         responseBuilder.setContextKey(sessionDataKey);
         responseBuilder.setCallbackPath(getCallbackPath(samlMessageContext));
         responseBuilder.setAuthType(getType(samlMessageContext));
-        String commonAuthURL = IdentityUtil.getServerURL(COMMONAUTH, true, true);
+
+        String commonAuthURL;
+        try {
+            commonAuthURL = ServiceURLBuilder.create().addPath(COMMONAUTH).build().getAbsolutePublicURL();
+        } catch (URLBuilderException e) {
+            throw FrameworkRuntimeException.error("Error while building commonauth URL.", e);
+        }
         responseBuilder.setRedirectURL(commonAuthURL);
         return responseBuilder;
     }
@@ -228,7 +233,11 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     @Override
     public String getCallbackPath(IdentityMessageContext context) {
 
-        return IdentityUtil.getServerURL(SAML_SLO_URL, false, false);
+        try {
+            return ServiceURLBuilder.create().addPath(SAML_SLO_URL).build().getAbsolutePublicURL();
+        } catch (URLBuilderException e) {
+            throw FrameworkRuntimeException.error("Error while building callback path.", e);
+        }
     }
 
     @Override

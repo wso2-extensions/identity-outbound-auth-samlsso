@@ -18,13 +18,6 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor;
 
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.dbcp.BasicDataSource;
@@ -44,12 +37,22 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConsta
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.internal.IdentityCoreServiceComponent;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
+
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -57,21 +60,24 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_NAME;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_URL;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.SUPER_TENANT_DOMAIN;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.SAML2_SLO_POST_REQUEST;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.SUPER_TENANT_DOMAIN;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockServiceURLBuilder;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_CERT;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_AUTHN_RESP_SIGNED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_LOGOUT_REQ_SIGNED;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL;
 
 /**
  * Unit test cases for SAMLLogoutRequestProcessor
  */
+@WithCarbonHome
 @PrepareForTest({IdentityDatabaseUtil.class, IdentityProviderManager.class, SAMLSSOAuthenticatorServiceDataHolder.class,
-        IdentityCoreServiceComponent.class, AuthenticationRequestCache.class, IdentityContextCache.class})
+        IdentityCoreServiceComponent.class, AuthenticationRequestCache.class, IdentityContextCache.class,
+        ServiceURLBuilder.class})
 @WithH2Database(files = {"dbscripts/h2.sql"})
 public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
 
@@ -178,6 +184,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         mockStatic(IdentityContextCache.class);
         when(IdentityContextCache.getInstance()).thenReturn(mockedIdentityCache);
 
+        mockServiceURLBuilder();
         assertNotNull(processor.process(mockedRequest));
     }
 

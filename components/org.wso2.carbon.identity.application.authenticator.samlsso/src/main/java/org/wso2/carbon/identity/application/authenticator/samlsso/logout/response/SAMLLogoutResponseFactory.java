@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.respon
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.entity.ContentType;
 import org.owasp.encoder.Encode;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponse;
@@ -66,6 +67,7 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
         String samlPostPage = generateSamlPostPage(response.getAcsUrl(), response.getResponse(), response.getRelayState());
         builder.setBody(samlPostPage);
         builder.setStatusCode(SC_OK);
+        builder.setContentType("text/html; charset=UTF-8");
         builder.setRedirectURL(response.getAcsUrl());
     }
 
@@ -79,6 +81,7 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
                 samlException.getRelayState());
         errorResponseBuilder.setBody(samlPostPage);
         errorResponseBuilder.setStatusCode(SC_OK);
+        errorResponseBuilder.setContentType("text/html; charset=UTF-8");
         errorResponseBuilder.setRedirectURL(samlException.getAcsUrl());
         return errorResponseBuilder;
     }

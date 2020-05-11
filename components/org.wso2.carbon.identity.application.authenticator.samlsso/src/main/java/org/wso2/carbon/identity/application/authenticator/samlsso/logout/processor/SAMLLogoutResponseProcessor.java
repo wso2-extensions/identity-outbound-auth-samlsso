@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor;
 
+import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkRuntimeException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityMessageContext;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityProcessor;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
@@ -25,10 +26,13 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Inb
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponse;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import static org.wso2.carbon.identity.application.authentication.framework.inbound.InboundConstants.
         RequestProcessor.CONTEXT_KEY;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_URL;
 import static org.wso2.carbon.identity.base.IdentityConstants.IDENTITY_DEFAULT_ROLE;
 
 /**
@@ -65,7 +69,11 @@ public class SAMLLogoutResponseProcessor extends IdentityProcessor {
     @Override
     public String getCallbackPath(IdentityMessageContext context) {
 
-        return IdentityUtil.getServerURL(IDENTITY_DEFAULT_ROLE, false, false);
+        try {
+            return ServiceURLBuilder.create().addPath(IDENTITY_DEFAULT_ROLE).build().getAbsolutePublicURL();
+        } catch (URLBuilderException e) {
+            throw FrameworkRuntimeException.error("Error while building callback path.", e);
+        }
     }
 
     @Override

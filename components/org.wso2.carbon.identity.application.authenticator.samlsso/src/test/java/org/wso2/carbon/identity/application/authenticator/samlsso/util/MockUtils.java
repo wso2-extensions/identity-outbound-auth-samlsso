@@ -22,14 +22,20 @@ import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.xerces.dom.CoreDOMImplementationImpl;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.apache.xerces.util.SecurityManager;
+import org.powermock.api.mockito.PowerMockito;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.wso2.carbon.identity.core.ServiceURL;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+
+import java.util.Arrays;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.xpath.XPathFactory;
 
+import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -67,6 +73,52 @@ public class MockUtils {
         mockStatic(DOMImplementationRegistry.class);
         when(DOMImplementationRegistry.newInstance()).thenReturn(mockedDomImplementationRegistry);
         when(mockedDomImplementationRegistry.getDOMImplementation("LS")).thenReturn(new CoreDOMImplementationImpl());
+    }
+
+    public static void mockServiceURLBuilder() {
+
+        ServiceURLBuilder builder = new ServiceURLBuilder() {
+            String path = "";
+
+            @Override
+            public ServiceURLBuilder addPath(String... strings) {
+
+                Arrays.stream(strings).forEach(x -> {
+                    path += "/" + x;
+                });
+                return this;
+            }
+
+            @Override
+            public ServiceURLBuilder addParameter(String s, String s1) {
+
+                return this;
+            }
+
+            @Override
+            public ServiceURLBuilder setFragment(String s) {
+
+                return this;
+            }
+
+            @Override
+            public ServiceURLBuilder addFragmentParameter(String s, String s1) {
+
+                return this;
+            }
+
+            @Override
+            public ServiceURL build() {
+
+                ServiceURL serviceURL = mock(ServiceURL.class);
+                PowerMockito.when(serviceURL.getAbsolutePublicURL()).thenReturn("https://localhost:9443" + path);
+                PowerMockito.when(serviceURL.getRelativeURL()).thenReturn(path);
+                return serviceURL;
+            }
+        };
+
+        mockStatic(ServiceURLBuilder.class);
+        PowerMockito.when(ServiceURLBuilder.create()).thenReturn(builder);
     }
 
     private static DocumentBuilderFactory getSecuredDocumentBuilderFactory() throws ParserConfigurationException {
