@@ -535,17 +535,25 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             if (samlResponse.getStatus() != null && samlResponse.getStatus().getStatusCode() != null) {
                 if (samlResponse.getStatus().getStatusCode().getValue().equals(
                         SSOConstants.StatusCodes.IDENTITY_PROVIDER_ERROR)) {
-                    if (samlResponse.getStatus().getStatusCode().getStatusCode() != null &&
-                            samlResponse.getStatus().getStatusCode().getStatusCode().getValue().equals(
-                                    SSOConstants.StatusCodes.NO_PASSIVE)) {
-                        return;
+                    if (samlResponse.getStatus().getStatusCode().getStatusCode() != null) {
+                        if (samlResponse.getStatus().getStatusCode().getStatusCode().getValue().equals(
+                                SSOConstants.StatusCodes.NO_PASSIVE)) {
+                            return;
+                        } else if (log.isDebugEnabled()) {
+                            log.debug("SAML Response status code object value is: " +
+                                    samlResponse.getStatus().getStatusCode().getStatusCode().getValue()
+                                    + ".");
+                            throw new SAMLSSOException("SAML Response status code object value is not" +
+                                    "equal to: " + SSOConstants.StatusCodes.NO_PASSIVE + ".");
+                        }
                     } else if (log.isDebugEnabled()) {
-                        log.debug("SAML Response status code object is either null or it's value is " +
-                                "not equal to: " + SSOConstants.StatusCodes.NO_PASSIVE + ".");
+                        log.debug("SAML Response status code object is null.");
                     }
                 } else if (log.isDebugEnabled()) {
                     log.debug("SAML Response status code value is: " +
                             samlResponse.getStatus().getStatusCode().getValue() + ".");
+                    throw new SAMLSSOException("SAML Response status code value is not equal to: " +
+                            SSOConstants.StatusCodes.IDENTITY_PROVIDER_ERROR + ".");
                 }
             } else if (log.isDebugEnabled()) {
                 log.debug("SAML Response status or the status code is null.");
