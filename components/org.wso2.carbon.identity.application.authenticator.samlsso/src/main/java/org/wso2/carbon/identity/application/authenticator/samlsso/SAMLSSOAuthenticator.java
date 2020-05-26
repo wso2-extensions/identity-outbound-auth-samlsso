@@ -56,6 +56,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -71,6 +76,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
     public static final String AUTHENTICATION_CONTEXT = "AUTHENTICATION_CONTEXT";
 
     private static final String AS_RESPONSE = "AS_RESPONSE";
+    private static final String AUTH_PARAM = "$authparam";
+    private static final String DYNAMIC_AUTH_PARAMS_LOOKUP_REGEX = "\\$authparam\\{(\\w+)\\}";
+    private static final Pattern authParamDynamicQueryPattern = Pattern.compile(DYNAMIC_AUTH_PARAMS_LOOKUP_REGEX);
 
     private static final Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
 
@@ -184,7 +192,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
     private String getResolvedQueryParamValue(HttpServletRequest request, AuthenticationContext context,
                                               Map.Entry<String, String> queryParam) {
+
         String resolvedQueryParamValue = queryParam.getValue();
+
         if (isDynamicQueryParam(resolvedQueryParamValue)) {
             String inboundQueryParamKey = removeEnclosingParenthesis(resolvedQueryParamValue);
             String[] authRequestParamValues = context.getAuthenticationRequest()
@@ -199,8 +209,26 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 // string for the dynamic query value.
                 resolvedQueryParamValue = StringUtils.EMPTY;
             }
+        } else if (isDynamicAuthContextParam(resolvedQueryParamValue)) {
+            Matcher matcher = authParamDynamicQueryPattern.matcher(resolvedQueryParamValue);
+            if (matcher.find()) {
+                String paramName = matcher.group(1);
+                String valueFromRuntimeParams = getRuntimeParams(context).get(paramName);
+                if (StringUtils.isNotEmpty(valueFromRuntimeParams)) {
+                    log.info(queryParam.getKey() + "=" + queryParam.getValue() + " was replaced as "
+                            + queryParam.getKey() + "=" + valueFromRuntimeParams);
+                    return valueFromRuntimeParams;
+                }
+            }
+
+            return StringUtils.EMPTY;
         }
         return resolvedQueryParamValue;
+    }
+
+    private boolean isDynamicAuthContextParam(String resolvedQueryParamValue) {
+
+        return StringUtils.startsWith(resolvedQueryParamValue, AUTH_PARAM);
     }
 
     private String removeEnclosingParenthesis(String queryParamValue) {
