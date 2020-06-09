@@ -215,8 +215,10 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 String paramName = matcher.group(1);
                 String valueFromRuntimeParams = getRuntimeParams(context).get(paramName);
                 if (StringUtils.isNotEmpty(valueFromRuntimeParams)) {
-                    log.info(queryParam.getKey() + "=" + queryParam.getValue() + " was replaced as "
-                            + queryParam.getKey() + "=" + valueFromRuntimeParams);
+                    if (log.isDebugEnabled()) {
+                        log.debug(queryParam.getKey() + "=" + queryParam.getValue() + " was replaced as "
+                                + queryParam.getKey() + "=" + valueFromRuntimeParams);
+                    }
                     return valueFromRuntimeParams;
                 }
             }
