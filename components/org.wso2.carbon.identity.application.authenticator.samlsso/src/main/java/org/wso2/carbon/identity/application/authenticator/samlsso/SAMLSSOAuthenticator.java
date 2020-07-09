@@ -501,7 +501,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
     }
 
     private String buildPostPageInputs(String encodedRequest, String relayState,
-                                       Map<String, String> reqParamMap) {
+                                       Map<String, String> reqParamMap) throws SAMLSSOException {
         StringBuilder hiddenInputBuilder = new StringBuilder("");
         hiddenInputBuilder.append("<input type='hidden' name='SAMLRequest' value='")
                 .append(encodedRequest).append("'>");
@@ -513,9 +513,14 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
 
         for (Map.Entry<String, String> reqParam : reqParamMap.entrySet()) {
             String paramName = reqParam.getKey();
-            String paramValue = reqParam.getValue();
-            hiddenInputBuilder.append("<input type='hidden' name='").append(paramName)
-                    .append("' value='").append(paramValue).append("'>");
+            String paramValue;
+            try {
+                paramValue = URLDecoder.decode(reqParam.getValue(), StandardCharsets.UTF_8.toString());
+            } catch (UnsupportedEncodingException e) {
+                throw new SAMLSSOException("Error while building POST request.", e);
+            }
+            hiddenInputBuilder.append("<input type='hidden' name='").append(Encode.forHtmlAttribute(paramName))
+                    .append("' value='").append(Encode.forHtmlAttribute(paramValue) ).append("'>");
         }
 
         return hiddenInputBuilder.toString();
