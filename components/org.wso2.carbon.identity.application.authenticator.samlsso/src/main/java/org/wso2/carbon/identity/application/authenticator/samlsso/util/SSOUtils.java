@@ -17,34 +17,34 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso.util;
 
+import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xml.security.c14n.Canonicalizer;
-import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
-import org.opensaml.saml.common.SAMLObjectContentReference;
-import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
-import org.opensaml.saml.saml2.core.RequestAbstractType;
-import org.opensaml.saml.saml2.core.LogoutResponse;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.XMLObjectBuilder;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.core.xml.io.Marshaller;
 import org.opensaml.core.xml.io.MarshallerFactory;
 import org.opensaml.core.xml.io.MarshallingException;
 import org.opensaml.core.xml.io.Unmarshaller;
 import org.opensaml.core.xml.io.UnmarshallerFactory;
 import org.opensaml.core.xml.io.UnmarshallingException;
+import org.opensaml.saml.common.SAMLObjectContentReference;
+import org.opensaml.saml.saml2.core.LogoutResponse;
+import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.security.SecurityException;
-import org.opensaml.xmlsec.crypto.XMLSigningUtil;
 import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.crypto.XMLSigningUtil;
 import org.opensaml.xmlsec.signature.KeyInfo;
-import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.SignableXMLObject;
+import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.X509Data;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidationProvider;
 import org.opensaml.xmlsec.signature.support.Signer;
-import org.opensaml.xmlsec.signature.X509Data;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -53,19 +53,12 @@ import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.xml.sax.SAXException;
 
-import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -86,7 +79,17 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
 public class SSOUtils {
+
     private SSOUtils() {
 
     }
@@ -163,7 +166,8 @@ public class SSOUtils {
         }
         if (x509Credential.getEntityCertificate() == null) {
             throw new SAMLSSOException(
-                    "IdP certificate is needed for AuthnRequest signing in POST binding");
+                    ErrorMessages.IDP_CERTIFICATE_MISSING.getCode(),
+                    ErrorMessages.IDP_CERTIFICATE_MISSING.getMessage());
         }
         //TODO use StringUtils.isBlank
         if (StringUtils.isEmpty(signatureAlgorithm)) {
@@ -189,7 +193,8 @@ public class SSOUtils {
                     value = org.apache.xml.security.utils.Base64.encode(x509Credential
                             .getEntityCertificate().getEncoded());
                 } catch (CertificateEncodingException e) {
-                    throw new SAMLSSOException("Error getting the certificate to include in the signature", e);
+                    throw new SAMLSSOException(ErrorMessages.RETRIEVING_THE_CERTIFICATE_FAILED.getCode(),
+                            "Error getting the certificate to include in the signature", e);
                 }
                 cert.setValue(value);
                 data.getX509Certificates().add(cert);
@@ -210,7 +215,8 @@ public class SSOUtils {
         try {
             marshaller.marshall(request);
         } catch (MarshallingException e) {
-            throw new SAMLSSOException("Error while marshalling the SAML Request for signing", e);
+            throw new SAMLSSOException(ErrorMessages.MARSHALLING_SAML_REQUEST_FOR_SIGNING_FAILED.getCode(),
+                    ErrorMessages.MARSHALLING_SAML_REQUEST_FOR_SIGNING_FAILED.getMessage(), e);
         }
 
         org.apache.xml.security.Init.init();
@@ -225,7 +231,8 @@ public class SSOUtils {
         try {
             Signer.signObjects(signatureList);
         } catch (SignatureException e) {
-            throw new SAMLSSOException("Error while signing the SAML Request", e);
+            throw new SAMLSSOException(ErrorMessages.SIGNING_SAML_REQUEST_FAILED.getCode(),
+                    ErrorMessages.SIGNING_SAML_REQUEST_FAILED.getMessage(), e);
         } finally {
             thread.setContextClassLoader(originalClassLoader);
         }
@@ -250,10 +257,12 @@ public class SSOUtils {
             httpQueryString.append("&Signature=" + URLEncoder.encode(base64Signature, "UTF-8").trim());
 
         } catch (SecurityException e) {
-            throw new SAMLSSOException("Unable to sign query string", e);
+            throw new SAMLSSOException(ErrorMessages.UNABLE_TO_SIGN_QUERY_STRING.getCode(),
+                    ErrorMessages.UNABLE_TO_SIGN_QUERY_STRING.getMessage(), e);
         } catch (UnsupportedEncodingException e) {
             // UTF-8 encoding is required to be supported by all JVMs
-            throw new SAMLSSOException("Error while adding signature to HTTP query string", e);
+            throw new SAMLSSOException(ErrorMessages.ADDING_SIGNATURE_TO_HTTP_QUERY_STRING_FAILED.getCode(),
+                    ErrorMessages.ADDING_SIGNATURE_TO_HTTP_QUERY_STRING_FAILED.getMessage(), e);
         }
   }
 
@@ -268,8 +277,8 @@ public class SSOUtils {
         XMLObjectBuilder builder = XMLObjectProviderRegistrySupport.getBuilderFactory()
                         .getBuilder(objectQName);
         if (builder == null) {
-            throw new SAMLSSOException("Unable to retrieve builder for object QName " +
-                    objectQName);
+            throw new SAMLSSOException(ErrorMessages.UNABLE_TO_RETRIEVE_BUILDER_FOR_OBJECT_QNAME.getCode(),
+                    String.format(ErrorMessages.UNABLE_TO_RETRIEVE_BUILDER_FOR_OBJECT_QNAME.getMessage(), objectQName));
         }
         return builder.buildObject(objectQName.getNamespaceURI(), objectQName.getLocalPart(),
                 objectQName.getPrefix());
@@ -327,7 +336,7 @@ public class SSOUtils {
                 return decodedStr;
             }
         } catch (IOException e) {
-            throw new SAMLSSOException("Error when decoding the SAML Request.", e);
+            throw new SAMLSSOException(ErrorMessages.IO_ERROR.getCode(), "Error when decoding the SAML Request.", e);
         }
 
     }
@@ -346,8 +355,7 @@ public class SSOUtils {
             return decodedString;
 
         } catch (IOException e) {
-            throw new SAMLSSOException(
-                    "Error when decoding the SAML Request.", e);
+            throw new SAMLSSOException(ErrorMessages.IO_ERROR.getCode(), "Error when decoding the SAML Request.", e);
         }
     }
 
@@ -378,7 +386,7 @@ public class SSOUtils {
             return byteArrayOutputStrm.toString();
         } catch (Exception e) {
             log.error("Error Serializing the SAML Response");
-            throw new SAMLSSOException("Error Serializing the SAML Response", e);
+            throw new SAMLSSOException(ErrorMessages.IO_ERROR.getCode(), "Error Serializing the SAML Response", e);
         }
     }
 
@@ -404,7 +412,8 @@ public class SSOUtils {
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
             return unmarshaller.unmarshall(element);
         } catch (ParserConfigurationException | UnmarshallingException | SAXException | IOException e) {
-            throw new SAMLSSOException("Error in unmarshalling SAML Request from the encoded String", e);
+            throw new SAMLSSOException(ErrorMessages.UNMARSHALLING_SAML_REQUEST_ENCODED_STRING_FAILED.getCode(),
+                    ErrorMessages.UNMARSHALLING_SAML_REQUEST_ENCODED_STRING_FAILED.getMessage(), e);
         }
 
     }

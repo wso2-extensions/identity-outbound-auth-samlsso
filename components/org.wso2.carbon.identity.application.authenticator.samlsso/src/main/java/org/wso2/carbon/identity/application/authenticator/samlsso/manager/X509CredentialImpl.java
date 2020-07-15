@@ -32,10 +32,10 @@ import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 
-import javax.crypto.SecretKey;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -53,11 +53,12 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
 
+import javax.crypto.SecretKey;
+
 /**
  * X509Credential implementation for signing and verification.
  */
 public class X509CredentialImpl implements X509Credential {
-
 
     private PublicKey publicKey = null;
     private PrivateKey privateKey = null;
@@ -97,8 +98,8 @@ public class X509CredentialImpl implements X509Credential {
                 cert = (X509Certificate) IdentityApplicationManagementUtil
                         .decodeCertificate(idpCert);
             } catch (CertificateException e) {
-                throw new SAMLSSOException(
-                        "Error retrieving the certificate for alias " + idpCert, e);
+                throw new SAMLSSOException(ErrorMessages.RETRIEVING_THE_CERTIFICATE_FAILED.getCode(),
+                        String.format("Error retrieving the certificate for alias %s", idpCert), e);
             }
         } else {
             int tenantId;
@@ -107,9 +108,8 @@ public class X509CredentialImpl implements X509Credential {
                 tenantId = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getRealmService().getTenantManager()
                         .getTenantId(tenantDomain);
             } catch (UserStoreException e) {
-                throw new SAMLSSOException(
-                        "Exception occurred while retrieving Tenant ID from tenant domain " +
-                                tenantDomain, e);
+                throw new SAMLSSOException(ErrorMessages.RETRIEVING_TENANT_ID_FAILED.getCode(),
+                        String.format(ErrorMessages.RETRIEVING_TENANT_ID_FAILED.getMessage(), tenantDomain), e);
             }
 
             KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
@@ -151,11 +151,14 @@ public class X509CredentialImpl implements X509Credential {
 
                                     superTenantSignKeyStore = keyStore;
                                 } catch (FileNotFoundException e) {
-                                    throw new SAMLSSOException("Unable to locate keystore", e);
+                                    throw new SAMLSSOException(ErrorMessages.UNABLE_TO_LOCATE_KEYSTORE.getCode(),
+                                            ErrorMessages.UNABLE_TO_LOCATE_KEYSTORE.getMessage(), e);
                                 } catch (IOException e) {
-                                    throw new SAMLSSOException("Unable to read keystore", e);
+                                    throw new SAMLSSOException(ErrorMessages.UNABLE_TO_READ_KEYSTORE.getCode(),
+                                            ErrorMessages.UNABLE_TO_READ_KEYSTORE.getMessage(), e);
                                 } catch (CertificateException e) {
-                                    throw new SAMLSSOException("Unable to read certificate", e);
+                                    throw new SAMLSSOException(ErrorMessages.UNABLE_TO_READ_CERTIFICATE.getCode(),
+                                            ErrorMessages.UNABLE_TO_READ_CERTIFICATE.getMessage(), e);
                                 }
                             }
 
@@ -170,21 +173,28 @@ public class X509CredentialImpl implements X509Credential {
                             if (privateKey instanceof PrivateKey) {
                                 key = (PrivateKey) privateKey;
                             } else {
-                                throw new SAMLSSOException("Configured signing KeyStore private key is invalid");
+                                throw new SAMLSSOException(
+                                        ErrorMessages.CONFIGURED_PRIVATE_KEY_IS_INVALID.getCode(),
+                                        ErrorMessages.CONFIGURED_PRIVATE_KEY_IS_INVALID.getMessage());
                             }
 
                             if (publicKey instanceof X509Certificate) {
                                 cert = (X509Certificate) publicKey;
                             } else {
-                                throw new SAMLSSOException("Configured signing KeyStore public key is invalid");
+                                throw new SAMLSSOException(
+                                        ErrorMessages.CONFIGURED_PUBLIC_KEY_IS_INVALID.getCode(),
+                                        ErrorMessages.CONFIGURED_PUBLIC_KEY_IS_INVALID.getMessage());
                             }
 
                         } catch (NoSuchAlgorithmException e) {
-                            throw new SAMLSSOException("Unable to load algorithm", e);
+                            throw new SAMLSSOException(ErrorMessages.INVALID_ALGORITHM.getCode(),
+                                    ErrorMessages.INVALID_ALGORITHM.getMessage(), e);
                         } catch (UnrecoverableKeyException e) {
-                            throw new SAMLSSOException("Unable to load key", e);
+                            throw new SAMLSSOException(ErrorMessages.UNABLE_TO_LOAD_KEY.getCode(),
+                                    ErrorMessages.UNABLE_TO_LOAD_KEY.getMessage(), e);
                         } catch (KeyStoreException e) {
-                            throw new SAMLSSOException("Unable to load keystore", e);
+                            throw new SAMLSSOException(ErrorMessages.UNABLE_TO_LOAD_KEYSTORE.getCode(),
+                                    ErrorMessages.UNABLE_TO_LOAD_KEYSTORE.getMessage(), e);
                         }
                     } else {
                         key = keyStoreManager.getDefaultPrivateKey();
@@ -193,8 +203,9 @@ public class X509CredentialImpl implements X509Credential {
                 }
             } catch (Exception e) {
                 throw new SAMLSSOException(
-                        "Error retrieving private key and the certificate for tenant " +
-                                tenantDomain, e);
+                        ErrorMessages.RETRIEVING_PRIVATE_KEY_AND_CERTIFICATE_FOR_TENANT_FAILED.getCode(), String.format(
+                        ErrorMessages.RETRIEVING_PRIVATE_KEY_AND_CERTIFICATE_FOR_TENANT_FAILED.getMessage(),
+                        tenantDomain), e);
             } finally {
                 if (!tenantDomain.equals(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
                     FrameworkUtils.endTenantFlow();
@@ -202,15 +213,16 @@ public class X509CredentialImpl implements X509Credential {
             }
 
             if (key == null) {
-                throw new SAMLSSOException(
-                        "Cannot find the private key for tenant " + tenantDomain);
+                throw new SAMLSSOException(ErrorMessages.CANNOT_FIND_THE_PRIVATE_KEY_FOR_TENANT.getCode(),
+                        String.format(ErrorMessages.CANNOT_FIND_THE_PRIVATE_KEY_FOR_TENANT.getMessage(), tenantDomain));
             }
 
             this.privateKey = key;
         }
 
         if (cert == null) {
-            throw new SAMLSSOException("Cannot find the certificate.");
+            throw new SAMLSSOException(ErrorMessages.CANNOT_FIND_THE_CERTIFICATE.getCode(),
+                    ErrorMessages.CANNOT_FIND_THE_CERTIFICATE.getMessage());
         }
 
         entityCertificate = cert;
