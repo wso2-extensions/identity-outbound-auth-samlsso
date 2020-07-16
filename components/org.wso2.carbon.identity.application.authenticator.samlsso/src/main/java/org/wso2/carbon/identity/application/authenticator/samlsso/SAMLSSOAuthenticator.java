@@ -39,14 +39,13 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.manager.Defaul
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.SAML2SSOManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.model.StateInfo;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.SubProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -54,10 +53,12 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_RESP;
@@ -128,10 +129,12 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 generateAuthenticationRequest(request, response, ssoUrl, authenticatorProperties);
 
             }
-        } catch (SAMLSSOException | UnsupportedEncodingException e) {
-            throw new AuthenticationFailedException(e.getMessage(), e);
+        } catch (SAMLSSOException e) {
+            throw new AuthenticationFailedException(e.getErrorCode(), e.getMessage(), e);
+        } catch (UnsupportedEncodingException e) {
+            throw new AuthenticationFailedException(ErrorMessages.UNSUPPORTED_ENCODING_EXCEPTION.getCode(),
+                    e.getMessage(), e);
         }
-
     }
 
     /**
@@ -239,8 +242,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             }
             response.sendRedirect(ssoUrl);
         } catch (IOException e) {
-            throw new AuthenticationFailedException(
-                    "Error while sending the redirect to federated SAML IdP", e);
+            throw new AuthenticationFailedException(ErrorMessages.IO_ERROR.getCode(),
+                    "Error while sending the redirect to federated SAML IdP.", e);
         }
     }
 
@@ -279,7 +282,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
             }
 
             if (StringUtils.isBlank(subject)) {
-                throw new SAMLSSOException("Cannot find federated User Identifier");
+                throw new SAMLSSOException(ErrorMessages.FEDERATED_USER_IDENTIFIER_NOT_FOUND.getCode(),
+                        ErrorMessages.FEDERATED_USER_IDENTIFIER_NOT_FOUND.getMessage());
             }
 
             Object sessionIndexObj = request.getSession(false).getAttribute(SSOConstants.IDP_SESSION);
@@ -336,7 +340,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
         } catch (SAMLSSOException e) {
             // whenever the code reaches here the subject identifier will be null. Therefore we can't pass
             // AuthenticatedUser object with the exception.
-            throw new AuthenticationFailedException(e.getMessage(), e);
+            throw new AuthenticationFailedException(e.getErrorCode(), e.getMessage(), e);
         } finally {
             // this is not needed - remove it.
             request.removeAttribute(AUTHENTICATION_CONTEXT);
@@ -877,7 +881,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 context.getExternalIdP().getIdentityProvider());
 
         if (!(saml2SSOManager instanceof DefaultSAML2SSOManager)) {
-            throw new SAMLSSOException("HTTP-POST is not supported");
+            throw new SAMLSSOException(ErrorMessages.HTTP_POST_NOT_SUPPORTED.getCode(),
+                    ErrorMessages.HTTP_POST_NOT_SUPPORTED.getMessage());
         }
 
         String encodedRequest = ((DefaultSAML2SSOManager) saml2SSOManager).buildPostRequest(
@@ -898,11 +903,11 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 Class clazz = Class.forName(managerClassName);
                 return (SAML2SSOManager) clazz.newInstance();
             } catch (ClassNotFoundException e) {
-                throw new SAMLSSOException(e.getMessage(), e);
+                throw new SAMLSSOException(ErrorMessages.CLASS_NOT_FOUND_EXCEPTION.getCode(), e.getMessage(), e);
             } catch (InstantiationException e) {
-                throw new SAMLSSOException(e.getMessage(), e);
+                throw new SAMLSSOException(ErrorMessages.INSTANTIATION_FAILED.getCode(), e.getMessage(), e);
             } catch (IllegalAccessException e) {
-                throw new SAMLSSOException(e.getMessage(), e);
+                throw new SAMLSSOException(ErrorMessages.ILLEGAL_ACCESS.getCode(), e.getMessage(), e);
             }
         } else {
             return new DefaultSAML2SSOManager();
@@ -989,7 +994,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator imple
                 out.println("</html>");
             }
         } catch (Exception e) {
-            throw new SAMLSSOException("Error while sending POST request", e);
+            throw new SAMLSSOException(ErrorMessages.IO_ERROR.getCode(), "Error while sending POST request", e);
         }
     }
 }

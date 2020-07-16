@@ -112,7 +112,7 @@ public class MockUtils {
 
                 ServiceURL serviceURL = mock(ServiceURL.class);
                 PowerMockito.when(serviceURL.getAbsolutePublicURL()).thenReturn("https://localhost:9443" + path);
-                PowerMockito.when(serviceURL.getRelativeURL()).thenReturn(path);
+                PowerMockito.when(serviceURL.getRelativePublicURL()).thenReturn(path);
                 return serviceURL;
             }
         };

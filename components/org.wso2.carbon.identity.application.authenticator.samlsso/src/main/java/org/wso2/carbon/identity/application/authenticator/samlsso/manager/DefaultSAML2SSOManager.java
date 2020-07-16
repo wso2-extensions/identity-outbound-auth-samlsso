@@ -93,6 +93,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.exception.Arti
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.CertificateInfo;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
@@ -220,7 +221,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         try {
             httpQueryString.append("&RelayState=" + URLEncoder.encode(contextIdentifier, "UTF-8").trim());
         } catch (UnsupportedEncodingException e) {
-            throw new SAMLSSOException("Error occurred while url encoding RelayState", e);
+            throw new SAMLSSOException(ErrorMessages.URL_ENCODING_RELAY_STATE.getCode(),
+                    ErrorMessages.URL_ENCODING_RELAY_STATE.getMessage(), e);
         }
 
         boolean isRequestSigned;
@@ -359,7 +361,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                                 if (SUCCESS.equals(code)) {
                                     executeSAMLReponse(request, child);
                                 } else {
-                                    throw new SAMLSSOException("Received an error SAML response.");
+                                    throw new SAMLSSOException(
+                                            ErrorMessages.SAML_RESPONSE_STATUS_CODE_MISMATCHED_WITH_SUCCESS_CODE
+                                                    .getCode(),
+                                            ErrorMessages.SAML_RESPONSE_STATUS_CODE_MISMATCHED_WITH_SUCCESS_CODE
+                                                    .getMessage());
                                 }
                             }
                         }
@@ -367,7 +373,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 }
             }
         } catch (ArtifactResolutionException e) {
-            throw new SAMLSSOException("Error when getting the Artifact Response.", e);
+            throw new SAMLSSOException(ErrorMessages.ARTIFACT_RESPONSE_RESOLUTION_FAILED.getCode(),
+                    ErrorMessages.ARTIFACT_RESPONSE_RESOLUTION_FAILED.getMessage(), e);
         }
     }
 
@@ -388,7 +395,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } else if (samlObject instanceof Response) {
             processSSOResponse(request, (Response) samlObject);
         } else {
-            throw new SAMLSSOException("Unable to process unknown SAML object type.");
+            throw new SAMLSSOException(ErrorMessages.UNABLE_TO_PROCESS_SAML_OBJECT_TYPE.getCode(),
+                    ErrorMessages.UNABLE_TO_PROCESS_SAML_OBJECT_TYPE.getMessage());
         }
     }
 
@@ -505,7 +513,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         } else if (samlObject instanceof LogoutResponse) {
             request.getSession().invalidate();
         } else {
-            throw new SAMLSSOException("Invalid Single Logout SAML Request");
+            throw new SAMLSSOException(ErrorMessages.INVALID_SINGLE_LOGOUT_SAML_REQUEST.getCode(),
+                    ErrorMessages.INVALID_SINGLE_LOGOUT_SAML_REQUEST.getMessage());
         }
     }
 
@@ -521,7 +530,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 try {
                     assertion = getDecryptedAssertion(encryptedAssertion);
                 } catch (Exception e) {
-                    throw new SAMLSSOException("Unable to decrypt the SAML Assertion", e);
+                    throw new SAMLSSOException(ErrorMessages.UNABLE_TO_DECRYPT_THE_SAML_ASSERTION.getCode(),
+                            ErrorMessages.UNABLE_TO_DECRYPT_THE_SAML_ASSERTION.getMessage(), e);
                 }
             }
         } else {
@@ -559,7 +569,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 log.debug("SAML Response status or the status code is null.");
             }
 
-            throw new SAMLSSOException("SAML Assertion is not found in the Response.");
+            throw new SAMLSSOException(ErrorMessages.SAML_ASSERTION_NOT_FOUND_IN_RESPONSE.getCode(),
+                    ErrorMessages.SAML_ASSERTION_NOT_FOUND_IN_RESPONSE.getMessage());
         }
 
         // Validate the assertion issuer. This is an optional validation which is not mandate by the spec.
@@ -588,7 +599,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
 
         if (subject == null) {
-            throw new SAMLSSOException("SAML Response does not contain the name of the subject");
+            throw new SAMLSSOException(ErrorMessages.SUBJECT_NAME_NOT_FOUND_IN_RESPONSE.getCode(),
+                    ErrorMessages.SUBJECT_NAME_NOT_FOUND_IN_RESPONSE.getMessage());
         }
 
         request.getSession().setAttribute("username", subject); // get the subject
@@ -627,7 +639,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         if (SSOUtils.isLogoutEnabled(properties)) {
             String sessionId = assertion.getAuthnStatements().get(0).getSessionIndex();
             if (sessionId == null) {
-                throw new SAMLSSOException("Single Logout is enabled but IdP Session ID not found in SAML Assertion");
+                throw new SAMLSSOException(ErrorMessages.IDP_SESSION_ID_NOT_FOUND_FOR_SLO.getCode(),
+                        ErrorMessages.IDP_SESSION_ID_NOT_FOUND_FOR_SLO.getMessage());
             }
             request.getSession().setAttribute(SSOConstants.IDP_SESSION, sessionId);
             request.getSession().setAttribute(SSOConstants.NAME_QUALIFIER, nameQualifier);
@@ -963,7 +976,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             return URLEncoder.encode(encodedRequestMessage, "UTF-8").trim();
 
         } catch (MarshallingException | IOException e) {
-            throw new SAMLSSOException("Error occurred while encoding SAML request", e);
+            throw new SAMLSSOException(ErrorMessages.IO_ERROR.getCode(),
+                    "Error occurred while encoding SAML request", e);
         }
     }
 
@@ -972,15 +986,15 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
         NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
         if (responseList != null && responseList.getLength() > 0) {
-            throw new SAMLSSOException("Error occurred while processing SAML2 response. " +
-                    "Invalid schema for the SAML2 response. Multiple Response elements found.");
+            throw new SAMLSSOException(ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getCode(),
+                    ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getMessage());
         }
 
         // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
         NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
         if (assertionList != null && assertionList.getLength() > 1) {
-            throw new SAMLSSOException("Error occurred while processing SAML2 response. " +
-                    "Invalid schema for the SAML2 response. Multiple Assertion elements found.");
+            throw new SAMLSSOException(ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getCode(),
+                    ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getMessage());
         }
     }
 
@@ -1058,17 +1072,23 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                                 }
                             }
                             if (!audienceFound) {
-                                throw new SAMLSSOException("SAML Assertion Audience Restriction validation failed");
+                                throw new SAMLSSOException(
+                                        ErrorMessages.AUDIENCE_RESTRICTION_VALIDATION_FAILED.getCode(),
+                                        ErrorMessages.AUDIENCE_RESTRICTION_VALIDATION_FAILED.getMessage());
                             }
                         } else {
-                            throw new SAMLSSOException("SAML Response's AudienceRestriction doesn't contain Audiences");
+                            throw new SAMLSSOException(
+                                    ErrorMessages.AUDIENCES_NOT_FOUND.getCode(),
+                                    ErrorMessages.AUDIENCES_NOT_FOUND.getMessage());
                         }
                     }
                 } else {
-                    throw new SAMLSSOException("SAML Response doesn't contain AudienceRestrictions");
+                    throw new SAMLSSOException(ErrorMessages.AUDIENCE_RESTRICTION_NOT_FOUND.getCode(),
+                            ErrorMessages.AUDIENCE_RESTRICTION_NOT_FOUND.getMessage());
                 }
             } else {
-                throw new SAMLSSOException("SAML Response doesn't contain Conditions");
+                throw new SAMLSSOException(ErrorMessages.SAML_CONDITIONS_NOT_FOUND.getCode(),
+                        ErrorMessages.SAML_CONDITIONS_NOT_FOUND.getMessage());
             }
         }
     }
@@ -1086,8 +1106,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
             XMLObject signature = response.getSignature();
             if (signature == null) {
-                throw new SAMLSSOException("SAMLResponse signing is enabled, but signature element " +
-                        "not found in SAML Response element.");
+                throw new SAMLSSOException(ErrorMessages.SIGNATURE_ELEMENT_NOT_FOUND_WHILE_ENABLED.getCode(),
+                        ErrorMessages.SIGNATURE_ELEMENT_NOT_FOUND_WHILE_ENABLED.getMessage());
             } else {
                 validateSignature(signature);
             }
@@ -1096,8 +1116,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
             XMLObject signature = assertion.getSignature();
             if (assertion.getSignature() == null) {
-                throw new SAMLSSOException("SAMLAssertion signing is enabled, but signature element " +
-                        "not found in SAML Assertion element.");
+                throw new SAMLSSOException(
+                        ErrorMessages.SIGNATURE_ELEMENT_NOT_FOUND_IN_SAML_ASSERTION_WHILE_SIGNING_ENABLED.getCode(),
+                        ErrorMessages.SIGNATURE_ELEMENT_NOT_FOUND_IN_SAML_ASSERTION_WHILE_SIGNING_ENABLED.getMessage());
             } else {
                 validateSignature(signature);
             }
@@ -1116,8 +1137,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
             XMLObject signature = artifactResponse.getSignature();
             if (signature == null) {
-                throw new SAMLSSOException("Artifact Response signing is enabled, but signature element " +
-                        "not found in Artifact Response element.");
+                throw new SAMLSSOException(
+                        ErrorMessages.SIGNATURE_ELEMENT_NOT_FOUND_IN_ARTIFACT_RESPONSE_WHILE_ENABLED.getCode(),
+                        ErrorMessages.SIGNATURE_ELEMENT_NOT_FOUND_IN_ARTIFACT_RESPONSE_WHILE_ENABLED.getMessage());
             } else {
                 validateSignature(signature);
             }
@@ -1140,14 +1162,16 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             SAMLSignatureProfileValidator signatureProfileValidator = new SAMLSignatureProfileValidator();
             signatureProfileValidator.validate(signImpl);
         } catch (SignatureException ex) {
-            String logMsg = "Signature do not confirm to SAML signature profile. Possible XML Signature  " +
-                    "Wrapping Attack!";
+            String logMsg = ErrorMessages.SIGNATURE_NOT_CONFIRM_TO_SAML_SIGNATURE_PROFILE.getMessage();
             AUDIT_LOG.warn(logMsg);
-            throw new SAMLSSOException(logMsg, ex);
+            throw new SAMLSSOException(ErrorMessages.SIGNATURE_NOT_CONFIRM_TO_SAML_SIGNATURE_PROFILE.getCode(),
+                    logMsg, ex);
         }
 
         if (ArrayUtils.isEmpty(identityProvider.getCertificateInfoArray())) {
-            throw new SAMLSSOException("Signature validation is enabled, but IdP doesn't have a certificate");
+            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode(),
+                    ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getMessage(),
+                    validationException);
         }
 
         certificateInfos = identityProvider.getCertificateInfoArray();
@@ -1195,15 +1219,18 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             int timeStampSkewInSeconds = IdentityUtil.getClockSkewInSeconds();
 
             if (validFrom != null && validFrom.minusSeconds(timeStampSkewInSeconds).isAfterNow()) {
-                throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not Before'");
+                throw new SAMLSSOException(ErrorMessages.NOT_BEFORE_CONDITION_NOT_MET.getCode(),
+                        ErrorMessages.NOT_BEFORE_CONDITION_NOT_MET.getMessage());
             }
 
             if (validTill != null && validTill.plusSeconds(timeStampSkewInSeconds).isBeforeNow()) {
-                throw new SAMLSSOException("Failed to meet SAML Assertion Condition 'Not On Or After'");
+                throw new SAMLSSOException(
+                        ErrorMessages.NOT_ON_OR_BEFORE_CONDITION_NOT_MET.getCode(),
+                        ErrorMessages.NOT_ON_OR_BEFORE_CONDITION_NOT_MET.getMessage());
             }
 
             if (validFrom != null && validTill != null && validFrom.isAfter(validTill)) {
-                throw new SAMLSSOException(
+                throw new SAMLSSOException(ErrorMessages.NOT_ON_OR_BEFORE_CONDITION_NOT_MET.getCode(),
                         "SAML Assertion Condition 'Not Before' must be less than the value of 'Not On Or After'");
             }
         }
@@ -1241,8 +1268,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             if (!idpEntityId.equals(assertion.getIssuer().getValue())) {
                 log.warn("Issuer value in the assertion is invalid. Expected value is '" + idpEntityId + "'," +
                         " but received value in the assertion is '" + assertion.getIssuer().getValue() + "'.");
-                throw new SAMLSSOException("Identity provider with entity id '" + assertion.getIssuer().getValue()
-                        + "' is not registered in the system.");
+                throw new SAMLSSOException(ErrorMessages.INVALID_IDP_ID.getCode(),
+                        String.format(ErrorMessages.INVALID_IDP_ID.getMessage(),
+                                assertion.getIssuer().getValue()));
             }
         }
     }

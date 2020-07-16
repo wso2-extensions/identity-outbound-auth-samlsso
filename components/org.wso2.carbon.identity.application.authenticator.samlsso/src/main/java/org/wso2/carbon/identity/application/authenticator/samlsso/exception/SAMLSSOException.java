@@ -25,11 +25,37 @@ import javax.servlet.ServletException;
  */
 public class SAMLSSOException extends ServletException {
 
+    private String errorCode;
+
     public SAMLSSOException(String message) {
+
         super(message);
     }
 
+    public SAMLSSOException(String code, String message) {
+
+        super(message);
+        this.errorCode = code;
+    }
+
     public SAMLSSOException(String message, Throwable cause) {
+
         super(message, cause);
+    }
+
+    public SAMLSSOException(String code, String message, Throwable cause) {
+
+        super(message, cause);
+        this.errorCode = code;
+    }
+
+    public String getErrorCode() {
+
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+
+        this.errorCode = errorCode;
     }
 }
