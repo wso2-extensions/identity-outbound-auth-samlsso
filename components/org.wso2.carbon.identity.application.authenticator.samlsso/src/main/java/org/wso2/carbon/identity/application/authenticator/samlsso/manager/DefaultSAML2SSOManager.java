@@ -981,7 +981,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         }
     }
 
-    private void validateResponseFormat(XMLObject response) throws SAMLSSOException {
+    /**
+     * Validate response format.
+     *
+     * @param response XMLObject response.
+     * @throws SAMLSSOException SAMLSSOException.
+     */
+    protected void validateResponseFormat(XMLObject response) throws SAMLSSOException {
 
         // Checking for duplicate samlp:Response. This is done to thwart possible XSW attacks
         NodeList responseList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
@@ -1055,7 +1061,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @param assertion SAML2 Assertion
      * @param issuer Issuer of the SAML2 Assertion
      */
-    private void validateAudienceRestriction(Assertion assertion, String issuer) throws SAMLSSOException {
+    protected void validateAudienceRestriction(Assertion assertion, String issuer) throws SAMLSSOException {
 
         if (assertion != null) {
             Conditions conditions = assertion.getConditions();
@@ -1094,12 +1100,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 
     /**
-     * Validate the signature of a SAML2 Response and Assertion
+     * Validate the signature of a SAML2 Response and Assertion.
      *
-     * @param response SAML2 Response
-     * @return true, if signature is valid.
+     * @param response SAML2 Response.
+     * @param assertion SAML2 assertion.
+     * @throws SAMLSSOException SAMLSSOException.
      */
-    private void validateSignature(Response response, Assertion assertion) throws
+    protected void validateSignature(Response response, Assertion assertion) throws
             SAMLSSOException {
 
         if (SSOUtils.isAuthnResponseSigned(properties)) {
@@ -1131,7 +1138,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @param artifactResponse SAML2 Artifact Response
      * @throws SAMLSSOException
      */
-    private void validateSignature(ArtifactResponse artifactResponse) throws SAMLSSOException {
+    protected void validateSignature(ArtifactResponse artifactResponse) throws SAMLSSOException {
 
         if (SSOUtils.isArtifactResponseSigningEnabled(properties)) {
 
@@ -1152,7 +1159,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @param signature XML Signature element
      * @throws SAMLSSOException
      */
-    private void validateSignature(XMLObject signature) throws SAMLSSOException {
+    protected void validateSignature(XMLObject signature) throws SAMLSSOException {
 
         SignatureImpl signImpl = (SignatureImpl) signature;
         CertificateInfo[] certificateInfos;
@@ -1211,7 +1218,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      * @param assertion SAML Assertion element
      * @throws SAMLSSOException
      */
-    private void validateAssertionValidityPeriod(Assertion assertion) throws SAMLSSOException {
+    protected void validateAssertionValidityPeriod(Assertion assertion) throws SAMLSSOException {
 
         if (assertion.getConditions() != null) {
             DateTime validFrom = assertion.getConditions().getNotBefore();
@@ -1237,13 +1244,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     }
 
     /**
-     * Get Decrypted Assertion
+     * Get Decrypted Assertion.
      *
-     * @param encryptedAssertion
-     * @return
-     * @throws Exception
+     * @param encryptedAssertion Encrypted assertion.
+     * @return Decrypted assertion.
+     * @throws Exception Exception.
      */
-    private Assertion getDecryptedAssertion(EncryptedAssertion encryptedAssertion) throws Exception {
+    protected Assertion getDecryptedAssertion(EncryptedAssertion encryptedAssertion) throws Exception {
 
         X509Credential credential = new X509CredentialImpl(tenantDomain, null);
         KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(credential);
@@ -1257,7 +1264,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return decrypter.decrypt(encryptedAssertion);
     }
 
-    private void validateAssertionIssuer(Assertion assertion) throws SAMLSSOException {
+    /**
+     * Validate assertion issuer.
+     *
+     * @param assertion SAML2 assertion.
+     * @throws SAMLSSOException SAMLSSOException.
+     */
+    protected void validateAssertionIssuer(Assertion assertion) throws SAMLSSOException {
 
         if (isAssertionIssuerVerificationEnabled()) {
             if (log.isDebugEnabled()) {
