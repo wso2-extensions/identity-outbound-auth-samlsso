@@ -787,7 +787,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         String includeNameIDPolicyProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
-        if (StringUtils.isEmpty(includeNameIDPolicyProp) || Boolean.parseBoolean(includeNameIDPolicyProp)) {
+        if (Boolean.parseBoolean(includeNameIDPolicyProp)) {
             NameIDPolicyBuilder nameIdPolicyBuilder = new NameIDPolicyBuilder();
             NameIDPolicy nameIdPolicy = nameIdPolicyBuilder.buildObject();
 
