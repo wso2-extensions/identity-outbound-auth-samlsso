@@ -100,6 +100,7 @@ import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
+import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -787,7 +788,18 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
         String includeNameIDPolicyProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_NAME_ID_POLICY);
-        if (Boolean.parseBoolean(includeNameIDPolicyProp)) {
+
+        boolean isNameIDPolicyPropIncluded;
+        if (Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityConstants.ServerConfig.ADD_NAME_ID_POLICY_IF_UNSPECIFIED))) {
+            // Adding empty string check for backward compatibility.
+            isNameIDPolicyPropIncluded = StringUtils.isEmpty(includeNameIDPolicyProp) ||
+                    Boolean.parseBoolean(includeNameIDPolicyProp);
+        } else {
+            isNameIDPolicyPropIncluded = Boolean.parseBoolean(includeNameIDPolicyProp);
+        }
+
+        if (isNameIDPolicyPropIncluded) {
             NameIDPolicyBuilder nameIdPolicyBuilder = new NameIDPolicyBuilder();
             NameIDPolicy nameIdPolicy = nameIdPolicyBuilder.buildObject();
 
