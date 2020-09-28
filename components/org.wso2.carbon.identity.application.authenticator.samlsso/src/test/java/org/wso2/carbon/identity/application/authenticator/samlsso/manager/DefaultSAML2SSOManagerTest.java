@@ -592,8 +592,7 @@ public class DefaultSAML2SSOManagerTest {
             assertTrue(TestConstants.ACS_INDEX.equals(authnRequest.getAttributeConsumingServiceIndex().toString()),
                     "Failed to set ACS index");
         }
-        if (StringUtils.isEmpty(requestData.getIncludeNameIDPolicyProp()) || Boolean.parseBoolean(requestData
-                .getIncludeNameIDPolicyProp())) {
+        if (Boolean.parseBoolean(requestData.getIncludeNameIDPolicyProp())) {
             assertNotNull(authnRequest.getNameIDPolicy(), "Failed to set NameID policy");
         } else {
             assertNull(authnRequest.getNameIDPolicy(), "Invalid NameID policy");
