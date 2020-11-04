@@ -55,6 +55,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -152,13 +153,16 @@ public class SAMLLogoutUtil {
      */
     public static Map<String, String> getFederatedIdPConfigs(IdentityProvider identityProvider) {
 
-        Property[] properties = identityProvider.getDefaultAuthenticatorConfig().getProperties();
-        List<String> idpPropertyNames = Arrays.asList(SP_ENTITY_ID, SSO_URL, IS_AUTHN_RESP_SIGNED,
-                INCLUDE_CERT, IS_LOGOUT_REQ_SIGNED, IS_SLO_REQUEST_ACCEPTED);
-
-        return Arrays.stream(properties)
-                .filter(t -> idpPropertyNames.contains(t.getName()))
-                .collect(Collectors.toMap(Property::getName, Property::getValue));
+        List<String> idpPropertyNames = Arrays.asList(SP_ENTITY_ID, SSO_URL, IS_AUTHN_RESP_SIGNED, INCLUDE_CERT,
+                IS_LOGOUT_REQ_SIGNED, IS_SLO_REQUEST_ACCEPTED);
+        if (identityProvider.getDefaultAuthenticatorConfig() != null &&
+                identityProvider.getDefaultAuthenticatorConfig().getProperties() != null) {
+            Property[] properties = identityProvider.getDefaultAuthenticatorConfig().getProperties();
+            return Arrays.stream(properties)
+                    .filter(t -> idpPropertyNames.contains(t.getName()))
+                    .collect(Collectors.toMap(Property::getName, Property::getValue));
+        }
+        return Collections.emptyMap();
     }
 
     /**
