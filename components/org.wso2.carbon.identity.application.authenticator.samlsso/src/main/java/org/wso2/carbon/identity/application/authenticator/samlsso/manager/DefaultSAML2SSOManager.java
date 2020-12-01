@@ -873,7 +873,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return acsUrl;
     }
 
-    private RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws SAMLSSOException {
+    protected RequestedAuthnContext buildRequestedAuthnContext(AuthnRequest inboundAuthnRequest) throws SAMLSSOException {
 
         /* AuthnContext */
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = null;
@@ -946,7 +946,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return requestedAuthnContext;
     }
 
-    private boolean isForceAuthenticate(AuthenticationContext context) {
+    protected boolean isForceAuthenticate(AuthenticationContext context) {
 
         boolean forceAuthenticate = false;
         String forceAuthenticateProp = properties
@@ -959,7 +959,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         return forceAuthenticate;
     }
 
-    private String encodeRequestMessage(RequestAbstractType requestMessage)
+    protected String encodeRequestMessage(RequestAbstractType requestMessage)
             throws SAMLSSOException {
 
         Marshaller marshaller = XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(requestMessage);
