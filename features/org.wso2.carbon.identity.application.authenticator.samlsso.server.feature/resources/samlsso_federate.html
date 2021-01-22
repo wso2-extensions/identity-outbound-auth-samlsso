@@ -50,7 +50,6 @@
         }
 
         div.redirect-loader {
-            border: 1px solid #CDCDCD;
             padding: 20px;
             border-radius: 6px;
             text-align: center;
@@ -66,7 +65,7 @@
         }
 
         .padding-top-20 {
-            padding-top: 20rem;
+            padding-top: 22rem;
         }
 
         .padding-top-2 {
@@ -84,11 +83,18 @@
         .loader-redirect {
             font-size: 17px;
             color: #787778;
+            margin-right: 0.5rem;
         }
+        
+        .primary-color-btn {
+            color: var(--primary-color) !important;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 
-<body onload="javascript:document.forms[0].submit()">
+<body onload="javascript:document.getElementById('outbound-auth-samlsso-form').submit()">
 
     <div class="padding-top-20">
         <div class="ui centered grid">
@@ -97,14 +103,11 @@
                     <i class="fa fa-circle-o-notch fa-spin loader-redirect"></i>
                     Please wait while we take you to the $url.
                 </div>
-                <p class="padding-top-2 padding-bottom-1 text-align-center">Click continue if you have been waiting for
+                <p class="padding-bottom-1 text-align-center"><a class="primary-color-btn button" href="javascript:document.getElementById('outbound-auth-samlsso-form').submit()">Click here</a> if you have been waiting for
                     too long.</p>
 
-                <form method="post" action="$url">
+                <form id="outbound-auth-samlsso-form" method="post" action="$url">
                     <!--$params-->
-                    <button class="ui primary button center" type="submit">
-                        Continue
-                    </button>
                 </form>
 
             </div>
