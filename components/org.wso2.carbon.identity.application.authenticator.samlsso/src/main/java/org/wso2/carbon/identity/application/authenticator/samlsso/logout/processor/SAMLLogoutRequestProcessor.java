@@ -233,11 +233,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     @Override
     public String getCallbackPath(IdentityMessageContext context) {
 
-        try {
-            return ServiceURLBuilder.create().addPath(SAML_SLO_URL).build().getAbsolutePublicURL();
-        } catch (URLBuilderException e) {
-            throw FrameworkRuntimeException.error("Error while building callback path.", e);
-        }
+        return SAML_SLO_URL;
     }
 
     @Override
