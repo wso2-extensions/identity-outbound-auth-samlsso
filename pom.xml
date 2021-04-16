@@ -261,11 +261,6 @@
                 <artifactId>pax-logging-api</artifactId>
                 <version>${pax.logging.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${com.google.guava.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -409,7 +404,6 @@
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <pax.logging.version>1.11.0</pax.logging.version>
         <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>
-        <com.google.guava.version>27.0-jre</com.google.guava.version>
         <h2database.version>1.4.199</h2database.version>
     </properties>
 
