@@ -759,7 +759,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String includeProtocolBindingProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_PROTOCOL_BINDING);
         if (StringUtils.isEmpty(includeProtocolBindingProp) || Boolean.parseBoolean(includeProtocolBindingProp)) {
-            authRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
+            String isArtifactBindingEnabledProp = properties
+                    .get(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_ARTIFACT_BINDING_ENABLED);
+            if ( StringUtils.isEmpty(isArtifactBindingEnabledProp) || Boolean.parseBoolean(isArtifactBindingEnabledProp) ) {
+                authRequest.setProtocolBinding(SAMLConstants.SAML2_ARTIFACT_BINDING_URI);
+            } else {
+                authRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
+            }
         }
 
         AuthenticatorConfig authenticatorConfig =
