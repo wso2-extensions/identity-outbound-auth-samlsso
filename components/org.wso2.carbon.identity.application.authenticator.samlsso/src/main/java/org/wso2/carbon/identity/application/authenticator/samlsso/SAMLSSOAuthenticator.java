@@ -512,7 +512,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         configProperties.add(nameIdFormat);
 
         Property selectMode = new Property();
-        selectMode.setName("selectMode");
+        selectMode.setName("SelectMode");
         selectMode.setDisplayName("Select Mode");
         selectMode.setDescription("Select the input method for SAML configuration");
         selectMode.setType("string");
