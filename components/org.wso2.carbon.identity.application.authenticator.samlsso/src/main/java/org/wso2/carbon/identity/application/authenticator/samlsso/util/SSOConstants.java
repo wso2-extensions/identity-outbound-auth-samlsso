@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 public class SSOConstants {
 
     public static final String AUTHENTICATOR_NAME = "SAMLSSOAuthenticator";
-    public static final String AUTHENTICATOR_FRIENDLY_NAME = "samlsso";
+    public static final String AUTHENTICATOR_FRIENDLY_NAME = "SAML SSO";
 
     public static final String HTTP_POST_PARAM_SAML2_AUTH_REQ = "SAMLRequest";
     public static final String HTTP_POST_PARAM_SAML2_RESP = "SAMLResponse";
