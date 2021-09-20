@@ -63,7 +63,7 @@ public class X509CredentialImpl implements X509Credential {
     private PublicKey publicKey = null;
     private PrivateKey privateKey = null;
     private X509Certificate entityCertificate = null;
-    private String entityId = "";
+    private String entityId = StringUtils.EMPTY;
 
     private static KeyStore superTenantSignKeyStore = null;
     private static final Log log = LogFactory.getLog(X509CredentialImpl.class);

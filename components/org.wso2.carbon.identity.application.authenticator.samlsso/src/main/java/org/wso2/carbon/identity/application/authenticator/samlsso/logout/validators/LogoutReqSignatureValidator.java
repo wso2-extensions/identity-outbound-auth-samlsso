@@ -63,9 +63,9 @@ public class LogoutReqSignatureValidator {
     /**
      * Validates the signature of the SAML requests sent with HTTP Redirect Binding against the given certificate.
      *
-     * @param queryString SAML request (passed an an HTTP query parameter).
+     * @param queryString SAML request (passed as an HTTP query parameter).
      * @param issuer      Issuer of the SAML request.
-     * @param certificate Certificate for validating the signature
+     * @param certificate Certificate for validating the signature.
      * @return true       If the signature is valid, false otherwise.
      * @throws SecurityException If signature validation process fails.
      */
@@ -94,12 +94,10 @@ public class LogoutReqSignatureValidator {
      *
      * @param request SAML Assertion (SAML LogoutRequest).
      * @param cred    Signature signing credential.
-     * @param alias   Certificate alias against which the signature is validated.
      * @return true   If the signature is valid.
      * @throws IdentityException If signature validation process fails.
      */
-    public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred,
-                                        String alias) throws IdentityException {
+    public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred) throws IdentityException {
 
         if (request.getSignature() != null) {
             try {
@@ -131,10 +129,10 @@ public class LogoutReqSignatureValidator {
     /**
      * Extract the signature algorithm from the query string in the request.
      *
-     * @param queryString SAML request (passed an an HTTP query parameter).
+     * @param queryString SAML request (passed as an HTTP query parameter).
      * @return String     Signature Algorithm of the request.
      * @throws SecurityException If process of extracting signature algorithm fails.
-     * @throws IdentityException If decoding not supproted
+     * @throws IdentityException If decoding not supported.
      */
     private static String getSignatureAlgorithm(String queryString) throws SecurityException,
             IdentityException {
@@ -230,18 +228,18 @@ public class LogoutReqSignatureValidator {
     }
 
     /**
-     * Append raw query string parameter it to the string builder.
+     * Append raw query string parameter to the string builder.
      *
-     * @param builder     String builder to which to append the parameter
-     * @param queryString The URL query string containing parameters
-     * @param paramName   The name of the parameter to append
+     * @param builder     String builder to which to append the parameter.
+     * @param queryString The URL query string containing parameters.
+     * @param paramName   The name of the parameter to append.
      * @return true       If raw string of parameter is not null.
      */
     private static boolean appendParameter(StringBuilder builder, String queryString,
                                            String paramName) {
 
         String rawParam = URISupport.getRawQueryStringParameter(queryString, paramName);
-        if (rawParam == null) {
+        if (StringUtils.isBlank(rawParam)) {
             return false;
         }
         if (builder.length() > 0) {

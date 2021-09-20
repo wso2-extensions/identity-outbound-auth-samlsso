@@ -26,12 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.opensaml.core.config.InitializationException;
 import org.opensaml.saml.common.SAMLVersion;
-import org.opensaml.saml.saml2.core.LogoutRequest;
-import org.opensaml.saml.saml2.core.LogoutResponse;
-import org.opensaml.saml.saml2.core.Status;
-import org.opensaml.saml.saml2.core.Issuer;
-import org.opensaml.saml.saml2.core.StatusCode;
-import org.opensaml.saml.saml2.core.StatusMessage;
+import org.opensaml.saml.saml2.core.*;
 import org.opensaml.saml.saml2.core.impl.StatusBuilder;
 import org.opensaml.saml.saml2.core.impl.LogoutResponseBuilder;
 import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
@@ -259,7 +254,7 @@ public class SAMLLogoutUtil {
         try {
             if (samlMessageContext.getSAMLLogoutRequest().isPost()) {
                 return signatureValidator.validateXMLSignature(logoutRequest,
-                        new X509CredentialImpl(x509Certificate, issuer), null);
+                        new X509CredentialImpl(x509Certificate, issuer));
             } else {
                 return signatureValidator.validateSignature(samlMessageContext.getSAMLLogoutRequest().getQueryString(),
                         issuer, x509Certificate);
@@ -291,14 +286,15 @@ public class SAMLLogoutUtil {
 
     /**
      * @param logoutRequest {@link LogoutRequest} object.
-     * @return String               Session Index of the Logout Request.
+     * @return String              Session Index of the Logout Request.
      * @throws SAMLLogoutException Error while extracting the Session Index.
      */
     public static String getSessionIndex(LogoutRequest logoutRequest) throws SAMLLogoutException {
 
-        if (CollectionUtils.isNotEmpty(logoutRequest.getSessionIndexes()) &&
-                StringUtils.isNotBlank(logoutRequest.getSessionIndexes().get(0).getSessionIndex())) {
-            return logoutRequest.getSessionIndexes().get(0).getSessionIndex();
+        List<SessionIndex> sessionIndexList = logoutRequest.getSessionIndexes();
+        if (CollectionUtils.isNotEmpty(sessionIndexList) &&
+                StringUtils.isNotBlank(sessionIndexList.get(0).getSessionIndex())) {
+            return sessionIndexList.get(0).getSessionIndex();
         }
         String notification = "Could not extract the session index from the logout request";
         if (log.isDebugEnabled()) {

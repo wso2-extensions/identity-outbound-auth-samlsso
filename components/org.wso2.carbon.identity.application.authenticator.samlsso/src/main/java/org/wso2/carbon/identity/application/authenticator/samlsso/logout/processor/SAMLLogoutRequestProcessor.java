@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,6 +33,7 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Ide
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.InboundUtil;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
@@ -43,12 +45,16 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validat
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.application.mgt.ApplicationConstants;
+import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -56,17 +62,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AnalyticsAttributes.SESSION_ID;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.LOGOUT;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_URL;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.StatusCodes.SUCCESS_CODE;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED;
-import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.COMMONAUTH;
-import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_NAME;
-import static org.wso2.carbon.identity.base.IdentityConstants.ServerConfig.SAMLSSO;
-import static org.wso2.carbon.identity.base.IdentityConstants.TRUE;
-import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 
 /**
  * This class processes the SAML single logout request from the federated IdP.
@@ -119,7 +114,8 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
                 populateContextWithSessionDetails(samlMessageContext);
             }
 
-            if (!Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_SLO_REQUEST_ACCEPTED))) {
+            if (!Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IdentityApplicationConstants.
+                    Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED))) {
                 throw new SAMLLogoutException("Single logout requests from the federated IdP: "
                         + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " are not accepted");
             }
@@ -127,7 +123,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             LogoutRequestValidator logoutRequestValidator = new LogoutRequestValidator(samlMessageContext);
             if (logoutRequestValidator.isValidate(logoutRequest)) {
                 LogoutResponse logoutResp = SAMLLogoutUtil.buildResponse(samlMessageContext, logoutRequest.getID(),
-                        SUCCESS_CODE, null);
+                        SSOConstants.StatusCodes.SUCCESS_CODE, null);
                 samlMessageContext.setResponse(SSOUtils.encode(SSOUtils.marshall(logoutResp)));
                 samlMessageContext.setAcsUrl(logoutResp.getDestination());
             }
@@ -148,6 +144,8 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     (SAMLMessageContext<String, String> samlMessageContext) {
 
         IdentityRequest identityRequest = samlMessageContext.getRequest();
+        String callback = getCallbackPath(samlMessageContext);
+        String type = getType(samlMessageContext);
         Map<String, String[]> parameterMap = identityRequest.getParameterMap();
 
         AuthenticationRequest authenticationRequest = new AuthenticationRequest();
@@ -157,16 +155,16 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
         }
         authenticationRequest.setTenantDomain(samlMessageContext.getTenantDomain());
         authenticationRequest.setRelyingParty(getRelyingPartyId(samlMessageContext));
-        authenticationRequest.setType(getType(samlMessageContext));
+        authenticationRequest.setType(type);
         try {
-            authenticationRequest.setCommonAuthCallerPath(URLEncoder.encode(getCallbackPath(samlMessageContext),
-                    StandardCharsets.UTF_8.name()));
+            authenticationRequest.setCommonAuthCallerPath(URLEncoder.encode(callback, StandardCharsets.UTF_8.name()));
         } catch (UnsupportedEncodingException e) {
             throw FrameworkRuntimeException.error("Error occurred while URL encoding callback path: " +
-                    getCallbackPath(samlMessageContext), e);
+                    callback, e);
         }
-        authenticationRequest.addRequestQueryParam(LOGOUT, new String[]{TRUE});
-        authenticationRequest.addRequestQueryParam(SESSION_ID, new String[]{samlMessageContext.getSessionID()});
+        authenticationRequest.addRequestQueryParam(FrameworkConstants.LOGOUT, new String[]{IdentityConstants.TRUE});
+        authenticationRequest.addRequestQueryParam(FrameworkConstants.AnalyticsAttributes.SESSION_ID,
+                new String[]{samlMessageContext.getSessionID()});
 
         AuthenticationRequestCacheEntry authRequest = new AuthenticationRequestCacheEntry(authenticationRequest);
         String sessionDataKey = UUIDGenerator.generateUUID();
@@ -178,12 +176,13 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
         FrameworkLogoutResponse.FrameworkLogoutResponseBuilder responseBuilder =
                 new FrameworkLogoutResponse.FrameworkLogoutResponseBuilder(samlMessageContext);
         responseBuilder.setContextKey(sessionDataKey);
-        responseBuilder.setCallbackPath(getCallbackPath(samlMessageContext));
-        responseBuilder.setAuthType(getType(samlMessageContext));
+        responseBuilder.setCallbackPath(callback);
+        responseBuilder.setAuthType(type);
 
         String commonAuthURL;
         try {
-            commonAuthURL = ServiceURLBuilder.create().addPath(COMMONAUTH).build().getAbsolutePublicURL();
+            commonAuthURL = ServiceURLBuilder.create().addPath(IdentityApplicationConstants.COMMONAUTH).build().
+                    getAbsolutePublicURL();
         } catch (URLBuilderException e) {
             throw FrameworkRuntimeException.error("Error while building commonauth URL.", e);
         }
@@ -201,24 +200,25 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
             throws SAMLLogoutException {
 
         SessionInfoDAO sessionInfoDAO = new SessionInfoDAO();
+        String tenantDomain = samlMessageContext.getSAMLLogoutRequest().getTenantDomain();
         Map<String, String> sessionDetails = sessionInfoDAO.getSessionDetails
                 (samlMessageContext.getIdPSessionID());
-        if (sessionDetails != null) {
-            if (StringUtils.isNotBlank(samlMessageContext.getSAMLLogoutRequest().getTenantDomain())) {
-                samlMessageContext.setTenantDomain(samlMessageContext.getSAMLLogoutRequest().getTenantDomain());
+        if ( MapUtils.isNotEmpty(sessionDetails)) {
+            if (StringUtils.isNotBlank(tenantDomain)) {
+                samlMessageContext.setTenantDomain(tenantDomain);
             } else {
-                samlMessageContext.setTenantDomain(SUPER_TENANT_DOMAIN_NAME);
+                samlMessageContext.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             }
-            IdentityProvider identityProvider = null;
+            IdentityProvider identityProvider;
             try {
                 identityProvider = IdentityProviderManager.getInstance().getIdPByName(
-                        sessionDetails.get(IDP_NAME), samlMessageContext.getTenantDomain());
+                        sessionDetails.get(ApplicationConstants.IDP_NAME), samlMessageContext.getTenantDomain());
             } catch (IdentityProviderManagementException e) {
                 throw new SAMLLogoutException("Error when getting the Identity Provider by IdP name: "
-                        + sessionDetails.get(IDP_NAME) + "with tenant domain: "
+                        + sessionDetails.get(ApplicationConstants.IDP_NAME) + "with tenant domain: "
                             + samlMessageContext.getTenantDomain(), e);
             }
-            samlMessageContext.setSessionID(sessionDetails.get(SESSION_ID));
+            samlMessageContext.setSessionID(sessionDetails.get(FrameworkConstants.AnalyticsAttributes.SESSION_ID));
             samlMessageContext.setFederatedIdP(identityProvider);
             samlMessageContext.setFedIdPConfigs(SAMLLogoutUtil.getFederatedIdPConfigs(identityProvider));
         }
@@ -227,13 +227,13 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     @Override
     public String getType(IdentityMessageContext context) {
 
-        return SAMLSSO;
+        return IdentityConstants.ServerConfig.SAMLSSO;
     }
 
     @Override
     public String getCallbackPath(IdentityMessageContext context) {
 
-        return SAML_SLO_URL;
+        return SSOConstants.SAML_SLO_URL;
     }
 
     @Override

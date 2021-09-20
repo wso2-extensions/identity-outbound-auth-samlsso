@@ -268,4 +268,3 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
     }
 }
 
-

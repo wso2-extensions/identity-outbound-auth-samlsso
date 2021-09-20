@@ -32,9 +32,6 @@ import java.util.regex.Matcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ;
-import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_SLO_ENDPOINT_URL_PATTERN;
-
 /**
  * This class checks whether requests from the Identity servlet are SAML Requests and
  * provides a builder to an instance of SAMLLogoutRequest.
@@ -59,7 +56,7 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
 
         boolean canHandle = false;
         if (request != null) {
-            Matcher matcher = SAML_SLO_ENDPOINT_URL_PATTERN.matcher(request.getRequestURI());
+            Matcher matcher = SSOConstants.SAML_SLO_ENDPOINT_URL_PATTERN.matcher(request.getRequestURI());
             if (matcher.matches() && StringUtils.isNotBlank(request.getParameter
                     (SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))) {
                 canHandle = true;
@@ -72,13 +69,14 @@ public class SAMLLogoutRequestFactory extends HttpIdentityRequestFactory {
     public IdentityRequest.IdentityRequestBuilder create(HttpServletRequest request, HttpServletResponse response)
             throws FrameworkClientException {
 
+        String requestQueryString = request.getQueryString();
         SAMLLogoutRequest.SAMLLogoutRequestBuilder builder = new SAMLLogoutRequest.
                 SAMLLogoutRequestBuilder(request, response);
         super.create(builder, request, response);
-        builder.isPost(StringUtils.isBlank(URISupport.getRawQueryStringParameter(request.getQueryString(),
-                HTTP_POST_PARAM_SAML2_AUTH_REQ)));
+        builder.isPost(StringUtils.isBlank(URISupport.getRawQueryStringParameter(requestQueryString,
+                SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)));
         if (log.isDebugEnabled()) {
-            log.debug("Query string : " + request.getQueryString());
+            log.debug("Query string : " + requestQueryString);
         }
         return builder;
     }
