@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.response;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.entity.ContentType;
@@ -101,7 +102,7 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
                 Encode.forHtmlAttribute(acUrl) + "'><p><input type='hidden' name='SAMLResponse' value='"
                 + Encode.forHtmlAttribute(samlMessage) + "'/>";
 
-        if (relayState != null) {
+        if (StringUtils.isNotBlank(relayState)) {
             postPage = postPage + "<input type='hidden' name='RelayState' value='"
                     + Encode.forHtmlAttribute(relayState) + "'/>";
         }
@@ -110,7 +111,7 @@ public class SAMLLogoutResponseFactory extends HttpIdentityResponseFactory {
                 "document.forms[0].submit();</script></body></html>";
 
         if (log.isDebugEnabled()) {
-            log.debug(postPage);
+            log.debug("Post page for the logout response: " + postPage);
         }
         return postPage;
     }

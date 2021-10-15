@@ -39,6 +39,9 @@ import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_
  */
 public class SessionInfoDAO {
 
+    private static final String SESSION_ID_COLUMN_LABEL = "SESSION_ID";
+    private static final String IDP_NAME_COLUMN_LABEL = "IDP_NAME";
+
     private static final Log log = LogFactory.getLog(SessionInfoDAO.class);
 
     /**
@@ -58,11 +61,11 @@ public class SessionInfoDAO {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 Map<String, String> sessionDetails = new HashMap<>();
                 if (resultSet.next()) {
-                    sessionDetails.put(SESSION_ID, resultSet.getString("SESSION_ID"));
-                    sessionDetails.put(IDP_NAME, resultSet.getString("IDP_NAME"));
+                    sessionDetails.put(SESSION_ID, resultSet.getString(SESSION_ID_COLUMN_LABEL));
+                    sessionDetails.put(IDP_NAME, resultSet.getString(IDP_NAME_COLUMN_LABEL));
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("Retrieved session index: " + resultSet.getString("SESSION_ID") +
+                    log.debug("Retrieved session index: " + resultSet.getString(SESSION_ID_COLUMN_LABEL) +
                             " for federated idp session index: " + samlIndex);
                 }
                 return sessionDetails;

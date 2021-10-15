@@ -33,7 +33,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.TestCon
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SAML_SLO_URL;
 
 /**
- * Unit test cases for SAMLLogoutRequestFactory
+ * Unit test cases for SAMLLogoutRequestFactory.
  */
 public class SAMLLogoutRequestFactoryTest extends PowerMockTestCase {
 
