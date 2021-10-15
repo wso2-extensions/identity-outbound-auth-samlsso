@@ -94,10 +94,12 @@ public class LogoutReqSignatureValidator {
      *
      * @param request SAML Assertion (SAML LogoutRequest).
      * @param cred    Signature signing credential.
+     * @param alias   Certificate alias against which the signature is validated.
      * @return true   If the signature is valid.
      * @throws IdentityException If signature validation process fails.
      */
-    public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred) throws IdentityException {
+    public boolean validateXMLSignature(SignableXMLObject request, X509Credential cred,
+                                        String alias) throws IdentityException {
 
         if (request.getSignature() != null) {
             try {

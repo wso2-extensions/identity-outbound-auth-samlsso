@@ -254,7 +254,7 @@ public class SAMLLogoutUtil {
         try {
             if (samlMessageContext.getSAMLLogoutRequest().isPost()) {
                 return signatureValidator.validateXMLSignature(logoutRequest,
-                        new X509CredentialImpl(x509Certificate, issuer));
+                        new X509CredentialImpl(x509Certificate, issuer), null);
             } else {
                 return signatureValidator.validateSignature(samlMessageContext.getSAMLLogoutRequest().getQueryString(),
                         issuer, x509Certificate);
