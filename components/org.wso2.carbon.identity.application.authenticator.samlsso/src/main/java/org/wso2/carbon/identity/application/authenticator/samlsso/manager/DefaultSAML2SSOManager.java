@@ -896,28 +896,37 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             requestedAuthnContext = requestedAuthnContextBuilder.buildObject();
             /* AuthnContextClass */
             AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
-            AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
-                    .buildObject(SAMLConstants.SAML20_NS,
-                            AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
-                            SAMLConstants.SAML20_PREFIX);
 
             String authnContextClass = properties
                     .get(IdentityApplicationConstants.Authenticator.SAML2SSO.AUTHENTICATION_CONTEXT_CLASS);
 
             if (StringUtils.isNotEmpty(authnContextClass)) {
-                String samlAuthnContextURN = IdentityApplicationManagementUtil
-                        .getSAMLAuthnContextClasses().get(authnContextClass);
-                if (!StringUtils.isBlank(samlAuthnContextURN)) {
-                    //There was one matched URN for give authnContextClass.
-                    authnContextClassRef.setAuthnContextClassRef(samlAuthnContextURN);
-                } else {
-                    //There are no any matched URN for given authnContextClass, so added authnContextClass name to the
-                    // AuthnContextClassRef.
-                    authnContextClassRef.setAuthnContextClassRef(authnContextClass);
+                String[] authnContextClassList = authnContextClass.split(",");
+                for (String authnContextClassListElement : authnContextClassList) {
+                    AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
+                            .buildObject(SAMLConstants.SAML20_NS,
+                                    AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
+                                    SAMLConstants.SAML20_PREFIX);
+                    String samlAuthnContextURN = IdentityApplicationManagementUtil
+                            .getSAMLAuthnContextClasses().get(authnContextClassListElement);
+                    if (!StringUtils.isBlank(samlAuthnContextURN)) {
+                        //There was one matched URN for given authnContextClass.
+                        authnContextClassRef.setAuthnContextClassRef(samlAuthnContextURN);
+                    } else {
+                        //There are no any matched URN for given authnContextClass, so added authnContextClassListElement name to the
+                        // AuthnContextClassRef.
+                        authnContextClassRef.setAuthnContextClassRef(authnContextClassListElement);
+                    }
+                    requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
                 }
 
             } else {
+                AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
+                        .buildObject(SAMLConstants.SAML20_NS,
+                                AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
+                                SAMLConstants.SAML20_PREFIX);
                 authnContextClassRef.setAuthnContextClassRef(AuthnContext.PPT_AUTHN_CTX);
+                requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
             }
 
             /* Authentication Context Comparison Level */
@@ -941,7 +950,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             } else {
                 requestedAuthnContext.setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
             }
-            requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
         }
         return requestedAuthnContext;
     }
