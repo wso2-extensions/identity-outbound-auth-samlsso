@@ -907,8 +907,16 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                             .buildObject(SAMLConstants.SAML20_NS,
                                     AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
                                     SAMLConstants.SAML20_PREFIX);
-                    String samlAuthnContextURN = IdentityApplicationManagementUtil
-                            .getSAMLAuthnContextClasses().get(authnContextClassListElement);
+                    String samlAuthnContextURN;
+                    if (authnContextClassListElement.equals(IdentityApplicationConstants.Authenticator.SAML2SSO
+                            .CUSTOM_AUTHENTICATION_CONTEXT_CLASS_OPTION)) {
+                        samlAuthnContextURN = properties.get(IdentityApplicationConstants.Authenticator
+                                .SAML2SSO.ATTRIBUTE_CUSTOM_AUTHENTICATION_CONTEXT_CLASS);
+                    } else{
+                        samlAuthnContextURN = IdentityApplicationManagementUtil
+                                .getSAMLAuthnContextClasses().get(authnContextClassListElement);
+                    }
+
                     if (StringUtils.isNotBlank(samlAuthnContextURN)) {
                         // There was one matched URN for given authnContextClass.
                         authnContextClassRef.setAuthnContextClassRef(samlAuthnContextURN);
