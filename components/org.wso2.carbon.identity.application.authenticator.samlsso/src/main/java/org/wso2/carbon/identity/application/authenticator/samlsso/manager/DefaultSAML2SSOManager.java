@@ -900,7 +900,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String authnContextClass = properties
                     .get(IdentityApplicationConstants.Authenticator.SAML2SSO.AUTHENTICATION_CONTEXT_CLASS);
 
-            if (StringUtils.isNotEmpty(authnContextClass)) {
+            if (StringUtils.isNotBlank(authnContextClass)) {
                 String[] authnContextClassList = authnContextClass.split(DEFAULT_MULTI_ATTRIBUTE_SEPARATOR);
                 for (String authnContextClassListElement : authnContextClassList) {
                     AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
