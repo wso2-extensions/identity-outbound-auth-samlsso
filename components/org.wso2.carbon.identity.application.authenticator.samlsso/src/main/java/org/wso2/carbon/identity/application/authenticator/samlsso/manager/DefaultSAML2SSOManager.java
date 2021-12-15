@@ -897,11 +897,11 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             /* AuthnContextClass */
             AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
 
-            String authnContextClass = properties
+            String authnContextClasses = properties
                     .get(IdentityApplicationConstants.Authenticator.SAML2SSO.AUTHENTICATION_CONTEXT_CLASS);
 
-            if (StringUtils.isNotBlank(authnContextClass)) {
-                String[] authnContextClassList = authnContextClass.split(DEFAULT_MULTI_ATTRIBUTE_SEPARATOR);
+            if (StringUtils.isNotBlank(authnContextClasses)) {
+                String[] authnContextClassList = authnContextClasses.split(DEFAULT_MULTI_ATTRIBUTE_SEPARATOR);
                 for (String authnContextClassListElement : authnContextClassList) {
                     AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
                             .buildObject(SAMLConstants.SAML20_NS,
@@ -912,7 +912,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                             .CUSTOM_AUTHENTICATION_CONTEXT_CLASS_OPTION)) {
                         samlAuthnContextURN = properties.get(IdentityApplicationConstants.Authenticator
                                 .SAML2SSO.ATTRIBUTE_CUSTOM_AUTHENTICATION_CONTEXT_CLASS);
-                    } else{
+                    } else {
                         samlAuthnContextURN = IdentityApplicationManagementUtil
                                 .getSAMLAuthnContextClasses().get(authnContextClassListElement);
                     }
