@@ -116,6 +116,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.util.Mo
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockServiceURLBuilder;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockXPathFactory;
 import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.ACS_URL;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.AUTHENTICATION_CONTEXT_CLASS;
 import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 
 /**
@@ -352,6 +353,34 @@ public class DefaultSAML2SSOManagerTest {
         RequestData requestData = (RequestData) outboundRequestData;
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(ACS_URL, TestConstants.IDP_ACS_URL);
+        setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
+                authenticatorProperties);
+        DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
+        defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
+        String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
+                TestConstants.IDP_URL, mockedAuthenticationContext);
+        assertNotNull(generatedRequest, "Failed to build federated authentication request.");
+
+        String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
+        assertNotNull(decodedRequest, "Failed to decode the generated request.");
+
+        XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
+        if (!isLogout) {
+            assertAuthnRequest((AuthnRequest) xmlObject, requestData);
+        }
+    }
+
+    @Test(dataProvider = "redirectRequestBuilderDataProvider")
+    public void testBuildRequestWithMultipleAuthnContextClasses(boolean isLogout, String tenantDomain,
+                                                                Object inboundRequestData,
+                                                                Object outboundRequestData) throws Exception{
+        DefaultSAML2SSOManager.doBootstrap();
+        when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
+        mockXPathFactory();
+        RequestData requestData = (RequestData) outboundRequestData;
+        Map<String, String> authenticatorProperties = new HashMap<>();
+        authenticatorProperties.put(ACS_URL, TestConstants.IDP_ACS_URL);
+        authenticatorProperties.put(AUTHENTICATION_CONTEXT_CLASS, TestConstants.AUTHENTICATION_CONTEXT_CLASSES);
         setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
                 authenticatorProperties);
         DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
