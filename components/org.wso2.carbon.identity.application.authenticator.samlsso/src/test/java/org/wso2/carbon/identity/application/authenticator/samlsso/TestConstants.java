@@ -396,6 +396,8 @@ public final class TestConstants {
 
     public static final String ACS_URL = "https://localhost:9443/commonauth";
 
+    public static final String AUTHENTICATION_CONTEXT_CLASSES = "Password,Password Protected Transport";
+
     public static final String ACS_INDEX = "123456789";
 
     public static final String IDP_NAME = "secondary";
