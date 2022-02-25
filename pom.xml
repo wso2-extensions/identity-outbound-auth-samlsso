@@ -391,7 +391,7 @@
 
         <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
         <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
-        <wss4j.xml.security.imp.pkg.version.range>[1.4.2.patched,2.2.0)</wss4j.xml.security.imp.pkg.version.range>
+        <wss4j.xml.security.imp.pkg.version.range>[1.4.2.patched,2.0.0)</wss4j.xml.security.imp.pkg.version.range>
 
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
