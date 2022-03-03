@@ -173,7 +173,7 @@ public class SAMLSSOSoapMessageService {
         httpPost.addHeader(SSOConstants.PRAGMA_PARAM_KEY, "no-cache");
         httpPost.addHeader(SSOConstants.CACHE_CONTROL_PARAM_KEY, "no-cache, no-store");
 
-        httpPost.setEntity(new StringEntity(message, ContentType.create(CONTENT_TYPE)));
+        httpPost.setEntity(new StringEntity(message, ContentType.create("text/xml", "UTF-8")));
     }
 
     private static String getResponseBody(HttpResponse response) throws ArtifactResolutionException {
