@@ -903,29 +903,33 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             if (StringUtils.isNotBlank(authnContextClasses)) {
                 String[] authnContextClassList = authnContextClasses.split(DEFAULT_MULTI_ATTRIBUTE_SEPARATOR);
                 for (String authnContextClassListElement : authnContextClassList) {
-                    AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
-                            .buildObject(SAMLConstants.SAML20_NS,
-                                    AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
-                                    SAMLConstants.SAML20_PREFIX);
-                    String samlAuthnContextURN;
+                    String samlAuthnContextURNs;
                     if (authnContextClassListElement.equals(IdentityApplicationConstants.Authenticator.SAML2SSO
                             .CUSTOM_AUTHENTICATION_CONTEXT_CLASS_OPTION)) {
-                        samlAuthnContextURN = properties.get(IdentityApplicationConstants.Authenticator
+                        samlAuthnContextURNs = properties.get(IdentityApplicationConstants.Authenticator
                                 .SAML2SSO.ATTRIBUTE_CUSTOM_AUTHENTICATION_CONTEXT_CLASS);
                     } else {
-                        samlAuthnContextURN = IdentityApplicationManagementUtil
+                        samlAuthnContextURNs = IdentityApplicationManagementUtil
                                 .getSAMLAuthnContextClasses().get(authnContextClassListElement);
                     }
-
-                    if (StringUtils.isNotBlank(samlAuthnContextURN)) {
-                        // There was one matched URN for given authnContextClass.
-                        authnContextClassRef.setAuthnContextClassRef(samlAuthnContextURN);
-                    } else {
-                        // There are no any matched URN for given authnContextClass, so added authnContextClassListElement name to the
-                        // AuthnContextClassRef.
-                        authnContextClassRef.setAuthnContextClassRef(authnContextClassListElement);
+                    if (StringUtils.isNotEmpty(samlAuthnContextURNs)) {
+                        String[] samlAuthnContextURNList = samlAuthnContextURNs.split(DEFAULT_MULTI_ATTRIBUTE_SEPARATOR);
+                        for (String samlAuthnContextURNElement : samlAuthnContextURNList) {
+                            AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder
+                                    .buildObject(SAMLConstants.SAML20_NS,
+                                            AuthnContextClassRef.DEFAULT_ELEMENT_LOCAL_NAME,
+                                            SAMLConstants.SAML20_PREFIX);
+                            if (StringUtils.isNotBlank(samlAuthnContextURNElement)) {
+                                // There was one matched URN for give authnContextClass.
+                                authnContextClassRef.setAuthnContextClassRef(samlAuthnContextURNElement);
+                            } else {
+                                // There are no any matched URN for given authnContextClass, so added authnContextClass name to the
+                                // AuthnContextClassRef.
+                                authnContextClassRef.setAuthnContextClassRef(authnContextClassListElement);
+                            }
+                            requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
+                        }
                     }
-                    requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
                 }
 
             } else {
