@@ -50,6 +50,7 @@ import org.wso2.carbon.identity.application.mgt.ApplicationConstants;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
@@ -201,8 +202,13 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
 
         SessionInfoDAO sessionInfoDAO = new SessionInfoDAO();
         String tenantDomain = samlMessageContext.getSAMLLogoutRequest().getTenantDomain();
-        Map<String, String> sessionDetails = sessionInfoDAO.getSessionDetails
-                (samlMessageContext.getIdPSessionID());
+        Map<String, String> sessionDetails;
+        if (FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()) {
+            int tenantId = IdentityTenantUtil.getTenantId(samlMessageContext.getSAMLLogoutRequest().getTenantDomain());
+            sessionDetails = sessionInfoDAO.getSessionDetails(samlMessageContext.getIdPSessionID(), tenantId);
+        } else {
+            sessionDetails = sessionInfoDAO.getSessionDetails(samlMessageContext.getIdPSessionID());
+        }
         if ( MapUtils.isNotEmpty(sessionDetails)) {
             if (StringUtils.isNotBlank(tenantDomain)) {
                 samlMessageContext.setTenantDomain(tenantDomain);

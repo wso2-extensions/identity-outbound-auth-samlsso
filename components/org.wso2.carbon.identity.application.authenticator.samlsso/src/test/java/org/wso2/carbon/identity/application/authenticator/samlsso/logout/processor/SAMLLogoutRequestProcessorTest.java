@@ -30,7 +30,9 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.cache.AuthenticationRequestCache;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityContextCache;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SAMLLogoutUtil;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
@@ -42,6 +44,7 @@ import org.wso2.carbon.identity.common.testng.WithH2Database;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.internal.IdentityCoreServiceComponent;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
@@ -54,6 +57,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.testng.Assert.assertEquals;
@@ -77,12 +81,13 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 @WithCarbonHome
 @PrepareForTest({IdentityDatabaseUtil.class, IdentityProviderManager.class, SAMLSSOAuthenticatorServiceDataHolder.class,
         IdentityCoreServiceComponent.class, AuthenticationRequestCache.class, IdentityContextCache.class,
-        ServiceURLBuilder.class})
-@WithH2Database(files = {"dbscripts/h2.sql"})
+        ServiceURLBuilder.class, FrameworkUtils.class, IdentityTenantUtil.class, SAMLLogoutUtil.class})
+@WithH2Database(files = {"dbscripts/h2.sql", "dbscripts/h2-with-tenant-id.sql"})
 public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
 
     private static Map<String, BasicDataSource> dataSourceMap = new HashMap<>();
     private static final String DB_NAME = "testSAMLSLO";
+    private static final String DB_WITH_TENANT_ID_NAME = "testSAMLSLOWithTenantId";
     private static final String SAML_INDEX = "94911684-8ef8-407b-bc59-e435b6270858";
 
     @Mock
@@ -261,10 +266,162 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         throw new IllegalArgumentException("DB Script file name cannot be empty.");
     }
 
+    @Test
+    public void testProcessWithTenantId() throws Exception {
+
+        SAMLLogoutRequestProcessor processor = new SAMLLogoutRequestProcessor();
+        SAMLLogoutUtil.doBootstrap();
+        when(mockedRequest.isPost()).thenReturn(true);
+        PowerMockito.when(mockedRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).
+                thenReturn(SAML2_SLO_POST_REQUEST);
+
+        setupDatabaseWithTenantId();
+        mockStatic(IdentityDatabaseUtil.class);
+        when(IdentityDatabaseUtil.getDBConnection(false)).thenReturn(getConnection(DB_WITH_TENANT_ID_NAME));
+
+        mockStatic(IdentityProviderManager.class);
+        when(IdentityProviderManager.getInstance()).thenReturn(mockedIdPManager);
+
+        IdentityProvider idp = new IdentityProvider();
+        idp.setIdentityProviderName(IDP_NAME);
+
+        FederatedAuthenticatorConfig config = new FederatedAuthenticatorConfig();
+        Property[] properties = new Property[6];
+
+        Property property = new Property();
+        property.setName(IS_SLO_REQUEST_ACCEPTED);
+        property.setValue("true");
+        properties[0] = property;
+
+        property = new Property();
+        property.setName(SP_ENTITY_ID);
+        property.setValue("lacalhost");
+        properties[1] = property;
+
+        property = new Property();
+        property.setName(IS_AUTHN_RESP_SIGNED);
+        property.setValue("false");
+        properties[2] = property;
+
+        property = new Property();
+        property.setName(INCLUDE_CERT);
+        property.setValue("false");
+        properties[3] = property;
+
+        property = new Property();
+        property.setName(IS_LOGOUT_REQ_SIGNED);
+        property.setValue("false");
+        properties[4] = property;
+
+        property = new Property();
+        property.setName(SSO_URL);
+        property.setValue(IDP_URL);
+        properties[5] = property;
+
+        config.setProperties(properties);
+        idp.setDefaultAuthenticatorConfig(config);
+
+        when(mockedIdPManager.getIdPByName(IDP_NAME, SUPER_TENANT_DOMAIN)).thenReturn(idp);
+
+        mockStatic(SAMLSSOAuthenticatorServiceDataHolder.class);
+        when(SAMLSSOAuthenticatorServiceDataHolder.getInstance()).thenReturn(mockedAuthenticator);
+        when(mockedAuthenticator.getRealmService()).thenReturn(mockedRealmService);
+
+        mockStatic(IdentityCoreServiceComponent.class);
+        when(IdentityCoreServiceComponent.getConfigurationContextService()).thenReturn(mockedService);
+        when(mockedService.getServerConfigContext()).thenReturn(mockedContext);
+        when(mockedContext.getAxisConfiguration()).thenReturn(mockedConfig);
+
+        mockStatic(AuthenticationRequestCache.class);
+        when(AuthenticationRequestCache.getInstance()).thenReturn(mockedCache);
+
+        mockStatic(IdentityContextCache.class);
+        when(IdentityContextCache.getInstance()).thenReturn(mockedIdentityCache);
+
+        mockStatic(FrameworkUtils.class);
+        when(FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()).thenReturn(Boolean.TRUE);
+
+        mockStatic(IdentityTenantUtil.class);
+        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(1);
+
+        mockServiceURLBuilder();
+        assertNotNull(processor.process(mockedRequest));
+    }
+
+    private void setupDatabaseWithTenantId() throws Exception {
+
+        initiateH2Base(DB_WITH_TENANT_ID_NAME, getFilePath("h2-with-tenant-id.sql"));
+
+        try (Connection connection1 = getConnection(DB_WITH_TENANT_ID_NAME)) {
+            prepareConnection(connection1, false);
+
+            String sql = "INSERT INTO IDN_FED_AUTH_SESSION_MAPPING " +
+                    "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE, TENANT_ID) VALUES ( '" +
+                    SAML_INDEX + "' , '" + INBOUND_SESSION_INDEX + "' , '" + IDP_NAME + "' , " +
+                    "'samlssoAuthenticator', 'samlsso', 1);";
+            PreparedStatement statement = connection1.prepareStatement(sql);
+            statement.execute();
+        }
+
+        try (Connection connection1 = getConnection(DB_WITH_TENANT_ID_NAME)) {
+            prepareConnection(connection1, false);
+            String query = "SELECT * FROM IDN_FED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID=?";
+            PreparedStatement statement2 = connection1.prepareStatement(query);
+            statement2.setString(1, "94911684-8ef8-407b-bc59-e435b6270858");
+            ResultSet resultSet = statement2.executeQuery();
+            String result = null;
+            if (resultSet.next()) {
+                result = resultSet.getString("SESSION_ID");
+            }
+            assertEquals(INBOUND_SESSION_INDEX, result, "Failed to handle for valid input");
+        }
+    }
+
+    @Test(expectedExceptions = SAMLLogoutException.class)
+    public void testProcessWithTenantIdSLONotAccepted() throws Exception {
+
+        SAMLLogoutRequestProcessor processor = new SAMLLogoutRequestProcessor();
+        SAMLLogoutUtil.doBootstrap();
+        when(mockedRequest.isPost()).thenReturn(true);
+        PowerMockito.when(mockedRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).
+                thenReturn(SAML2_SLO_POST_REQUEST);
+
+        mockStatic(IdentityDatabaseUtil.class);
+        when(IdentityDatabaseUtil.getDBConnection(false)).thenReturn(getConnection(DB_WITH_TENANT_ID_NAME));
+
+        mockStatic(IdentityProviderManager.class);
+        when(IdentityProviderManager.getInstance()).thenReturn(mockedIdPManager);
+
+        IdentityProvider idp = new IdentityProvider();
+        idp.setIdentityProviderName(null);
+
+        FederatedAuthenticatorConfig config = new FederatedAuthenticatorConfig();
+        Property[] properties = new Property[1];
+
+        Property property = new Property();
+        property.setName(IS_SLO_REQUEST_ACCEPTED);
+        property.setValue("false");
+        properties[0] = property;
+
+        config.setProperties(properties);
+        idp.setDefaultAuthenticatorConfig(config);
+        when(mockedIdPManager.getIdPByName(IDP_NAME, SUPER_TENANT_DOMAIN)).thenReturn(idp);
+
+        mockStatic(FrameworkUtils.class);
+        when(FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()).thenReturn(Boolean.TRUE);
+
+        mockStatic(IdentityTenantUtil.class);
+        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(1);
+
+        mockServiceURLBuilder();
+        assertNotNull(processor.process(mockedRequest));
+    }
+
     @AfterClass
     public void tearDown() throws Exception {
 
         closeH2Base(DB_NAME);
+        closeH2Base(DB_WITH_TENANT_ID_NAME);
     }
 }
 

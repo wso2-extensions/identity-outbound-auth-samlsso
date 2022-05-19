@@ -75,4 +75,38 @@ public class SessionInfoDAO {
                     + samlIndex, e);
         }
     }
+
+    /**
+     * Retrieve the session details of a given SAML Index and the tenant id from the database.
+     *
+     * @param samlIndex Session Index of the SAML Logout Request.
+     * @param tenantId  Tenant id.
+     * @return Map of session details.
+     * @throws SAMLLogoutException If DB execution fails.
+     */
+    public Map<String, String> getSessionDetails(String samlIndex, int tenantId) throws SAMLLogoutException {
+
+        final String query = "SELECT * FROM IDN_FED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID = ? AND TENANT_ID = ?";
+
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, samlIndex);
+            preparedStatement.setInt(2, tenantId);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                Map<String, String> sessionDetails = new HashMap<>();
+                if (resultSet.next()) {
+                    sessionDetails.put(SESSION_ID, resultSet.getString("SESSION_ID"));
+                    sessionDetails.put(IDP_NAME, resultSet.getString("IDP_NAME"));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Retrieved session id: " + resultSet.getString("SESSION_ID") +
+                                " for federated idp session index: " + samlIndex);
+                    }
+                }
+                return sessionDetails;
+            }
+        } catch (SQLException e) {
+            throw new SAMLLogoutException("Unable to retrieve session details from the database with SAML Index: "
+                    + samlIndex, e);
+        }
+    }
 }
