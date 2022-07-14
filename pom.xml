@@ -88,6 +88,12 @@
                 <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.testutil</artifactId>
+                <scope>test</scope>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
 
             <!--SAML Common Util dependency-->
             <dependency>
@@ -166,7 +172,7 @@
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito</artifactId>
+                <artifactId>powermock-api-mockito2</artifactId>
                 <version>${powermock-module-testng.version}</version>
             </dependency>
             <dependency>
@@ -178,6 +184,18 @@
                 <groupId>org.ops4j.pax.logging</groupId>
                 <artifactId>pax-logging-api</artifactId>
                 <version>${pax.logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>jaxws-ri</artifactId>
+                <version>${com.sun.xml.ws.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.parsers</groupId>
+                <artifactId>jaxp-ri</artifactId>
+                <version>${com.sun.xml.parsers.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -268,7 +286,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.20.433</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.21.7</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.15.0, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
         <!--SAML Common Util Version-->
@@ -315,14 +333,17 @@
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
-        <jacoco.version>0.7.9</jacoco.version>
-        <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
-        <slf4j.api.version>1.7.12</slf4j.api.version>
-        <powermock-module-testng.version>1.6.6</powermock-module-testng.version>
+        <jacoco.version>0.8.7</jacoco.version>
+        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+        <slf4j.api.version>1.6.1</slf4j.api.version>
+        <powermock-module-testng.version>2.0.9</powermock-module-testng.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <pax.logging.version>1.11.0</pax.logging.version>
         <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>
         <h2database.version>1.4.199</h2database.version>
+
+        <com.sun.xml.ws.version>2.3.5</com.sun.xml.ws.version>
+        <com.sun.xml.parsers.version>1.4.5</com.sun.xml.parsers.version>
     </properties>
 
 </project>

@@ -24,6 +24,7 @@ import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.annotations.AfterClass;
@@ -82,6 +83,7 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 @PrepareForTest({IdentityDatabaseUtil.class, IdentityProviderManager.class, SAMLSSOAuthenticatorServiceDataHolder.class,
         IdentityCoreServiceComponent.class, AuthenticationRequestCache.class, IdentityContextCache.class,
         ServiceURLBuilder.class, FrameworkUtils.class, IdentityTenantUtil.class, SAMLLogoutUtil.class})
+@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*","javax.crypto.Cipher"})
 @WithH2Database(files = {"dbscripts/h2.sql", "dbscripts/h2-with-tenant-id.sql"})
 public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
 
@@ -342,7 +344,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         when(FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()).thenReturn(Boolean.TRUE);
 
         mockStatic(IdentityTenantUtil.class);
-        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(1);
+        when(IdentityTenantUtil.getTenantId(nullable(String.class))).thenReturn(1);
 
         mockServiceURLBuilder();
         assertNotNull(processor.process(mockedRequest));
@@ -411,7 +413,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         when(FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()).thenReturn(Boolean.TRUE);
 
         mockStatic(IdentityTenantUtil.class);
-        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(1);
+        when(IdentityTenantUtil.getTenantId(nullable(String.class))).thenReturn(1);
 
         mockServiceURLBuilder();
         assertNotNull(processor.process(mockedRequest));
