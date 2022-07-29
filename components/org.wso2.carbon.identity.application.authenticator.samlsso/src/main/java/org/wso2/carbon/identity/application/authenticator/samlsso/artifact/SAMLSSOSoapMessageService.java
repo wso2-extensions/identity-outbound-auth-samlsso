@@ -149,7 +149,7 @@ public class SAMLSSOSoapMessageService {
 
             char[] kspassphrase = keyStorePassword.toCharArray();
 
-            sslContext = SSLContext.getInstance("TLS");
+            sslContext = SSLContext.getInstance("TLSv1.2");
             keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
             keyStore = SSOUtils.loadKeyStoreFromFileSystem(keyStorePath, keyStorePassword, keyStoreType);
             keyManagerFactory.init(keyStore, kspassphrase);
