@@ -28,11 +28,14 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.cache.AuthenticationRequestCache;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityContextCache;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.util.SAMLLogoutUtil;
@@ -49,6 +52,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -118,6 +122,14 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
 
     @Mock
     private IdentityContextCache mockedIdentityCache;
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+
+        SAMLMessageContext<String, String> samlMessageContext = new SAMLMessageContext<>(mockedRequest,
+                new HashMap<>());
+        when(samlMessageContext.getSAMLLogoutRequest().getTenantDomain()).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+    }
 
     @Test
     public void testProcess() throws Exception {
@@ -344,7 +356,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         when(FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()).thenReturn(Boolean.TRUE);
 
         mockStatic(IdentityTenantUtil.class);
-        when(IdentityTenantUtil.getTenantId(nullable(String.class))).thenReturn(1);
+        when(IdentityTenantUtil.getTenantId(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)).thenReturn(1);
 
         mockServiceURLBuilder();
         assertNotNull(processor.process(mockedRequest));
@@ -413,7 +425,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         when(FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()).thenReturn(Boolean.TRUE);
 
         mockStatic(IdentityTenantUtil.class);
-        when(IdentityTenantUtil.getTenantId(nullable(String.class))).thenReturn(1);
+        when(IdentityTenantUtil.getTenantId(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)).thenReturn(1);
 
         mockServiceURLBuilder();
         assertNotNull(processor.process(mockedRequest));
