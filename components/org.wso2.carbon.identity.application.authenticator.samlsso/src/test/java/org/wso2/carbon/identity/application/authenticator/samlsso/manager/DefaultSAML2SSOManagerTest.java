@@ -122,7 +122,7 @@ import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENA
 /**
  * Unit test cases for DefaultSAML2SSOManager
  */
-@PowerMockIgnore({"javax.xml.datatype.*"})
+@PowerMockIgnore({"javax.xml.datatype.*","org.mockito.*","org.powermock.api.mockito.invocation.*","javax.crypto.Cipher"})
 @PrepareForTest({FileBasedConfigurationBuilder.class, IdentityUtil.class, DocumentBuilderFactory.class,
         KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class, FrameworkUtils.class,
         ServiceURLBuilder.class})
