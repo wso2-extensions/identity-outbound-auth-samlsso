@@ -21,6 +21,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.mockito.Mock;
 import org.opensaml.security.credential.UsageType;
 import org.opensaml.security.x509.X509Credential;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
@@ -57,6 +58,7 @@ import static org.wso2.carbon.identity.common.testng.TestConstants.CARBON_HOST_L
 /**
  * Unit tests for X509CredentialImpl.
  */
+@PowerMockIgnore({"org.mockito.*","org.powermock.api.mockito.invocation.*"})
 @PrepareForTest({KeyStoreManager.class, FrameworkUtils.class})
 public class X509CredentialImplTest {
 

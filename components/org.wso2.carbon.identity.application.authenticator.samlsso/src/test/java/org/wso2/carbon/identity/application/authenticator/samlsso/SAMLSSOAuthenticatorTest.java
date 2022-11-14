@@ -80,7 +80,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.util.Mo
 /**
  * Unit test cases for SAMLSSOAuthenticator
  */
-@PowerMockIgnore({"javax.xml.datatype.*"})
+@PowerMockIgnore({"javax.xml.datatype.*","org.mockito.*","org.powermock.api.mockito.invocation.*","javax.crypto.Cipher"})
 @PrepareForTest({XPathFactory.class, XMLInputFactory.class, DocumentBuilderFactory.class, IdentityUtil.class,
         DOMImplementationRegistry.class})
 public class SAMLSSOAuthenticatorTest {
