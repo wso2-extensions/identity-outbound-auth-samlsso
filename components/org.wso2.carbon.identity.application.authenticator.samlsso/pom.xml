@@ -37,10 +37,6 @@
             <artifactId>org.wso2.carbon.utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon</groupId>
-            <artifactId>org.wso2.carbon.ui</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.base</artifactId>
             <exclusions>
@@ -208,7 +204,6 @@
                             org.wso2.carbon.identity.saml.common.util.*; version="${saml.common.util.version.range}",
 
                             org.wso2.carbon.core.util; version="${carbon.kernel.imp.pkg.version.range}",
-                            org.wso2.carbon.ui; version="${carbon.kernel.imp.pkg.version.range}",
                             org.wso2.carbon.user.api; version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.service; version="${carbon.kernel.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.tenant; version="${carbon.kernel.imp.pkg.version.range}",
