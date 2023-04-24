@@ -45,6 +45,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validat
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.mgt.ApplicationConstants;
 import org.wso2.carbon.identity.base.IdentityConstants;
@@ -60,9 +61,17 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AnalyticsAttributes.SESSION_ID;
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.FED_IDP_ID;
+import static org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID;
+import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.IDP_NAME;
+import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 
 /**
  * This class processes the SAML single logout request from the federated IdP.
@@ -112,7 +121,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
 
             samlMessageContext.setIdPSessionID(SAMLLogoutUtil.getSessionIndex(logoutRequest));
             if (StringUtils.isNotBlank(samlMessageContext.getIdPSessionID())) {
-                populateContextWithSessionDetails(samlMessageContext);
+                populateContextWithSessionDetails(samlMessageContext, logoutRequest);
             }
 
             if (!Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IdentityApplicationConstants.
@@ -164,8 +173,12 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
                     callback, e);
         }
         authenticationRequest.addRequestQueryParam(FrameworkConstants.LOGOUT, new String[]{IdentityConstants.TRUE});
-        authenticationRequest.addRequestQueryParam(FrameworkConstants.AnalyticsAttributes.SESSION_ID,
+        authenticationRequest.addRequestQueryParam(SESSION_ID,
                 new String[]{samlMessageContext.getSessionID()});
+        if (StringUtils.isNotBlank(samlMessageContext.getFederatedIdpId())) {
+            authenticationRequest.addRequestQueryParam(FED_IDP_ID,
+                    new String[]{samlMessageContext.getFederatedIdpId()});
+        }
 
         AuthenticationRequestCacheEntry authRequest = new AuthenticationRequestCacheEntry(authenticationRequest);
         String sessionDataKey = UUIDGenerator.generateUUID();
@@ -194,40 +207,120 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     /**
      * Populate SAMLMessageContext with session details of the SAML index.
      *
-     * @param samlMessageContext {@link SAMLMessageContext} object which has details on logout flow.
-     * @throws SAMLLogoutException Error while retrieving the session details.
+     * @param samlMessageContext    {@link SAMLMessageContext} object which has details on logout flow.
+     * @param logoutRequest         {@link LogoutRequest} abstract logout request.
+     * @throws SAMLLogoutException  Error while retrieving the session details.
      */
-    private void populateContextWithSessionDetails(SAMLMessageContext<String, String> samlMessageContext)
+    private void populateContextWithSessionDetails(SAMLMessageContext<String, String> samlMessageContext,
+                                                   LogoutRequest logoutRequest) throws SAMLLogoutException {
+
+        Map<String, String> sessionDetails = null;
+        IdentityProvider identityProvider = null;
+        String tenantDomain = StringUtils.isNotBlank(samlMessageContext.getSAMLLogoutRequest().getTenantDomain()) ?
+                samlMessageContext.getSAMLLogoutRequest().getTenantDomain() : SUPER_TENANT_DOMAIN_NAME;
+        String idpSessionId = samlMessageContext.getIdPSessionID();
+
+        if (FrameworkUtils.isIdpIdColumnAvailableInFedAuthTable()) {
+
+            String issuer = logoutRequest.getIssuer().getValue();
+
+            /*
+             * TODO: improve to retrieve IdP ID using issuer and the retrieving only the appropriate row from DB
+             * Currently this is not possible due to
+             *      https://github.com/wso2-support/identity-outbound-auth-samlsso/pull/71/files#r1169395304
+             */
+            List<Map<String, String>> sessionDetailsList =
+                    getSessionDetailsIncludingIdpIdList(samlMessageContext.getIdPSessionID(), tenantDomain);
+            IdentityProvider tempIdentityProvider;
+            for (Map<String, String> tempSessionDetails : sessionDetailsList) {
+                tempIdentityProvider = getIdentityProviderById(tempSessionDetails.get(FED_IDP_ID), tenantDomain);
+                Property idpEntityIdProperty = getIdpEntityIdProperty(tempIdentityProvider);
+                if (idpEntityIdProperty != null && issuer.equals(idpEntityIdProperty.getValue())) {
+                    // Issuer of the logout request matches with the IdPEntityId of SAMLSSOAuthenticator of the IdP.
+                    sessionDetails = tempSessionDetails;
+                    identityProvider = tempIdentityProvider;
+                    break;
+                }
+            }
+
+            if (MapUtils.isEmpty(sessionDetails)) {
+                throw new SAMLLogoutException("Failed to retrieve session details for IDP session ID: " + idpSessionId
+                        + " and issuer: " + issuer);
+            }
+
+        } else {
+
+            sessionDetails = getSessionDetails(samlMessageContext.getIdPSessionID(), tenantDomain);
+            if (MapUtils.isEmpty(sessionDetails)) {
+                throw new SAMLLogoutException("Failed to retrieve session details for IDP session ID: "
+                        + idpSessionId);
+            }
+
+            identityProvider = getIdentityProviderByName(sessionDetails.get(IDP_NAME), tenantDomain);
+            if (identityProvider == null) {
+                throw new SAMLLogoutException("Identity provider with IDP name: " + sessionDetails.get(IDP_NAME)
+                        + " not found");
+            }
+        }
+
+        samlMessageContext.setTenantDomain(tenantDomain);
+        samlMessageContext.setSessionID(sessionDetails.get(SESSION_ID));
+        samlMessageContext.setFederatedIdP(identityProvider);
+        samlMessageContext.setFedIdPConfigs(SAMLLogoutUtil.getFederatedIdPConfigs(identityProvider));
+        if (StringUtils.isNotBlank(sessionDetails.get(FED_IDP_ID))) {
+            samlMessageContext.setFederatedIdpId(sessionDetails.get(FED_IDP_ID));
+        }
+    }
+
+    private List<Map<String, String>> getSessionDetailsIncludingIdpIdList(String idpSessionId, String tenantDomain)
             throws SAMLLogoutException {
 
         SessionInfoDAO sessionInfoDAO = new SessionInfoDAO();
-        String tenantDomain = samlMessageContext.getSAMLLogoutRequest().getTenantDomain();
-        Map<String, String> sessionDetails;
         if (FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()) {
-            int tenantId = IdentityTenantUtil.getTenantId(samlMessageContext.getSAMLLogoutRequest().getTenantDomain());
-            sessionDetails = sessionInfoDAO.getSessionDetails(samlMessageContext.getIdPSessionID(), tenantId);
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+            return sessionInfoDAO.getSessionDetailsIncludingIdpId(idpSessionId, tenantId);
         } else {
-            sessionDetails = sessionInfoDAO.getSessionDetails(samlMessageContext.getIdPSessionID());
+            return sessionInfoDAO.getSessionDetailsIncludingIdpId(idpSessionId);
         }
-        if ( MapUtils.isNotEmpty(sessionDetails)) {
-            if (StringUtils.isNotBlank(tenantDomain)) {
-                samlMessageContext.setTenantDomain(tenantDomain);
-            } else {
-                samlMessageContext.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            }
-            IdentityProvider identityProvider;
-            try {
-                identityProvider = IdentityProviderManager.getInstance().getIdPByName(
-                        sessionDetails.get(ApplicationConstants.IDP_NAME), samlMessageContext.getTenantDomain());
-            } catch (IdentityProviderManagementException e) {
-                throw new SAMLLogoutException("Error when getting the Identity Provider by IdP name: "
-                        + sessionDetails.get(ApplicationConstants.IDP_NAME) + "with tenant domain: "
-                            + samlMessageContext.getTenantDomain(), e);
-            }
-            samlMessageContext.setSessionID(sessionDetails.get(FrameworkConstants.AnalyticsAttributes.SESSION_ID));
-            samlMessageContext.setFederatedIdP(identityProvider);
-            samlMessageContext.setFedIdPConfigs(SAMLLogoutUtil.getFederatedIdPConfigs(identityProvider));
+    }
+
+    private Map<String, String> getSessionDetails(String idpSessionId, String tenantDomain) throws SAMLLogoutException {
+
+        SessionInfoDAO sessionInfoDAO = new SessionInfoDAO();
+        if (FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()) {
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+            return sessionInfoDAO.getSessionDetails(idpSessionId, tenantId);
+        } else {
+            return sessionInfoDAO.getSessionDetails(idpSessionId);
         }
+    }
+
+    private IdentityProvider getIdentityProviderById(String idpId, String tenantDomain) throws SAMLLogoutException {
+
+        try {
+            return IdentityProviderManager.getInstance().getIdPById(idpId, tenantDomain);
+        } catch (IdentityProviderManagementException e) {
+            throw new SAMLLogoutException("Error when getting the Identity Provider by IdP ID: " + idpId
+                    + " with tenant domain: " + tenantDomain, e);
+        }
+    }
+
+    private IdentityProvider getIdentityProviderByName(String idpName, String tenantDomain) throws SAMLLogoutException {
+
+        try {
+            return IdentityProviderManager.getInstance().getIdPByName(
+                    idpName, tenantDomain);
+        } catch (IdentityProviderManagementException e) {
+            throw new SAMLLogoutException("Error when getting the Identity Provider by IdP name: " + idpName
+                    + " with tenant domain: " + tenantDomain, e);
+        }
+    }
+
+    private Property getIdpEntityIdProperty(IdentityProvider identityProvider) {
+
+        Property[] idpAuthenticatorProps = identityProvider.getDefaultAuthenticatorConfig().getProperties();
+        return Arrays.stream(idpAuthenticatorProps)
+                .filter(property -> IDP_ENTITY_ID.equals(property.getName())).findFirst().orElse(null);
     }
 
     @Override

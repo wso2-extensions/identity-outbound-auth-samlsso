@@ -37,6 +37,7 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     private String sessionID;
     private String idpSessionID;
     private String tenantDomain;
+    private String federatedIdpId;
     private Boolean validStatus;
     private IdentityProvider federatedIdP;
     private Map<String, String> fedIdPConfigs;
@@ -134,5 +135,15 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     public String getRelayState() {
 
         return request.getParameter(SSOConstants.RELAY_STATE);
+    }
+
+    public String getFederatedIdpId() {
+
+        return federatedIdpId;
+    }
+
+    public void setFederatedIdpId(String federatedIdpId) {
+
+        this.federatedIdpId = federatedIdpId;
     }
 }
