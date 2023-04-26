@@ -439,6 +439,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
 
         closeH2Base(DB_NAME);
         closeH2Base(DB_WITH_TENANT_ID_NAME);
+        closeH2Base(DB_NAME_WITH_TENANT_ID_AND_IDP_ID_COLUMNS);
     }
 }
 
