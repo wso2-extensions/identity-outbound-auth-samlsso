@@ -237,7 +237,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             String signatureAlgoProp = properties
                     .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
             if (StringUtils.isEmpty(signatureAlgoProp)) {
-                signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
+                signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA256;
             }
             String signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms()
                     .get(signatureAlgoProp);
@@ -288,7 +288,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         signatureAlgoProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
         if (StringUtils.isEmpty(signatureAlgoProp)) {
-            signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
+            signatureAlgoProp = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA256;
         }
         signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms().get(signatureAlgoProp);
 
@@ -296,7 +296,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         digestAlgoProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
         if (StringUtils.isEmpty(digestAlgoProp)) {
-            digestAlgoProp = IdentityApplicationConstants.XML.DigestAlgorithm.SHA1;
+            digestAlgoProp = IdentityApplicationConstants.XML.DigestAlgorithm.SHA256;
         }
         digestAlgo = IdentityApplicationManagementUtil.getXMLDigestAlgorithms().get(digestAlgoProp);
 
