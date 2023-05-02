@@ -103,15 +103,15 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
     private static final String TENANT_ID = "1";
 
     private static final String INSERT_SQL =  "INSERT INTO IDN_FED_AUTH_SESSION_MAPPING " +
-            "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE) VALUES ( '" +
+            "(IDP_SESSION_ID, SESSION_ID, IDP_NAME, AUTHENTICATOR_ID, PROTOCOL_TYPE) VALUES ( '" +
             SAML_INDEX + "' , '" + INBOUND_SESSION_INDEX + "' , '" + IDP_NAME + "' , " +
             "'samlssoAuthenticator', 'samlsso');";
     private static final String INSERT_SQL_WITH_TENANT_ID = "INSERT INTO IDN_FED_AUTH_SESSION_MAPPING " +
-            "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE, TENANT_ID) VALUES ( '" +
+            "(IDP_SESSION_ID, SESSION_ID, IDP_NAME, AUTHENTICATOR_ID, PROTOCOL_TYPE, TENANT_ID) VALUES ( '" +
             SAML_INDEX + "' , '" + INBOUND_SESSION_INDEX + "' , '" + IDP_NAME + "' , " +
             "'samlssoAuthenticator', 'samlsso', '" + TENANT_ID + "');";
     private static final String INSERT_SQL_WITH_TENANT_ID_AND_IDP_ID = "INSERT INTO IDN_FED_AUTH_SESSION_MAPPING " +
-            "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE, TENANT_ID, IDP_ID) VALUES ( '" +
+            "(IDP_SESSION_ID, SESSION_ID, IDP_NAME, AUTHENTICATOR_ID, PROTOCOL_TYPE, TENANT_ID, IDP_ID) VALUES ( '" +
             SAML_INDEX + "' , '" + INBOUND_SESSION_INDEX + "' , '" + IDP_NAME + "' , " +
             "'samlssoAuthenticator', 'samlsso', '" + TENANT_ID + "', '" + IDP_ID + "');";
     private static final String SELECT_SQL = "SELECT * FROM IDN_FED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID=?";
@@ -302,6 +302,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
     }
 
     private IdentityProvider getMockIdp() {
+
         IdentityProvider idp = new IdentityProvider();
         idp.setIdentityProviderName(IDP_NAME);
 
@@ -350,6 +351,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
     }
 
     private IdentityProvider getMockIdpWithoutSlo() {
+
         IdentityProvider idp = new IdentityProvider();
         idp.setIdentityProviderName(null);
 
