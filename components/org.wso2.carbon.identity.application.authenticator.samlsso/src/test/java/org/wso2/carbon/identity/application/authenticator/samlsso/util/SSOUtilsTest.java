@@ -209,11 +209,11 @@ public class SSOUtilsTest {
     @Test
     public void testGetSignatureAlgorithm() {
 
-        Assert.assertEquals(SSOUtils.getSignatureAlgorithm(null), TestConstants.SIGNATURE_ALGO_XML_SHA1,
+        Assert.assertEquals(SSOUtils.getSignatureAlgorithm(null), TestConstants.SIGNATURE_ALGO_XML_SHA256,
                 "Returned invalid output");
 
         Map<String, String> properties = new HashMap<>();
-        Assert.assertEquals(SSOUtils.getSignatureAlgorithm(properties), TestConstants.SIGNATURE_ALGO_XML_SHA1,
+        Assert.assertEquals(SSOUtils.getSignatureAlgorithm(properties), TestConstants.SIGNATURE_ALGO_XML_SHA256,
                 "Returned invalid output");
 
         properties.put(TestConstants.SIGNATURE_ALGO, TestConstants.SIGNATURE_ALGO_SHA256);
@@ -225,10 +225,11 @@ public class SSOUtilsTest {
     @Test
     public void testGetDigestAlgorithm() {
 
-        Assert.assertEquals(SSOUtils.getDigestAlgorithm(null), TestConstants.DIGEST_ALGO_XML_SHA1, "Returned invalid output");
+        Assert.assertEquals(SSOUtils.getDigestAlgorithm(null), TestConstants.DIGEST_ALGO_XML_SHA256, "Returned " +
+                "invalid output");
 
         Map<String, String> properties = new HashMap<>();
-        Assert.assertEquals(SSOUtils.getDigestAlgorithm(properties), TestConstants.DIGEST_ALGO_XML_SHA1,
+        Assert.assertEquals(SSOUtils.getDigestAlgorithm(properties), TestConstants.DIGEST_ALGO_XML_SHA256,
                 "Returned invalid output");
 
         properties.put(TestConstants.DIGEST_ALGO, TestConstants.DIGEST_ALGO_SHA256);
