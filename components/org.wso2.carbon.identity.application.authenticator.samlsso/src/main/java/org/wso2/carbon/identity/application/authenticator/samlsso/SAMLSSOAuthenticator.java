@@ -45,6 +45,9 @@ import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.SubProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.utils.DiagnosticLog;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -56,6 +59,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,6 +68,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_ARTIFACT_ID;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.HTTP_POST_PARAM_SAML2_RESP;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.LogConstants.ActionIDs.PROCESS_AUTHENTICATION_RESPONSE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.LogConstants.ActionIDs.INITIATE_OUTBOUND_AUTH_REQUEST;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.LogConstants.OUTBOUND_AUTH_SAMLSSO_SERVICE;
 import static org.wso2.carbon.identity.base.IdentityConstants.FEDERATED_IDP_SESSION_ID;
 
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
@@ -86,10 +93,17 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         if (log.isTraceEnabled()) {
             log.trace("Inside canHandle()");
         }
-
-        return request.getParameter(HTTP_POST_PARAM_SAML2_RESP) != null ||
+        boolean canHandle = request.getParameter(HTTP_POST_PARAM_SAML2_RESP) != null ||
                 request.getParameter(HTTP_POST_PARAM_SAML2_ARTIFACT_ID) != null;
-
+        if (canHandle && LoggerUtils.isDiagnosticLogsEnabled()) {
+            DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                    OUTBOUND_AUTH_SAMLSSO_SERVICE, FrameworkConstants.LogConstants.ActionIDs.HANDLE_AUTH_STEP);
+            diagnosticLogBuilder.resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .logDetailLevel(DiagnosticLog.LogDetailLevel.INTERNAL_SYSTEM)
+                    .resultMessage("Outbound SAML authenticator handling the authentication.");
+            LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+        }
+        return canHandle;
     }
 
     @Override
@@ -97,12 +111,33 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
                                                  AuthenticationContext context)
             throws AuthenticationFailedException {
 
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                    OUTBOUND_AUTH_SAMLSSO_SERVICE, INITIATE_OUTBOUND_AUTH_REQUEST);
+            diagnosticLogBuilder.resultMessage("Initiate outbound saml authentication request.")
+                    .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                    .inputParams(getApplicationDetails(context));
+            LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+        }
         Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
 
         String idpURL = authenticatorProperties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL);
         String ssoUrl;
         boolean isPost = false;
+
+        DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = null;
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(OUTBOUND_AUTH_SAMLSSO_SERVICE,
+                    INITIATE_OUTBOUND_AUTH_REQUEST);
+            diagnosticLogBuilder.logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                    .inputParam("authenticator properties", authenticatorProperties.keySet())
+                    .inputParams(getApplicationDetails(context));
+        }
 
         try {
             String requestMethod = authenticatorProperties
@@ -118,16 +153,18 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
 
             // Resolves dynamic query parameters from "Additional Query Parameters".
             resolveDynamicParameter(request, context);
-
             if (isPost) {
-                sendPostRequest(request, response, false, idpURL, context);
+                sendPostRequest(request, response, false, idpURL, context, diagnosticLogBuilder);
             } else {
                 SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
                 saml2SSOManager.init(context.getTenantDomain(), context.getAuthenticatorProperties(),
                         context.getExternalIdP().getIdentityProvider());
                 ssoUrl = saml2SSOManager.buildRequest(request, false, false, idpURL, context);
-                generateAuthenticationRequest(request, response, ssoUrl, authenticatorProperties);
-
+                generateAuthenticationRequest(request, response, ssoUrl, authenticatorProperties, diagnosticLogBuilder);
+            }
+            if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null) {
+                diagnosticLogBuilder.resultMessage("Outbound SAML authentication request sent to the IDP.");
+                LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
             }
         } catch (SAMLSSOException e) {
             throw new AuthenticationFailedException(e.getErrorCode(), e.getMessage(), e);
@@ -242,9 +279,13 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
     }
 
     private void generateAuthenticationRequest(HttpServletRequest request, HttpServletResponse response,
-                                               String ssoUrl, Map<String, String> authenticatorProperties)
+                                               String ssoUrl, Map<String, String> authenticatorProperties,
+                                               DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder)
             throws AuthenticationFailedException {
         try {
+            if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null) {
+                diagnosticLogBuilder.inputParam(SSOConstants.LogConstants.InputKeys.IS_POST, false);
+            }
             String domain = request.getParameter("domain");
 
             if (domain != null) {
@@ -255,6 +296,9 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
                 String queryString = authenticatorProperties
                         .get(FrameworkConstants.QUERY_PARAMS);
                 if (queryString != null) {
+                    if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null) {
+                        diagnosticLogBuilder.inputParam("query params", queryString);
+                    }
                     if (!queryString.startsWith("&")) {
                         ssoUrl = ssoUrl + "&" + queryString;
                     } else {
@@ -274,6 +318,16 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
                                                  AuthenticationContext context)
             throws AuthenticationFailedException {
 
+        if (LoggerUtils.isDiagnosticLogsEnabled()) {
+            DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                    OUTBOUND_AUTH_SAMLSSO_SERVICE, PROCESS_AUTHENTICATION_RESPONSE);
+            diagnosticLogBuilder.resultMessage("Processing outbound saml authentication response.")
+                    .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                    .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                    .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                    .inputParams(getApplicationDetails(context));
+            LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+        }
         String subject = null;
         try {
             SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
@@ -359,6 +413,17 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
                     AuthenticatedUser.createFederateAuthenticatedUserFromSubjectIdentifier(subject);
             authenticatedUser.setUserAttributes(receivedClaims);
             context.setSubject(authenticatedUser);
+            if (LoggerUtils.isDiagnosticLogsEnabled()) {
+                DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder = new DiagnosticLog.DiagnosticLogBuilder(
+                        OUTBOUND_AUTH_SAMLSSO_SERVICE, PROCESS_AUTHENTICATION_RESPONSE);
+                diagnosticLogBuilder.resultMessage("Successfully completed the outbound saml authentication response.")
+                        .logDetailLevel(DiagnosticLog.LogDetailLevel.APPLICATION)
+                        .resultStatus(DiagnosticLog.ResultStatus.SUCCESS)
+                        .inputParam(LogConstants.InputKeys.STEP, context.getCurrentStep())
+                        .inputParams(getApplicationDetails(context));
+                adduserAttributesToDiagnosticLog(authenticatedUser, diagnosticLogBuilder);
+                LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
+            }
         } catch (SAMLSSOException e) {
             // whenever the code reaches here the subject identifier will be null. Therefore we can't pass
             // AuthenticatedUser object with the exception.
@@ -465,7 +530,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
                 }
 
                 if (isPost) {
-                    sendPostRequest(request, response, true, idpLogoutURL, context);
+                    sendPostRequest(request, response, true, idpLogoutURL, context, null);
                 } else {
                     String logoutURL = saml2SSOManager.buildRequest(request, true, false,
                             idpLogoutURL, context);
@@ -887,7 +952,8 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
     }
 
     private void sendPostRequest(HttpServletRequest request, HttpServletResponse response,
-                                 boolean isLogout, String loginPage, AuthenticationContext context)
+                                 boolean isLogout, String loginPage, AuthenticationContext context,
+                                 DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder)
             throws SAMLSSOException {
 
         SAML2SSOManager saml2SSOManager = getSAML2SSOManagerInstance();
@@ -904,6 +970,11 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         String relayState = context.getContextIdentifier();
 
         Map<String, String> reqParamMap = getAdditionalRequestParams(request, context);
+        if (LoggerUtils.isDiagnosticLogsEnabled() && diagnosticLogBuilder != null) {
+            diagnosticLogBuilder.inputParam("encoded request", encodedRequest)
+                .inputParam(SSOConstants.LogConstants.InputKeys.IS_POST, true)
+                .inputParam("param map", reqParamMap);
+        }
         String postPageInputs = buildPostPageInputs(encodedRequest, relayState, reqParamMap);
         printPostPage(response, loginPage, postPageInputs);
     }
@@ -1010,5 +1081,37 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         } catch (Exception e) {
             throw new SAMLSSOException(ErrorMessages.IO_ERROR.getCode(), "Error while sending POST request", e);
         }
+    }
+
+    /**
+     * Get application details from the authentication context.
+     * @param context Authentication context.
+     * @return Map of application details.
+     */
+    private Map<String, String> getApplicationDetails(AuthenticationContext context) {
+
+        Map<String, String> applicationDetailsMap = new HashMap<>();
+        FrameworkUtils.getApplicationResourceId(context).ifPresent(applicationId ->
+                applicationDetailsMap.put(LogConstants.InputKeys.APPLICATION_ID, applicationId));
+        FrameworkUtils.getApplicationName(context).ifPresent(applicationName ->
+                applicationDetailsMap.put(LogConstants.InputKeys.APPLICATION_NAME,
+                        applicationName));
+        return applicationDetailsMap;
+    }
+
+    private void adduserAttributesToDiagnosticLog(AuthenticatedUser authenticatedUser,
+                                                  DiagnosticLog.DiagnosticLogBuilder diagnosticLogBuilder) {
+
+        if (authenticatedUser.getUserAttributes() == null) {
+            return;
+        }
+        Set<Map.Entry<ClaimMapping, String>> userAttributes = authenticatedUser.getUserAttributes().entrySet();
+        List<String> userAttributeList = new ArrayList<>();
+        userAttributes.forEach(claimMappingStringEntry -> {
+            String localClaim = claimMappingStringEntry.getKey().getLocalClaim().getClaimUri();
+            String remoteClaim = claimMappingStringEntry.getKey().getRemoteClaim().getClaimUri();
+            userAttributeList.add(localClaim + " : " + remoteClaim);
+        });
+        diagnosticLogBuilder.inputParam("user attributes (local claim : remote claim)", userAttributeList);
     }
 }
