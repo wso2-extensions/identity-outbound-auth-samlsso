@@ -1085,6 +1085,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
 
     /**
      * Get application details from the authentication context.
+     *
      * @param context Authentication context.
      * @return Map of application details.
      */
