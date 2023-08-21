@@ -84,4 +84,29 @@ public class SSOConstants {
         public static final String HTTPS_PROXY_HOST = "HTTPS_PROXY_HOST";
         public static final String HTTPS_PROXY_PORT = "HTTPS_PROXY_PORT";
     }
+
+    /**
+     * Constants related to log management.
+     */
+    public static class LogConstants {
+
+        public static final String OUTBOUND_AUTH_SAMLSSO_SERVICE = "outbound-auth-samlsso";
+
+        /**
+         * Define action IDs for diagnostic logs.
+         */
+        public static class ActionIDs {
+
+            public static final String PROCESS_AUTHENTICATION_RESPONSE = "process-outbound-auth-samlsso-response";
+            public static final String INITIATE_OUTBOUND_AUTH_REQUEST = "initiate-outbound-auth-samlsso-request";
+        }
+
+        /**
+         * Define input keys for diagnostic logs.
+         */
+        public  static class InputKeys {
+
+            public static final String IS_POST = "is post";
+        }
+    }
 }

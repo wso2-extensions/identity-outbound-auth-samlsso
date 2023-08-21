@@ -46,6 +46,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConsta
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
@@ -68,6 +69,7 @@ import javax.xml.xpath.XPathFactory;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doCallRealMethod;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -82,7 +84,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.util.Mo
  */
 @PowerMockIgnore({"javax.xml.datatype.*","org.mockito.*","org.powermock.api.mockito.invocation.*","javax.crypto.Cipher"})
 @PrepareForTest({XPathFactory.class, XMLInputFactory.class, DocumentBuilderFactory.class, IdentityUtil.class,
-        DOMImplementationRegistry.class})
+        DOMImplementationRegistry.class, LoggerUtils.class})
 public class SAMLSSOAuthenticatorTest {
 
     public static final String INBOUND_QUERY_KEY = "inbound_query_key";
@@ -131,6 +133,8 @@ public class SAMLSSOAuthenticatorTest {
     @Test(priority = 1)
     public void testCanHandle() {
 
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
         when(mockedHttpServletRequest.getParameter("SAMLResponse")).thenReturn("SAMLResponse");
         assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
     }
@@ -138,6 +142,8 @@ public class SAMLSSOAuthenticatorTest {
     @Test(priority = 1)
     public void testCanHandleArtifactBinding() {
 
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
         when(mockedHttpServletRequest.getParameter(TestConstants.HTTP_POST_PARAM_SAML_ART)).thenReturn(
                 TestConstants.HTTP_POST_PARAM_SAML_ART);
         assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
@@ -164,6 +170,8 @@ public class SAMLSSOAuthenticatorTest {
         mockXPathFactory();
         mockDocumentBuilderFactory();
         mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
@@ -196,6 +204,8 @@ public class SAMLSSOAuthenticatorTest {
 
         mockXPathFactory();
         mockDocumentBuilderFactory();
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
@@ -227,6 +237,8 @@ public class SAMLSSOAuthenticatorTest {
         mockXPathFactory();
         mockDocumentBuilderFactory();
         mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
@@ -324,6 +336,8 @@ public class SAMLSSOAuthenticatorTest {
         mockXPathFactory();
         mockDocumentBuilderFactory();
         mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
 
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(mockedRealmService);
 
@@ -380,6 +394,8 @@ public class SAMLSSOAuthenticatorTest {
         mockXPathFactory();
         mockDocumentBuilderFactory();
         mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+        mockStatic(LoggerUtils.class);
+        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
