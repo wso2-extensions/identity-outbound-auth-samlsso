@@ -63,6 +63,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -83,6 +84,11 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -652,6 +658,32 @@ public class SSOUtils {
             throw new java.lang.SecurityException("Could not open keystore in path: " + keyStorePath + ": " + e2);
         } catch (CertificateException | NoSuchAlgorithmException e3) {
             throw new java.lang.SecurityException("Error in loading keystore in path: " + keyStorePath + ": " + e3);
+        }
+    }
+
+    /**
+     * Generate a String using the given DOM element.
+     *
+     * @param xmlElement
+     * @return The String representation of the DOM element.
+     * @throws SAMLSSOException
+     */
+    public static String convertXmlDomToString(Element xmlElement) throws SAMLSSOException {
+
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer;
+        try {
+            transformer = tf.newTransformer();
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(xmlElement), new StreamResult(writer));
+
+            return writer.getBuffer().toString();
+        } catch (TransformerException e) {
+            throw new SAMLSSOException(ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getCode(),
+                    ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getMessage());
+        } catch (Exception e) {
+            throw new SAMLSSOException(ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getCode(),
+                    ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getMessage());
         }
     }
 }

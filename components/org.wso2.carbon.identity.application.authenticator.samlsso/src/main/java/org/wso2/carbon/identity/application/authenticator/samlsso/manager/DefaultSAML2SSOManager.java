@@ -384,6 +384,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String decodedResponse = new String(org.apache.commons.codec.binary.Base64.decodeBase64(request.getParameter(
                 SSOConstants.HTTP_POST_PARAM_SAML2_RESP).getBytes()));
         XMLObject samlObject = SSOUtils.unmarshall(decodedResponse);
+        if (log.isDebugEnabled()) {
+            log.debug("Decoded SAML Response:" + SSOUtils.convertXmlDomToString(samlObject.getDOM()));
+        }
         validateResponseFormat(samlObject);
         executeSAMLReponse(request, samlObject);
     }
