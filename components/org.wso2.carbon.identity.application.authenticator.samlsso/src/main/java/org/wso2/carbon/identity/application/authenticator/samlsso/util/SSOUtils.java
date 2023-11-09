@@ -673,11 +673,14 @@ public class SSOUtils {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer;
         try {
-            transformer = tf.newTransformer();
-            StringWriter writer = new StringWriter();
-            transformer.transform(new DOMSource(xmlElement), new StreamResult(writer));
-
-            return writer.getBuffer().toString();
+            if (xmlElement != null) {
+                transformer = tf.newTransformer();
+                StringWriter writer = new StringWriter();
+                transformer.transform(new DOMSource(xmlElement), new StreamResult(writer));
+                return writer.getBuffer().toString();
+            } else {
+                return null;
+            }
         } catch (TransformerException e) {
             throw new SAMLSSOException(ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getCode(),
                     ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getMessage());

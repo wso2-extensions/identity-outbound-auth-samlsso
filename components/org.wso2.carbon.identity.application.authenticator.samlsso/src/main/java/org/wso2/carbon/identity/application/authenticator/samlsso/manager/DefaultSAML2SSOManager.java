@@ -533,6 +533,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 encryptedAssertion = encryptedAssertions.get(0);
                 try {
                     assertion = getDecryptedAssertion(encryptedAssertion);
+                    if (log.isDebugEnabled() && assertion != null) {
+                        log.debug("Decrypted assertion: " + SSOUtils.convertXmlDomToString(assertion.getDOM()));
+                    }
                 } catch (Exception e) {
                     throw new SAMLSSOException(ErrorMessages.UNABLE_TO_DECRYPT_THE_SAML_ASSERTION.getCode(),
                             ErrorMessages.UNABLE_TO_DECRYPT_THE_SAML_ASSERTION.getMessage(), e);
