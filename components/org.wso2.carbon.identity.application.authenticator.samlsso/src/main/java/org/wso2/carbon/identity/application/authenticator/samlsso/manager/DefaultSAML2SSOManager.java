@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2014-2023, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -82,6 +82,7 @@ import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
@@ -1294,6 +1295,16 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      */
     protected Assertion getDecryptedAssertion(EncryptedAssertion encryptedAssertion) throws Exception {
 
+        String tenantDomain = this.tenantDomain;
+        /* When assertion decryption request is initiated by an organization, the key of the corresponding root tenant
+        should be used. */
+        String organizationId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getOrganizationId();
+        if (StringUtils.isNotEmpty(organizationId)) {
+            String rootOrganizationId = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getOrganizationManager()
+                    .getPrimaryOrganizationId(organizationId);
+            tenantDomain = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getOrganizationManager()
+                    .resolveTenantDomain(rootOrganizationId);
+        }
         X509Credential credential = new X509CredentialImpl(tenantDomain, null);
         KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(credential);
         EncryptedKey key = getEncryptedKey(encryptedAssertion);

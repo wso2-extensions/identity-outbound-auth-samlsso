@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017-2023, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 
 import org.apache.commons.logging.Log;
@@ -37,6 +38,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.process
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequestFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseFactory;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
+import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.CarbonUtils;
 
@@ -144,6 +146,21 @@ public class SAMLSSOAuthenticatorServiceComponent {
             log.debug("Unset the ServerConfiguration Service");
         }
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setServerConfigurationService(null);
+    }
+
+    @Reference(name = "identity.organization.management.component",
+            service = OrganizationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetOrganizationManager")
+    protected void setOrganizationManager(OrganizationManager organizationManager) {
+
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setOrganizationManager(organizationManager);
+    }
+
+    protected void unsetOrganizationManager(OrganizationManager organizationManager) {
+
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setOrganizationManager(null);
     }
 
     public static String getPostPage() {

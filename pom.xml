@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2015-2023, WSO2 LLC. (http://www.wso2.com).
   ~
-  ~ WSO2 Inc. licenses this file to you under the Apache License,
+  ~ WSO2 LLC. licenses this file to you under the Apache License,
   ~ Version 2.0 (the "License"); you may not use this file except
   ~ in compliance with the License.
   ~ You may obtain a copy of the License at
@@ -98,7 +98,6 @@
                 <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
                 <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
                 <version>${identity.organization.management.core.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!--SAML Common Util dependency-->
@@ -286,7 +285,7 @@
         <identity.outbound.auth.samlsso.imp.pkg.version.range>[1.0.0, 2.0.0)</identity.outbound.auth.samlsso.imp.pkg.version.range>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.9.10</carbon.kernel.version>
+        <carbon.kernel.version>4.9.17</carbon.kernel.version>
         <carbon.kernel.feature.version>4.9.0</carbon.kernel.feature.version>
         <carbon.kernel.imp.pkg.version.range>[4.4.0, 5.0.0)</carbon.kernel.imp.pkg.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
@@ -295,7 +294,9 @@
         <carbon.identity.framework.version>5.25.260</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.15.0, 7.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
-        <identity.organization.management.core.version>1.0.50</identity.organization.management.core.version>
+        <identity.organization.management.core.version>1.0.85</identity.organization.management.core.version>
+        <org.wso2.identity.organization.mgt.core.imp.pkg.version.range>[1.0.0,2.0.0)
+        </org.wso2.identity.organization.mgt.core.imp.pkg.version.range>
 
         <!--SAML Common Util Version-->
         <saml.common.util.version>1.0.3</saml.common.util.version>
