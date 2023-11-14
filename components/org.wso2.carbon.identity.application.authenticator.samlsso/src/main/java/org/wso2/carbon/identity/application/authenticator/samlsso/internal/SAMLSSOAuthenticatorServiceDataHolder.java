@@ -67,8 +67,7 @@ public class SAMLSSOAuthenticatorServiceDataHolder {
         return organizationManager;
     }
 
-    public void setOrganizationManager(
-            OrganizationManager organizationManager) {
+    public void setOrganizationManager(OrganizationManager organizationManager) {
 
         this.organizationManager = organizationManager;
     }

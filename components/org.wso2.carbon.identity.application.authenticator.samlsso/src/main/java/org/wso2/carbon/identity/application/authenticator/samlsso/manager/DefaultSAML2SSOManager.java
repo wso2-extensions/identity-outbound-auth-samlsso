@@ -82,7 +82,6 @@ import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.base.MultitenantConstants;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
@@ -105,6 +104,8 @@ import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.identity.saml.common.util.SAMLInitializer;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -253,8 +254,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
                         new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null));
             } else {
+                String tenantDomain = getSigningTenantDomain(context.getTenantDomain());
                 SSOUtils.addSignatureToHTTPQueryString(httpQueryString, signatureAlgo,
-                        new X509CredentialImpl(context.getTenantDomain(), null));
+                        new X509CredentialImpl(tenantDomain, null));
             }
         }
         if (loginPage.indexOf("?") > -1) {
@@ -310,8 +312,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         if (!isLogout) {
             requestMessage = buildAuthnRequest(request, isPassive, loginPage, context);
             if (SSOUtils.isAuthnRequestSigned(properties)) {
+                String tenantDomain = getSigningTenantDomain(context.getTenantDomain());
                 SSOUtils.setSignature(requestMessage, signatureAlgo, digestAlgo, includeCert,
-                        new X509CredentialImpl(context.getTenantDomain(), null));
+                        new X509CredentialImpl(tenantDomain, null));
             }
         } else {
             String username = (String) request.getSession().getAttribute(SSOConstants.LOGOUT_USERNAME);
@@ -323,8 +326,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             requestMessage = buildLogoutRequest(username, sessionIndex, loginPage, nameQualifier, spNameQualifier,
                     nameIdFormat, context);
             if (SSOUtils.isLogoutRequestSigned(properties)) {
+                String tenantDomain = getSigningTenantDomain(context.getTenantDomain());
                 SSOUtils.setSignature(requestMessage, signatureAlgo, digestAlgo, includeCert,
-                        new X509CredentialImpl(context.getTenantDomain(), null));
+                        new X509CredentialImpl(tenantDomain, null));
             }
         }
 
@@ -1295,16 +1299,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
      */
     protected Assertion getDecryptedAssertion(EncryptedAssertion encryptedAssertion) throws Exception {
 
-        String tenantDomain = this.tenantDomain;
-        /* When assertion decryption request is initiated by an organization, the key of the corresponding root tenant
-        should be used. */
-        String organizationId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getOrganizationId();
-        if (StringUtils.isNotEmpty(organizationId)) {
-            String rootOrganizationId = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getOrganizationManager()
-                    .getPrimaryOrganizationId(organizationId);
-            tenantDomain = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getOrganizationManager()
-                    .resolveTenantDomain(rootOrganizationId);
-        }
+        String tenantDomain = getSigningTenantDomain(this.tenantDomain);
         X509Credential credential = new X509CredentialImpl(tenantDomain, null);
         KeyInfoCredentialResolver keyResolver = new StaticKeyInfoCredentialResolver(credential);
         EncryptedKey key = getEncryptedKey(encryptedAssertion);
@@ -1384,5 +1379,36 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             return encryptedKeys.get(0);
         }
         throw new Exception("Could not obtain the encrypted key from the encrypted assertion.");
+    }
+
+    /**
+     * Resolve the tenant domain which is used to sign the request/response.
+     *
+     * @param tenantDomain The tenant domain from the context.
+     * @return The tenant domain which is used to sign the request/response.
+     */
+    private String getSigningTenantDomain(String tenantDomain) {
+
+        boolean isOrganization;
+        try {
+            isOrganization = OrganizationManagementUtil.isOrganization(tenantDomain);
+        } catch (OrganizationManagementException e) {
+            log.error("Error while checking the tenant domain is related to an organization", e);
+            return tenantDomain;
+        }
+        if (!isOrganization) {
+            return tenantDomain;
+        }
+        try {
+            String organizationId = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getOrganizationManager()
+                    .resolveOrganizationId(tenantDomain);
+            String rootOrganizationId = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getOrganizationManager()
+                    .getPrimaryOrganizationId(organizationId);
+            return SAMLSSOAuthenticatorServiceDataHolder.getInstance().getOrganizationManager()
+                    .resolveTenantDomain(rootOrganizationId);
+        } catch (OrganizationManagementException e) {
+            log.error("Error while resolving tenant domain for organization id: ", e);
+            return tenantDomain;
+        }
     }
 }
