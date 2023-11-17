@@ -51,6 +51,7 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
@@ -70,6 +71,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPathFactory;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -125,7 +127,7 @@ import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENA
 @PowerMockIgnore({"javax.xml.datatype.*","org.mockito.*","org.powermock.api.mockito.invocation.*","javax.crypto.Cipher"})
 @PrepareForTest({FileBasedConfigurationBuilder.class, IdentityUtil.class, DocumentBuilderFactory.class,
         KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class, FrameworkUtils.class,
-        ServiceURLBuilder.class})
+        ServiceURLBuilder.class, OrganizationManagementUtil.class})
 public class DefaultSAML2SSOManagerTest {
 
     @Mock
@@ -512,6 +514,8 @@ public class DefaultSAML2SSOManagerTest {
     public void buildPostRequest(boolean isLogout, String tenantDomain, Object inboundRequestData,
                                  Object outboundRequestData) throws Exception {
 
+        mockStatic(OrganizationManagementUtil.class);
+        when(OrganizationManagementUtil.isOrganization(anyString())).thenReturn(false);
         mockStatic(FrameworkUtils.class);
         doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
 
