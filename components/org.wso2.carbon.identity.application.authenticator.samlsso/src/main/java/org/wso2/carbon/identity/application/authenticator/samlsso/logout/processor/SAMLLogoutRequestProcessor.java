@@ -124,7 +124,7 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
                 populateContextWithSessionDetails(samlMessageContext, logoutRequest);
             }
 
-            if (!Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IdentityApplicationConstants.
+            if (!Boolean.parseBoolean((String) samlMessageContext.getFedIdPConfigs().get(IdentityApplicationConstants.
                     Authenticator.SAML2SSO.IS_SLO_REQUEST_ACCEPTED))) {
                 throw new SAMLLogoutException("Single logout requests from the federated IdP: "
                         + samlMessageContext.getFederatedIdP().getIdentityProviderName() + " are not accepted");

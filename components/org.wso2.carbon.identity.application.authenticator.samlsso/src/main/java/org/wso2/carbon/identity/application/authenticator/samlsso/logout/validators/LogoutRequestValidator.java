@@ -167,7 +167,7 @@ public class LogoutRequestValidator {
      */
     private void isValidLogoutReqSignature(LogoutRequest logoutRequest) throws SAMLLogoutException {
 
-        if (Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().get(IS_LOGOUT_REQ_SIGNED).toString()) &&
+        if (Boolean.parseBoolean((String) samlMessageContext.getFedIdPConfigs().get(IS_LOGOUT_REQ_SIGNED)) &&
                 (!SAMLLogoutUtil.isValidSignature(logoutRequest, samlMessageContext))) {
             String notification = "Signature validation failed for logout request with issuer: "
                     + logoutRequest.getIssuer().getValue();
