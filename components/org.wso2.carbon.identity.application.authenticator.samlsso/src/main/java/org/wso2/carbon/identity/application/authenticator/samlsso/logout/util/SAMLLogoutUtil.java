@@ -198,10 +198,10 @@ public class SAMLLogoutUtil {
             doBootstrap();
             String issuerID = (String) samlMessageContext.getFedIdPConfigs().get(SP_ENTITY_ID);
             String acsUrl = (String) samlMessageContext.getFedIdPConfigs().get(SSO_URL);
-            boolean isResponseSigned = Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().
-                    get(IS_AUTHN_RESP_SIGNED).toString());
-            boolean isIncludeCert = Boolean.parseBoolean(samlMessageContext.getFedIdPConfigs().
-                    get(INCLUDE_CERT).toString());
+            boolean isResponseSigned = Boolean.parseBoolean((String) samlMessageContext.getFedIdPConfigs().
+                    get(IS_AUTHN_RESP_SIGNED));
+            boolean isIncludeCert = Boolean.parseBoolean((String) samlMessageContext.getFedIdPConfigs().
+                    get(INCLUDE_CERT));
 
             LogoutResponse logoutResp = new LogoutResponseBuilder().buildObject();
             logoutResp.setID(createID());
