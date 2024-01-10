@@ -84,6 +84,14 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
     private static final String AUTH_PARAM = "$authparam";
     private static final String DYNAMIC_AUTH_PARAMS_LOOKUP_REGEX = "\\$authparam\\{(\\w+)}";
     private static final Pattern authParamDynamicQueryPattern = Pattern.compile(DYNAMIC_AUTH_PARAMS_LOOKUP_REGEX);
+    private String[] samlNameIdFormats = {
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:encrypted",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
+    };
 
     private static final Log log = LogFactory.getLog(SAMLSSOAuthenticator.class);
 
@@ -573,6 +581,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         nameIdFormat.setDescription("NameID format to be used in the SAML request");
         nameIdFormat.setType("string");
         nameIdFormat.setDisplayOrder(2);
+        nameIdFormat.setOptions(samlNameIdFormats);
         nameIdFormat.setDefaultValue(IdentityApplicationConstants.Authenticator.SAML2SSO.UNSPECIFIED_NAME_ID_FORMAT);
         configProperties.add(nameIdFormat);
 
