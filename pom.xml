@@ -299,7 +299,7 @@
         </org.wso2.identity.organization.mgt.core.imp.pkg.version.range>
 
         <!--SAML Common Util Version-->
-        <saml.common.util.version>1.0.3</saml.common.util.version>
+        <saml.common.util.version>1.3.0</saml.common.util.version>
         <saml.common.util.version.range>[1.0.0,2.0.0)</saml.common.util.version.range>
 
         <!-- Carbon Commons -->
