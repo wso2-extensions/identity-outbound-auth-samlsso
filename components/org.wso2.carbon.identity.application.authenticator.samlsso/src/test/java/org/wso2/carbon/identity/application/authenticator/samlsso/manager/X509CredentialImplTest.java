@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.carbon.utils.security.KeystoreUtils;
 
 import java.security.Key;
 import java.security.KeyStore;
@@ -59,7 +60,7 @@ import static org.wso2.carbon.identity.common.testng.TestConstants.CARBON_HOST_L
  * Unit tests for X509CredentialImpl.
  */
 @PowerMockIgnore({"org.mockito.*","org.powermock.api.mockito.invocation.*"})
-@PrepareForTest({KeyStoreManager.class, FrameworkUtils.class})
+@PrepareForTest({KeyStoreManager.class, FrameworkUtils.class, KeystoreUtils.class})
 public class X509CredentialImplTest {
 
     @Mock
@@ -101,6 +102,12 @@ public class X509CredentialImplTest {
                 TestConstants.IDP_CERTIFICATE);
     }
 
+    private void prepareForGetKeyStorePath() throws Exception {
+        mockStatic(KeystoreUtils.class);
+        when(KeystoreUtils.getKeyStoreFileLocation(TestConstants.SAMPLE_TENANT_DOMAIN_NAME)).thenReturn(
+                TestUtils.getFilePath("wso2carbon.jks"));
+    }
+
     @Test(priority = 1)
     public void testX509CredentialImplForSuperTenant() throws Exception {
 
@@ -132,6 +139,7 @@ public class X509CredentialImplTest {
         when(tenantKeyStoreManager.getPrivateKey(anyString(), anyString())).thenReturn(key);
         when(tenantKeyStoreManager.getKeyStore(anyString())).thenReturn(keyStore);
         keyStore.setCertificateEntry(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, certificate);
+        prepareForGetKeyStorePath();
 
         X509Credential x509Credential = new X509CredentialImpl(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, "");
 

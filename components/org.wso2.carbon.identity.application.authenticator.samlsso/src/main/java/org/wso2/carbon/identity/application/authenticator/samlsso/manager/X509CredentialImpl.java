@@ -35,6 +35,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLS
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.utils.security.KeystoreUtils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -121,13 +122,10 @@ public class X509CredentialImpl implements X509Credential {
                  */
                 if (!tenantDomain.equals(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
                     FrameworkUtils.startTenantFlow(tenantDomain);
-                    // derive key store name
-                    String ksName = tenantDomain.trim().replace(".", "-");
-                    // derive JKS name
-                    String jksName = ksName + ".jks";
+                    String fileName = KeystoreUtils.getKeyStoreFileLocation(tenantDomain);
                     key =
-                            (PrivateKey) keyStoreManager.getPrivateKey(jksName, tenantDomain);
-                    cert = (X509Certificate) keyStoreManager.getKeyStore(jksName)
+                            (PrivateKey) keyStoreManager.getPrivateKey(fileName, tenantDomain);
+                    cert = (X509Certificate) keyStoreManager.getKeyStore(fileName)
                             .getCertificate(tenantDomain);
                 } else {
                     if (isSignKeyStoreConfigured()) {
