@@ -38,7 +38,7 @@
         <developerConnection>scm:git:https://github.com/wso2-extensions/identity-outbound-auth-samlsso.git
         </developerConnection>
         <connection>scm:git:https://github.com/wso2-extensions/identity-outbound-auth-samlsso.git</connection>
-        <tag>v5.8.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>
