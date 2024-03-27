@@ -172,11 +172,11 @@ public class SSOUtils {
         //TODO use StringUtils.isBlank
         if (StringUtils.isEmpty(signatureAlgorithm)) {
             signatureAlgorithm = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms().get(
-                    IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1);
+                    IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA256);
         }
         if (StringUtils.isEmpty(digestAlgorithm)) {
             digestAlgorithm = IdentityApplicationManagementUtil.getXMLDigestAlgorithms().get(
-                    IdentityApplicationConstants.XML.DigestAlgorithm.SHA1);
+                    IdentityApplicationConstants.XML.DigestAlgorithm.SHA256);
         }
         
         Signature signature = (Signature) buildXMLObject(Signature.DEFAULT_ELEMENT_NAME);
@@ -530,7 +530,7 @@ public class SSOUtils {
             signatureAlgo = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.SIGNATURE_ALGORITHM);
         }
         if (StringUtils.isEmpty(signatureAlgo)) {
-            signatureAlgo = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1;
+            signatureAlgo = IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA256;
         }
         signatureAlgo = IdentityApplicationManagementUtil.getXMLSignatureAlgorithms().get(signatureAlgo);
         if (log.isDebugEnabled()) {
@@ -546,7 +546,7 @@ public class SSOUtils {
             digestAlgo = properties.get(IdentityApplicationConstants.Authenticator.SAML2SSO.DIGEST_ALGORITHM);
         }
         if (StringUtils.isEmpty(digestAlgo)) {
-            digestAlgo = IdentityApplicationConstants.XML.DigestAlgorithm.SHA1;
+            digestAlgo = IdentityApplicationConstants.XML.DigestAlgorithm.SHA256;
         }
         digestAlgo = IdentityApplicationManagementUtil.getXMLDigestAlgorithms().get(digestAlgo);
         if (log.isDebugEnabled()) {

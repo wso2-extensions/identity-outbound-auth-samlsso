@@ -689,7 +689,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         signatureAlgoOptions.add(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA512);
 
         signatureAlgo.setOptions(signatureAlgoOptions.toArray(new String[0]));
-        signatureAlgo.setDefaultValue(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA1);
+        signatureAlgo.setDefaultValue(IdentityApplicationConstants.XML.SignatureAlgorithm.RSA_SHA256);
         configProperties.add(signatureAlgo);
 
         Property digestAlgo = new Property();
@@ -709,7 +709,7 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         digestAlgoOptions.add(IdentityApplicationConstants.XML.DigestAlgorithm.SHA512);
 
         digestAlgo.setOptions(digestAlgoOptions.toArray(new String[0]));
-        digestAlgo.setDefaultValue(IdentityApplicationConstants.XML.DigestAlgorithm.SHA1);
+        digestAlgo.setDefaultValue(IdentityApplicationConstants.XML.DigestAlgorithm.SHA256);
         configProperties.add(digestAlgo);
 
         Property attributeConsumeIndex = new Property();
