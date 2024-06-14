@@ -389,6 +389,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         String decodedResponse = new String(org.apache.commons.codec.binary.Base64.decodeBase64(request.getParameter(
                 SSOConstants.HTTP_POST_PARAM_SAML2_RESP).getBytes()));
         XMLObject samlObject = SSOUtils.unmarshall(decodedResponse);
+        if (log.isDebugEnabled()) {
+            log.debug("Decoded SAML Response:" + SSOUtils.convertXmlDomToString(samlObject.getDOM()));
+        }
         validateResponseFormat(samlObject);
         executeSAMLReponse(request, samlObject);
     }
@@ -535,6 +538,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 encryptedAssertion = encryptedAssertions.get(0);
                 try {
                     assertion = getDecryptedAssertion(encryptedAssertion);
+                    if (log.isDebugEnabled() && assertion != null) {
+                        log.debug("Decrypted assertion: " + SSOUtils.convertXmlDomToString(assertion.getDOM()));
+                    }
                 } catch (Exception e) {
                     throw new SAMLSSOException(ErrorMessages.UNABLE_TO_DECRYPT_THE_SAML_ASSERTION.getCode(),
                             ErrorMessages.UNABLE_TO_DECRYPT_THE_SAML_ASSERTION.getMessage(), e);
