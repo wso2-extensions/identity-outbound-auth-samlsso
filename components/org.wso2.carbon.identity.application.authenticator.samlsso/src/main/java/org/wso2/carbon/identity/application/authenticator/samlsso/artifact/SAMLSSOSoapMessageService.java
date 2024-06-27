@@ -56,6 +56,11 @@ public class SAMLSSOSoapMessageService {
     private static final Log log = LogFactory.getLog(SAMLSSOSoapMessageService.class);
 
     /**
+     * Default tls protocol for client
+     */
+    private static final String TLS_PROTOCOL = "TLSv1.2";
+
+    /**
      * Build a SOAP Message.
      *
      * @param samlMessage SAMLObject.
@@ -149,7 +154,7 @@ public class SAMLSSOSoapMessageService {
 
             char[] kspassphrase = keyStorePassword.toCharArray();
 
-            sslContext = SSLContext.getInstance("TLS");
+            sslContext = SSLContext.getInstance(TLS_PROTOCOL);
             keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
             keyStore = SSOUtils.loadKeyStoreFromFileSystem(keyStorePath, keyStorePassword, keyStoreType);
             keyManagerFactory.init(keyStore, kspassphrase);
