@@ -35,10 +35,11 @@ import org.opensaml.soap.soap11.Body;
 import org.opensaml.soap.soap11.Envelope;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
+import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.base.ServerConfiguration;
+import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
-import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.utils.CarbonUtils;
 
 import java.io.IOException;
@@ -137,30 +138,28 @@ public class SAMLSSOSoapMessageService {
 
         SSLContext sslContext = null;
         KeyManagerFactory keyManagerFactory;
-        KeyStore keyStore;
-        String keyStorePath;
-        String keyStorePassword;
-        String keyStoreType;
 
         if (serverConfig != null) {
-            keyStorePath = serverConfig.getFirstProperty(SSOConstants.SECURITY_KEYSTORE_LOCATION);
-            keyStorePassword = serverConfig.getFirstProperty(SSOConstants.ServerConfig.KEY_PASSWORD);
-            keyStoreType = serverConfig.getFirstProperty(SSOConstants.SECURITY_KEYSTORE_TYPE);
+            String keyStorePath = serverConfig.getFirstProperty(SSOConstants.SECURITY_KEYSTORE_LOCATION);
+            String keyStorePassword = serverConfig.getFirstProperty(SSOConstants.ServerConfig.KEY_PASSWORD);
+            KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID);
 
             char[] kspassphrase = keyStorePassword.toCharArray();
 
             sslContext = SSLContext.getInstance("TLSv1.2");
             keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
-            keyStore = SSOUtils.loadKeyStoreFromFileSystem(keyStorePath, keyStorePassword, keyStoreType);
-            keyManagerFactory.init(keyStore, kspassphrase);
-            sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+            try {
+                KeyStore keyStore = keyStoreManager.getPrimaryKeyStore();
+                keyManagerFactory.init(keyStore, kspassphrase);
+                sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+            } catch (Exception e) {
+                throw new GeneralSecurityException("Error when try to load keystore" + keyStorePath, e);
+            }
 
             if (log.isDebugEnabled()) {
-                log.debug("Created SSL Context using keystore: " + keyStorePath + " and keyStorePassword: " +
-                        keyStorePassword);
+                log.debug("Created SSL Context using keystore: " + keyStorePath);
             }
         }
-
         return sslContext;
     }
 
