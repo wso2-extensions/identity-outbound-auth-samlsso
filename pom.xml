@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.carbon.identity.outbound.auth.saml2</groupId>
     <artifactId>identity-application-auth-samlsso</artifactId>
-    <version>5.9.5-SNAPSHOT</version>
+    <version>5.9.5</version>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - SAML SSO Application Authenticator Feature Aggregator Module</name>
     <description> WSO2 Carbon - Identity Application Authentication SAMLSSO</description>
@@ -38,7 +38,7 @@
         <developerConnection>scm:git:https://github.com/wso2-extensions/identity-outbound-auth-samlsso.git
         </developerConnection>
         <connection>scm:git:https://github.com/wso2-extensions/identity-outbound-auth-samlsso.git</connection>
-        <tag>HEAD</tag>
+        <tag>v5.9.5</tag>
     </scm>
 
     <modules>
