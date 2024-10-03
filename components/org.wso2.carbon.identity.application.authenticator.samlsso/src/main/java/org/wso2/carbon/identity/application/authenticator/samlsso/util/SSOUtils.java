@@ -57,6 +57,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorC
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.utils.security.KeystoreUtils;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -69,6 +70,7 @@ import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
@@ -643,10 +645,10 @@ public class SSOUtils {
     public static KeyStore loadKeyStoreFromFileSystem(String keyStorePath, String password, String type) {
 
         try (FileInputStream inputStream = new FileInputStream(keyStorePath)) {
-            KeyStore keyStore = KeyStore.getInstance(type);
+            KeyStore keyStore = KeystoreUtils.getKeystoreInstance(type);
             keyStore.load(inputStream, password.toCharArray());
             return keyStore;
-        } catch (KeyStoreException e1) {
+        } catch (KeyStoreException | NoSuchProviderException e1) {
             throw new java.lang.SecurityException("Could not get a keystore instance of type: " + type + ": " + e1);
         } catch (IOException e2) {
             throw new java.lang.SecurityException("Could not open keystore in path: " + keyStorePath + ": " + e2);
