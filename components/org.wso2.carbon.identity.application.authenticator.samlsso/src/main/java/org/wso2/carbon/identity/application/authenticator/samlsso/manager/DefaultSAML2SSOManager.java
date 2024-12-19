@@ -129,6 +129,7 @@ import javax.servlet.http.HttpServletRequest;
 import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 import static org.opensaml.saml.saml2.core.StatusCode.SUCCESS;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.AUTHN_REQUEST_PROVIDER_NAME;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
@@ -760,6 +761,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         authRequest.setForceAuthn(isForceAuthenticate(context));
         authRequest.setIsPassive(isPassive);
         authRequest.setIssueInstant(issueInstant);
+        String providerName = properties.get(AUTHN_REQUEST_PROVIDER_NAME);
+        authRequest.setProviderName(providerName);
 
         String includeProtocolBindingProp = properties
                 .get(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_PROTOCOL_BINDING);
