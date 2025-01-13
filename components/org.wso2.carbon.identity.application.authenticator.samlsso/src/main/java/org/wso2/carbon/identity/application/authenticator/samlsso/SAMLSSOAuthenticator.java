@@ -71,6 +71,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SS
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.LogConstants.ActionIDs.PROCESS_AUTHENTICATION_RESPONSE;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.LogConstants.ActionIDs.INITIATE_OUTBOUND_AUTH_REQUEST;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.LogConstants.OUTBOUND_AUTH_SAMLSSO_SERVICE;
+import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_AUTHN_REQUEST_PROVIDER_NAME;
 import static org.wso2.carbon.identity.base.IdentityConstants.FEDERATED_IDP_SESSION_ID;
 
 public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
@@ -956,6 +957,15 @@ public class SAMLSSOAuthenticator extends AbstractApplicationAuthenticator
         signatureAlgorithmPost.setType("string");
         signatureAlgorithmPost.setDisplayOrder(0);
         configProperties.add(signatureAlgorithmPost);
+
+        Property authnReqProviderName = new Property();
+        authnReqProviderName.setName(SAML_AUTHN_REQUEST_PROVIDER_NAME);
+        authnReqProviderName.setDisplayName("Authentication Request Provider Name");
+        authnReqProviderName.setRequired(false);
+        authnReqProviderName.setDescription("The human-readable name of the requester");
+        authnReqProviderName.setType("string");
+        selectMode.setDisplayOrder(35);
+        configProperties.add(authnReqProviderName);
 
         return configProperties;
     }
