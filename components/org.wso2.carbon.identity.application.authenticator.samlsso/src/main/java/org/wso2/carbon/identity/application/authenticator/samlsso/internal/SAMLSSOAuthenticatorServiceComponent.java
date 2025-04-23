@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.process
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutResponseProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequestFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseFactory;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -161,6 +162,29 @@ public class SAMLSSOAuthenticatorServiceComponent {
     protected void unsetOrganizationManager(OrganizationManager organizationManager) {
 
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setOrganizationManager(null);
+    }
+
+    @Reference(
+            name = "resource.configuration.manager",
+            service = ConfigurationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unregisterConfigurationManager"
+    )
+    protected void registerConfigurationManager(ConfigurationManager configurationManager) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the configuration manager in SAML SSO authenticator service bundle.");
+        }
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setConfigurationManager(configurationManager);
+    }
+
+    protected void unregisterConfigurationManager(ConfigurationManager configurationManager) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Unsetting the configuration manager in SAML SSO authenticator service bundle.");
+        }
+        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setConfigurationManager(null);
     }
 
     public static String getPostPage() {
