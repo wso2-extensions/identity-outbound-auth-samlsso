@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 
 import org.wso2.carbon.base.api.ServerConfigurationService;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -32,6 +33,7 @@ public class SAMLSSOAuthenticatorServiceDataHolder {
     private RealmService realmService;
     private ServerConfigurationService serverConfigurationService;
     private OrganizationManager organizationManager;
+    private ConfigurationManager configurationManager = null;
 
     public static SAMLSSOAuthenticatorServiceDataHolder getInstance() {
 
@@ -70,5 +72,15 @@ public class SAMLSSOAuthenticatorServiceDataHolder {
     public void setOrganizationManager(OrganizationManager organizationManager) {
 
         this.organizationManager = organizationManager;
+    }
+
+    public void setConfigurationManager(ConfigurationManager configurationManager) {
+
+        this.configurationManager = configurationManager;
+    }
+
+    public ConfigurationManager getConfigurationManager() {
+
+        return configurationManager;
     }
 }
