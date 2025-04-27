@@ -82,12 +82,12 @@ import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.base.MultitenantConstants;
-import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOArtifactResolutionService;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
@@ -102,7 +102,6 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityConstants;
-import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -132,11 +131,6 @@ import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 import static org.opensaml.saml.saml2.core.StatusCode.SUCCESS;
 import static org.wso2.carbon.CarbonConstants.AUDIT_LOG;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants.SAML_AUTHN_REQUEST_PROVIDER_NAME;
-import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_ATTRIBUTE_DOES_NOT_EXISTS;
-import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_DOES_NOT_EXISTS;
-import static org.wso2.carbon.identity.core.util.IdentityCoreConstants.ORG_WISE_MULTI_ATTRIBUTE_SEPARATOR_ENABLED;
-import static org.wso2.carbon.identity.core.util.IdentityCoreConstants.ORG_WISE_MULTI_ATTRIBUTE_SEPARATOR_RESOURCE_NAME;
-import static org.wso2.carbon.identity.core.util.IdentityCoreConstants.ORG_WISE_MULTI_ATTRIBUTE_SEPARATOR_RESOURCE_TYPE;
 
 public class DefaultSAML2SSOManager implements SAML2SSOManager {
 
@@ -152,11 +146,6 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
     private IdentityProvider identityProvider = null;
     private Map<String, String> properties;
     private String tenantDomain;
-
-    /**
-     * A temporary configuration to enable org wise multi attribute separator for SAML.
-     */
-    private static final String SAML_MULTI_ATTRIBUTE_SEPARATOR_ATTRIBUTE_KEY = "SAMLMultiAttributeSeparator";
 
     public static void doBootstrap() {
 
@@ -1074,13 +1063,9 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         Map<ClaimMapping, String> results = new HashMap<ClaimMapping, String>();
         String multiAttributeSeparator = DEFAULT_MULTI_ATTRIBUTE_SEPARATOR;
 
-        String orgWiseSAMLSeparator = getOrgWiseSAMLMultiAttributeSeparator();
-        if (StringUtils.isNotBlank(orgWiseSAMLSeparator)) {
-            multiAttributeSeparator = orgWiseSAMLSeparator;
-        } else {
-            UserRealm realm;
+        if (FrameworkUtils.isMultiAttributeSeparatorExistingBehaviourEnabled()) {
             try {
-                realm = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getRealmService()
+                UserRealm realm = SAMLSSOAuthenticatorServiceDataHolder.getInstance().getRealmService()
                         .getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID);
                 UserStoreManager userStoreManager = (UserStoreManager) realm.getUserStoreManager();
 
@@ -1089,6 +1074,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             } catch (UserStoreException e) {
                 log.warn("Error while reading MultiAttributeSeparator value from primary user store ", e);
             }
+        } else {
+            multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator(null);
         }
 
         if (assertion != null) {
@@ -1430,39 +1417,5 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             log.error("Error while resolving tenant domain for organization id: ", e);
             return tenantDomain;
         }
-    }
-
-    /**
-     * Get the org wise SAML multi attribute separator.
-     * Note: This is a temporary solution to support a org wise SAML multi attribute separator.
-     *
-     * @return SAML multi attribute separator if configured, null otherwise.
-     */
-    private static String getOrgWiseSAMLMultiAttributeSeparator() {
-
-        String multiAttributeSeparator = null;
-        if (Boolean.parseBoolean(IdentityUtil.getProperty(ORG_WISE_MULTI_ATTRIBUTE_SEPARATOR_ENABLED))) {
-            try {
-                org.wso2.carbon.identity.configuration.mgt.core.model.Attribute configAttribute =
-                        SAMLSSOAuthenticatorServiceDataHolder.getInstance().getConfigurationManager()
-                                .getAttribute(ORG_WISE_MULTI_ATTRIBUTE_SEPARATOR_RESOURCE_TYPE,
-                                        ORG_WISE_MULTI_ATTRIBUTE_SEPARATOR_RESOURCE_NAME,
-                                        SAML_MULTI_ATTRIBUTE_SEPARATOR_ATTRIBUTE_KEY);
-
-                if (configAttribute != null && StringUtils.isNotBlank(configAttribute.getValue())) {
-                    multiAttributeSeparator = configAttribute.getValue();
-                }
-            } catch (ConfigurationManagementException e) {
-                if (!ERROR_CODE_RESOURCE_DOES_NOT_EXISTS.getCode().equals(e.getErrorCode()) &&
-                        !ERROR_CODE_ATTRIBUTE_DOES_NOT_EXISTS.getCode().equals(e.getErrorCode())) {
-                    log.error(String.format("Error while retrieving the custom SAML MultiAttributeSeparator " +
-                                    "for the tenant: %s. Error code: %s, Error message: %s",
-                            CarbonContext.getThreadLocalCarbonContext().getTenantDomain(), e.getErrorCode(),
-                            e.getMessage()));
-                }
-            }
-        }
-
-        return multiAttributeSeparator;
     }
 }
