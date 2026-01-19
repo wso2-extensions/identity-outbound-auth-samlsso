@@ -1256,10 +1256,13 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
         for (CertificateInfo certificateInfo : certificateInfos) {
             String certVal = certificateInfo.getCertValue();
             X509Credential credential = new X509CredentialImpl(tenantDomain, certVal);
+            ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
+            ClassLoader opensamlCL = org.opensaml.xmlsec.signature.support.Signer.class.getClassLoader();
             try {
                 if (log.isDebugEnabled()) {
                     log.debug("Validating the SAML signature with certificate at index: " + index);
                 }
+                Thread.currentThread().setContextClassLoader(opensamlCL);
                 SignatureValidator.validate(signImpl, credential);
                 isExceptionThrown = false;
                 break;
@@ -1270,6 +1273,8 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                 } else {
                     validationException.addSuppressed(e);
                 }
+            } finally {
+                Thread.currentThread().setContextClassLoader(oldCL);
             }
             index++;
         }
