@@ -188,13 +188,13 @@ public class SAMLSSOAuthenticatorTest {
         when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.TRUE);
         when(mockedAuthenticationContext.getAuthenticationRequest()).thenReturn(mockedAuthenticationRequest);
 
-        PrintWriter out = new PrintWriter("auth-request.txt");
+        PrintWriter out = new PrintWriter("target/auth-request.txt");
         when(mockedAuthnHttpServletResponse.getWriter()).thenReturn(out);
 
         samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse,
                 mockedAuthenticationContext);
         out.flush();
-        String postPage = FileUtils.readFileToString(new File("auth-request.txt"), "UTF-8");
+        String postPage = FileUtils.readFileToString(new File("target/auth-request.txt"), "UTF-8");
         assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
         assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
     }
@@ -253,13 +253,13 @@ public class SAMLSSOAuthenticatorTest {
         when(mockedHttpSession.getAttribute(SSOConstants.SP_NAME_QUALIFIER)).thenReturn(NameIDType.UNSPECIFIED);
         when(mockedHttpServletRequest.getSession()).thenReturn(mockedHttpSession);
 
-        PrintWriter out = new PrintWriter("logout-request.txt");
+        PrintWriter out = new PrintWriter("target/logout-request.txt");
         when(mockedLogoutHttpServletResponse.getWriter()).thenReturn(out);
 
         samlssoAuthenticator.initiateLogoutRequest(mockedHttpServletRequest, mockedLogoutHttpServletResponse,
                 mockedAuthenticationContext);
         out.flush();
-        String postPage = FileUtils.readFileToString(new File("logout-request.txt"), "UTF-8");
+        String postPage = FileUtils.readFileToString(new File("target/logout-request.txt"), "UTF-8");
         assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
         assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
     }
@@ -423,7 +423,7 @@ public class SAMLSSOAuthenticatorTest {
 
         context.setAuthenticationRequest(mockedAuthenticationRequest);
 
-        PrintWriter out = new PrintWriter("auth-request.txt");
+        PrintWriter out = new PrintWriter("target/auth-request.txt");
         when(mockedAuthnHttpServletResponse.getWriter()).thenReturn(out);
 
         samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse, context);
