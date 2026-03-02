@@ -130,7 +130,13 @@ public class SSOErrorConstants {
         METADATA_CERT_DECODE_FAILED("SAM-65147",
                 "Failed to decode X.509 certificate from SAML metadata."),
         METADATA_ENTITY_ID_MISMATCH("SAM-65148",
-                "SAML metadata entity ID mismatch. Expected: '%s', but found: '%s'.");
+                "SAML metadata entity ID mismatch. Expected: '%s', but found: '%s'."),
+        METADATA_URL_NOT_CONFIGURED_FOR_IDP("SAM-65149",
+                "SAML metadata URL is not configured for IdP: %s"),
+        IDP_ENTITY_ID_NOT_CONFIGURED("SAM-65150",
+                "IDP entity ID is not configured for IdP: %s"),
+        NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA("SAM-65151",
+                "No signing certificates found in SAML metadata for IdP: %s");
 
         private final String code;
         private final String message;

@@ -88,22 +88,24 @@ public class RemoteCertificateProcessor {
 
         String metadataUrl = resolveMetadataUrl(identityProvider);
         if (StringUtils.isBlank(metadataUrl)) {
-            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode(),
-                    "SAML metadata URL ('" + SSOConstants.SAML_METADATA_URI + "') is not configured for IdP: "
-                            + identityProvider.getIdentityProviderName());
+            throw new SAMLSSOException(ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode(),
+                    String.format(ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getMessage(),
+                            identityProvider.getIdentityProviderName()));
         }
 
         String entityId = resolveEntityId(identityProvider);
         if (StringUtils.isBlank(entityId)) {
-            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode(),
-                    "IDP entity ID is not configured for IdP: " + identityProvider.getIdentityProviderName());
+            throw new SAMLSSOException(ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getCode(),
+                    String.format(ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getMessage(),
+                            identityProvider.getIdentityProviderName()));
         }
 
         List<X509Certificate> certificates = resolveCertificates(metadataUrl, entityId, tenantDomain);
 
         if (certificates == null || certificates.isEmpty()) {
-            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode(),
-                    ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getMessage());
+            throw new SAMLSSOException(ErrorMessages.NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA.getCode(),
+                    String.format(ErrorMessages.NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA.getMessage(),
+                            identityProvider.getIdentityProviderName()));
         }
 
         if (LOG.isDebugEnabled()) {
@@ -157,20 +159,21 @@ public class RemoteCertificateProcessor {
      * @throws SAMLSSOException If the metadata URL or entity ID is not configured; or if the metadata
      *                          cannot be fetched or parsed.
      */
-    public void refreshCertificates(IdentityProvider identityProvider,
+    public boolean refreshCertificates(IdentityProvider identityProvider,
             String tenantDomain) throws SAMLSSOException {
 
         String metadataUrl = resolveMetadataUrl(identityProvider);
         if (StringUtils.isBlank(metadataUrl)) {
-            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode(),
-                    "SAML metadata URL ('" + SSOConstants.SAML_METADATA_URI + "') is not configured for IdP: "
-                            + identityProvider.getIdentityProviderName());
+            throw new SAMLSSOException(ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode(),
+                    String.format(ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getMessage(),
+                            identityProvider.getIdentityProviderName()));
         }
 
         String entityId = resolveEntityId(identityProvider);
         if (StringUtils.isBlank(entityId)) {
-            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode(),
-                    "IDP entity ID is not configured for IdP: " + identityProvider.getIdentityProviderName());
+            throw new SAMLSSOException(ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getCode(),
+                    String.format(ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getMessage(),
+                            identityProvider.getIdentityProviderName()));
         }
 
         SAMLCertCache cache = SAMLCertCache.getInstance();
@@ -182,7 +185,7 @@ public class RemoteCertificateProcessor {
                 LOG.debug("No existing cache entry for metadata URL: " + metadataUrl
                         + ". Skipping certificate refresh.");
             }
-            return;
+            return false;
         }
 
         RemoteCertificate cached = cacheEntry.getRemoteCertificate();
@@ -196,7 +199,7 @@ public class RemoteCertificateProcessor {
                         + ". Block duration has not elapsed. Block duration: "
                         + blockDuration.toMillis() + "ms.");
             }
-            return;
+            return false;
         }
 
         if (LOG.isDebugEnabled()) {
@@ -214,6 +217,7 @@ public class RemoteCertificateProcessor {
             }
             cache.clearCacheEntry(cacheKey, tenantDomain);
             cache.addToCache(cacheKey, new SAMLCertCacheEntry(fresh), tenantDomain);
+            return true;
         } else {
             // Certificates are unchanged — potential DoS. Update lastRetrievedAt to reset the block window.
             if (LOG.isDebugEnabled()) {
@@ -221,6 +225,7 @@ public class RemoteCertificateProcessor {
                         + ". Treating as a potential DoS attempt. Updating lastRetrievedAt.");
             }
             cached.setLastRetrievedAt(now);
+            return false;
         }
     }
 
@@ -394,7 +399,7 @@ public class RemoteCertificateProcessor {
             try {
                 return Long.parseLong(value.trim());
             } catch (NumberFormatException e) {
-                LOG.warn("Invalid value for '" + SSOConstants.CERT_REFRESH_RETRY_BLOCK_DURATION
+                LOG.error("Invalid value for '" + SSOConstants.CERT_REFRESH_RETRY_BLOCK_DURATION
                         + "': '" + value + "'. Using default "
                         + SSOConstants.DEFAULT_CERT_REFRESH_RETRY_BLOCK_DURATION_MS + "ms.");
             }
@@ -416,7 +421,7 @@ public class RemoteCertificateProcessor {
             try {
                 return Long.parseLong(value.trim());
             } catch (NumberFormatException e) {
-                LOG.warn("Invalid value for '" + SSOConstants.CERT_CACHE_MAX_LIFETIME
+                LOG.error("Invalid value for '" + SSOConstants.CERT_CACHE_MAX_LIFETIME
                         + "': '" + value + "'. Using default "
                         + SSOConstants.DEFAULT_CERT_CACHE_MAX_LIFETIME_MS + "ms.");
             }

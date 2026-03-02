@@ -1248,9 +1248,22 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             RemoteCertificateProcessor.getInstance().validateSignature(signature, identityProvider, tenantDomain);
             return;
         } catch (SAMLSSOException e) {
-            if (log.isDebugEnabled()) {
+            if (ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode().equals(e.getErrorCode())) {
                 log.debug("Remote certificate processor signature validation failed. Falling back to " +
-                        "configured certificate-based validation.", e);
+                        "configured certificate-based validation.");
+            } else if (ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode()
+                    .equals(e.getErrorCode())) {
+                log.debug("Remote certificate processor signature validation failed. Attempting certificate " +
+                        "refresh and retrying validation.");
+                boolean certsRefreshed = RemoteCertificateProcessor.getInstance()
+                        .refreshCertificates(identityProvider, tenantDomain);
+                if (!certsRefreshed) {
+                    throw e;
+                }
+                RemoteCertificateProcessor.getInstance().validateSignature(signature, identityProvider, tenantDomain);
+                return;
+            } else {
+                throw e;
             }
         }
 
