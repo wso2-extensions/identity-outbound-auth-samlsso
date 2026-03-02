@@ -115,7 +115,22 @@ public class SSOErrorConstants {
         HTTP_POST_NOT_SUPPORTED("SAM-65131", "HTTP-POST is not supported"),
         INSTANTIATION_FAILED("SAM-65132", "Error while instantiation"),
         UNABLE_TO_RETRIEVE_BUILDER_FOR_OBJECT_QNAME("SAM-65133",
-                "Unable to retrieve builder for object QName %s");
+                "Unable to retrieve builder for object QName %s"),
+        // SAML metadata certificate resolution related exceptions.
+        METADATA_URL_BLANK("SAM-65141", "Certificate resolution failed due to blank metadata URL."),
+        METADATA_FETCH_HTTP_ERROR("SAM-65142",
+                "Received HTTP %d while fetching SAML metadata from: %s"),
+        METADATA_EMPTY_RESPONSE_BODY("SAM-65143",
+                "Empty response body received from metadata endpoint: %s"),
+        METADATA_FETCH_FAILED("SAM-65144", "Failed to fetch SAML metadata from: %s"),
+        METADATA_NOT_ENTITY_DESCRIPTOR("SAM-65145",
+                "Parsed XML from %s is not a SAML 2 EntityDescriptor. Actual type: %s"),
+        METADATA_CERT_INVALID_BASE64("SAM-65146",
+                "Certificate value in SAML metadata is not valid Base64."),
+        METADATA_CERT_DECODE_FAILED("SAM-65147",
+                "Failed to decode X.509 certificate from SAML metadata."),
+        METADATA_ENTITY_ID_MISMATCH("SAM-65148",
+                "SAML metadata entity ID mismatch. Expected: '%s', but found: '%s'.");
 
         private final String code;
         private final String message;

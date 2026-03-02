@@ -169,6 +169,10 @@
             <artifactId>jaxp-ri</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.external.api.client</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
@@ -229,6 +233,9 @@
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core.exception;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.external.api.client.api.exception; version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.external.api.client.api.model; version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.external.api.client.api.service; version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
                         <Export-Package>
                             !org.wso2.carbon.identity.application.authenticator.samlsso.internal,

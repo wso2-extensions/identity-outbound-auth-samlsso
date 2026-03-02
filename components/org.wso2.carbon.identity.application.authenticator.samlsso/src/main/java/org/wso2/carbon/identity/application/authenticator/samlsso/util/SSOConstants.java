@@ -58,6 +58,14 @@ public class SSOConstants {
     public static final Pattern SAML_SLO_ENDPOINT_URL_PATTERN = Pattern.compile("(.*)/identity/saml/slo/?");
 
     public static final String SAML_AUTHN_REQUEST_PROVIDER_NAME = "samlAuthnRequestProviderName";
+    public static final String SAML_METADATA_URI = "samlMetadataUri";
+    public static final String CERT_REFRESH_RETRY_BLOCK_DURATION = "CertRefreshRetryBlockDuration";
+    public static final String CERT_CACHE_MAX_LIFETIME = "CertCacheMaxLifetime";
+
+    // Default block duration for retrying certificate refresh after a failure: 5 minutes in milliseconds.
+    public static final long DEFAULT_CERT_REFRESH_RETRY_BLOCK_DURATION_MS = 300000L;
+    // Default maximum lifetime for cached certificates: 24 hours in milliseconds.
+    public static final long DEFAULT_CERT_CACHE_MAX_LIFETIME_MS = 86400000L;
 
     public class StatusCodes {
         private StatusCodes() {
