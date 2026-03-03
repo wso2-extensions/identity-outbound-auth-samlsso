@@ -19,14 +19,12 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
 import org.opensaml.security.credential.UsageType;
 import org.opensaml.security.x509.X509Credential;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.core.util.KeyStoreManager;
@@ -48,10 +46,9 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 
-import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.wso2.carbon.identity.common.testng.TestConstants.CARBON_HOST_LOCALHOST;
@@ -59,8 +56,6 @@ import static org.wso2.carbon.identity.common.testng.TestConstants.CARBON_HOST_L
 /**
  * Unit tests for X509CredentialImpl.
  */
-@PowerMockIgnore({"org.mockito.*","org.powermock.api.mockito.invocation.*"})
-@PrepareForTest({KeyStoreManager.class, FrameworkUtils.class, KeystoreUtils.class})
 public class X509CredentialImplTest {
 
     @Mock
@@ -86,6 +81,7 @@ public class X509CredentialImplTest {
     @BeforeClass
     public void initTest() throws Exception {
 
+        MockitoAnnotations.openMocks(this);
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(realmService);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getTenantId(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME))
@@ -102,52 +98,55 @@ public class X509CredentialImplTest {
                 TestConstants.IDP_CERTIFICATE);
     }
 
-    private void prepareForGetKeyStorePath() throws Exception {
-        mockStatic(KeystoreUtils.class);
-        when(KeystoreUtils.getKeyStoreFileLocation(TestConstants.SAMPLE_TENANT_DOMAIN_NAME)).thenReturn(
-                TestUtils.getFilePath("wso2carbon.jks"));
+    private MockedStatic<KeystoreUtils> prepareForGetKeyStorePath() throws Exception {
+        MockedStatic<KeystoreUtils> keystoreUtilsMock = mockStatic(KeystoreUtils.class);
+        keystoreUtilsMock.when(() -> KeystoreUtils.getKeyStoreFileLocation(TestConstants.SAMPLE_TENANT_DOMAIN_NAME))
+                .thenReturn(TestUtils.getFilePath("wso2carbon.jks"));
+        return keystoreUtilsMock;
     }
 
     @Test(priority = 1)
     public void testX509CredentialImplForSuperTenant() throws Exception {
 
-        mockStatic(FrameworkUtils.class);
-        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
-        mockStatic(KeyStoreManager.class);
-        when(KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID)).thenReturn(superTenantKeyStoreManager);
-        when(superTenantKeyStoreManager.getDefaultPrivateKey()).thenReturn((PrivateKey) key);
-        when(superTenantKeyStoreManager.getDefaultPrimaryCertificate()).thenReturn((X509Certificate) certificate);
+        try (MockedStatic<FrameworkUtils> frameworkUtilsMock = mockStatic(FrameworkUtils.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class)) {
+            
+            keyStoreManagerMock.when(() -> KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID))
+                    .thenReturn(superTenantKeyStoreManager);
+            when(superTenantKeyStoreManager.getDefaultPrivateKey()).thenReturn((PrivateKey) key);
+            when(superTenantKeyStoreManager.getDefaultPrimaryCertificate()).thenReturn((X509Certificate) certificate);
 
-        X509Credential x509Credential = new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null);
+            X509Credential x509Credential = new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null);
 
-        assertEquals(key, x509Credential.getPrivateKey(), "Failed to retrieve private key.");
-        assertEquals(certificate.getPublicKey(), x509Credential.getPublicKey(),
-                "Failed to retrieve public key.");
-        assertEquals(certificate, x509Credential.getEntityCertificate(),
-                "Failed to retrieve entire certificate.");
+            assertEquals(key, x509Credential.getPrivateKey(), "Failed to retrieve private key.");
+            assertEquals(certificate.getPublicKey(), x509Credential.getPublicKey(),
+                    "Failed to retrieve public key.");
+            assertEquals(certificate, x509Credential.getEntityCertificate(),
+                    "Failed to retrieve entire certificate.");
+        }
     }
 
     @Test(priority = 2)
     public void testX509CredentialImplForATenant() throws Exception {
 
-        mockStatic(FrameworkUtils.class);
-        doNothing().when(FrameworkUtils.class, TestConstants.START_TENANT_FLOW, TestConstants.SAMPLE_TENANT_DOMAIN_NAME);
-        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
+        try (MockedStatic<FrameworkUtils> frameworkUtilsMock = mockStatic(FrameworkUtils.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class);
+             MockedStatic<KeystoreUtils> keystoreUtilsMock = prepareForGetKeyStorePath()) {
+            
+            keyStoreManagerMock.when(() -> KeyStoreManager.getInstance(TestConstants.SAMPLE_TENANT_ID))
+                    .thenReturn(tenantKeyStoreManager);
+            when(tenantKeyStoreManager.getPrivateKey(anyString(), anyString())).thenReturn(key);
+            when(tenantKeyStoreManager.getKeyStore(anyString())).thenReturn(keyStore);
+            keyStore.setCertificateEntry(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, certificate);
 
-        mockStatic(KeyStoreManager.class);
-        when(KeyStoreManager.getInstance(TestConstants.SAMPLE_TENANT_ID)).thenReturn(tenantKeyStoreManager);
-        when(tenantKeyStoreManager.getPrivateKey(anyString(), anyString())).thenReturn(key);
-        when(tenantKeyStoreManager.getKeyStore(anyString())).thenReturn(keyStore);
-        keyStore.setCertificateEntry(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, certificate);
-        prepareForGetKeyStorePath();
+            X509Credential x509Credential = new X509CredentialImpl(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, "");
 
-        X509Credential x509Credential = new X509CredentialImpl(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, "");
-
-        assertEquals(key, x509Credential.getPrivateKey(), "Failed to retrieve private key.");
-        assertEquals(certificate.getPublicKey(), x509Credential.getPublicKey(),
-                "Failed to retrieve public key.");
-        assertEquals(certificate, x509Credential.getEntityCertificate(),
-                "Failed to retrieve entire certificate.");
+            assertEquals(key, x509Credential.getPrivateKey(), "Failed to retrieve private key.");
+            assertEquals(certificate.getPublicKey(), x509Credential.getPublicKey(),
+                    "Failed to retrieve public key.");
+            assertEquals(certificate, x509Credential.getEntityCertificate(),
+                    "Failed to retrieve entire certificate.");
+        }
     }
 
     @Test(priority = 3)
@@ -179,15 +178,16 @@ public class X509CredentialImplTest {
     @Test(priority = 6, expectedExceptions = Exception.class)
     public void testX509CredentialImplWhenFailedToGetKeyStore() throws Exception {
 
-        mockStatic(FrameworkUtils.class);
-        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
+        try (MockedStatic<FrameworkUtils> frameworkUtilsMock = mockStatic(FrameworkUtils.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class)) {
+            
+            keyStoreManagerMock.when(() -> KeyStoreManager.getInstance(TestConstants.SAMPLE_TENANT_ID))
+                    .thenReturn(tenantKeyStoreManager);
+            when(tenantKeyStoreManager.getPrivateKey(anyString(), anyString())).thenReturn(key);
+            when(tenantKeyStoreManager.getKeyStore(anyString())).thenThrow(new Exception());
 
-        mockStatic(KeyStoreManager.class);
-        when(KeyStoreManager.getInstance(TestConstants.SAMPLE_TENANT_ID)).thenReturn(tenantKeyStoreManager);
-        when(tenantKeyStoreManager.getPrivateKey(anyString(), anyString())).thenReturn(key);
-        when(tenantKeyStoreManager.getKeyStore(anyString())).thenThrow(new Exception());
-
-        new X509CredentialImpl(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, null);
+            new X509CredentialImpl(TestConstants.SAMPLE_TENANT_DOMAIN_NAME, null);
+        }
     }
 
     @DataProvider(name = "exceptionGeneratingData")
@@ -202,15 +202,16 @@ public class X509CredentialImplTest {
     @Test(priority = 7, dataProvider = "exceptionGeneratingData", expectedExceptions = SAMLSSOException.class)
     public void testX509CredentialImplWhenKeyOrCertNull(Key key, Certificate certificate) throws Exception {
 
-        mockStatic(FrameworkUtils.class);
-        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
+        try (MockedStatic<FrameworkUtils> frameworkUtilsMock = mockStatic(FrameworkUtils.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class)) {
+            
+            keyStoreManagerMock.when(() -> KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID))
+                    .thenReturn(superTenantKeyStoreManager);
+            when(superTenantKeyStoreManager.getDefaultPrivateKey()).thenReturn((PrivateKey) key);
+            when(superTenantKeyStoreManager.getDefaultPrimaryCertificate()).thenReturn((X509Certificate) certificate);
 
-        mockStatic(KeyStoreManager.class);
-        when(KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID)).thenReturn(superTenantKeyStoreManager);
-        when(superTenantKeyStoreManager.getDefaultPrivateKey()).thenReturn((PrivateKey) key);
-        when(superTenantKeyStoreManager.getDefaultPrimaryCertificate()).thenReturn((X509Certificate) certificate);
-
-        new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null);
+            new X509CredentialImpl(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, null);
+        }
     }
 
     @Test(priority = 8)
@@ -262,11 +263,4 @@ public class X509CredentialImplTest {
 
         assertEquals(x509CredentialImpl.getUsageType(), UsageType.UNSPECIFIED);
     }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
-
 }

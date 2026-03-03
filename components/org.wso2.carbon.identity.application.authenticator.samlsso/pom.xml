@@ -248,6 +248,7 @@
                     <argLine>
                         --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED
+                        --add-opens java.xml/com.sun.org.apache.xpath.internal.jaxp=ALL-UNNAMED
                         --add-opens java.base/jdk.internal.util=ALL-UNNAMED
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED

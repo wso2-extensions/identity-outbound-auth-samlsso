@@ -24,13 +24,12 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
 import org.opensaml.saml.saml2.core.NameIDType;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -62,15 +61,14 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.xpath.XPathFactory;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doCallRealMethod;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -82,9 +80,6 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.util.Mo
 /**
  * Unit test cases for SAMLSSOAuthenticator
  */
-@PowerMockIgnore({"javax.xml.datatype.*","org.mockito.*","org.powermock.api.mockito.invocation.*","javax.crypto.Cipher"})
-@PrepareForTest({XPathFactory.class, XMLInputFactory.class, DocumentBuilderFactory.class, IdentityUtil.class,
-        DOMImplementationRegistry.class, LoggerUtils.class})
 public class SAMLSSOAuthenticatorTest {
 
     public static final String INBOUND_QUERY_KEY = "inbound_query_key";
@@ -122,31 +117,43 @@ public class SAMLSSOAuthenticatorTest {
     private DOMImplementationRegistry mockedDomImplementationRegistry;
 
     private SAMLSSOAuthenticator samlssoAuthenticator = new SAMLSSOAuthenticator();
+    private MockedStatic<XMLInputFactory> xmlInputFactoryMock;
 
     @BeforeClass
     public void initTest() throws SocketException {
 
-        mockXMLInputFactory();
+        MockitoAnnotations.openMocks(this);
+        xmlInputFactoryMock = mockXMLInputFactory();
         FileBasedConfigurationBuilder.getInstance(TestUtils.getFilePath("application-authentication.xml"));
+    }
+
+    @AfterClass
+    public void tearDown() {
+
+        if (xmlInputFactoryMock != null) {
+            xmlInputFactoryMock.close();
+        }
     }
 
     @Test(priority = 1)
     public void testCanHandle() {
 
-        mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
-        when(mockedHttpServletRequest.getParameter("SAMLResponse")).thenReturn("SAMLResponse");
-        assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
+        try (MockedStatic<LoggerUtils> mockedLoggerUtils = mockStatic(LoggerUtils.class)) {
+            mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
+            when(mockedHttpServletRequest.getParameter("SAMLResponse")).thenReturn("SAMLResponse");
+            assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
+        }
     }
 
     @Test(priority = 1)
     public void testCanHandleArtifactBinding() {
 
-        mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
-        when(mockedHttpServletRequest.getParameter(TestConstants.HTTP_POST_PARAM_SAML_ART)).thenReturn(
-                TestConstants.HTTP_POST_PARAM_SAML_ART);
-        assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
+        try (MockedStatic<LoggerUtils> mockedLoggerUtils = mockStatic(LoggerUtils.class)) {
+            mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
+            when(mockedHttpServletRequest.getParameter(TestConstants.HTTP_POST_PARAM_SAML_ART)).thenReturn(
+                    TestConstants.HTTP_POST_PARAM_SAML_ART);
+            assertTrue(samlssoAuthenticator.canHandle(mockedHttpServletRequest), "Failed to handle for valid input");
+        }
     }
 
     @Test(priority = 2)
@@ -167,109 +174,112 @@ public class SAMLSSOAuthenticatorTest {
     @Test(priority = 3)
     public void testInitiatePostAuthenticationRequest() throws Exception {
 
-        mockXPathFactory();
-        mockDocumentBuilderFactory();
-        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
-        mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<DOMImplementationRegistry> domRegMock = mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+             MockedStatic<LoggerUtils> mockedLoggerUtils = mockStatic(LoggerUtils.class)) {
+            mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
 
-        Map<String, String> authenticatorProperties = new HashMap<>();
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
-                SSOConstants.POST);
-        when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
-        when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
+            Map<String, String> authenticatorProperties = new HashMap<>();
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
+                    SSOConstants.POST);
+            when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
+            when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
 
-        when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
-        when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
+            when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
+            when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
 
-        when(mockedAuthenticationRequest.getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))
-                .thenReturn(new String[]{TestConstants.SAML2_POST_REQUEST});
-        when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.TRUE);
-        when(mockedAuthenticationContext.getAuthenticationRequest()).thenReturn(mockedAuthenticationRequest);
+            when(mockedAuthenticationRequest.getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))
+                    .thenReturn(new String[]{TestConstants.SAML2_POST_REQUEST});
+            when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.TRUE);
+            when(mockedAuthenticationContext.getAuthenticationRequest()).thenReturn(mockedAuthenticationRequest);
 
-        PrintWriter out = new PrintWriter("target/auth-request.txt");
-        when(mockedAuthnHttpServletResponse.getWriter()).thenReturn(out);
+            PrintWriter out = new PrintWriter("target/auth-request.txt");
+            when(mockedAuthnHttpServletResponse.getWriter()).thenReturn(out);
 
-        samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse,
-                mockedAuthenticationContext);
-        out.flush();
-        String postPage = FileUtils.readFileToString(new File("target/auth-request.txt"), "UTF-8");
-        assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
-        assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
+            samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse,
+                    mockedAuthenticationContext);
+            out.flush();
+            String postPage = FileUtils.readFileToString(new File("target/auth-request.txt"), "UTF-8");
+            assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
+            assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
+        }
     }
 
     @Test(priority = 4)
     public void testInitiateRedirectAuthenticationRequest() throws Exception {
 
-        mockXPathFactory();
-        mockDocumentBuilderFactory();
-        mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<LoggerUtils> mockedLoggerUtils = mockStatic(LoggerUtils.class)) {
+            mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
 
-        Map<String, String> authenticatorProperties = new HashMap<>();
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
-                SSOConstants.REDIRECT);
-        when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
-        when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
+            Map<String, String> authenticatorProperties = new HashMap<>();
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
+                    SSOConstants.REDIRECT);
+            when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
+            when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
 
-        when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
-        when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
+            when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
+            when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
 
-        when(mockedAuthenticationRequest.getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))
-                .thenReturn(new String[]{TestConstants.SAML2_REDIRECT_REQUEST});
-        when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.FALSE);
-        when(mockedAuthenticationContext.getAuthenticationRequest()).thenReturn(mockedAuthenticationRequest);
+            when(mockedAuthenticationRequest.getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))
+                    .thenReturn(new String[]{TestConstants.SAML2_REDIRECT_REQUEST});
+            when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.FALSE);
+            when(mockedAuthenticationContext.getAuthenticationRequest()).thenReturn(mockedAuthenticationRequest);
 
-        samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse,
-                mockedAuthenticationContext);
+            samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse,
+                    mockedAuthenticationContext);
 
-        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(mockedAuthnHttpServletResponse).sendRedirect(captor.capture());
-        assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
-        assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
+            ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+            verify(mockedAuthnHttpServletResponse).sendRedirect(captor.capture());
+            assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
+            assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
+        }
     }
 
     @Test(priority = 5)
     public void testInitiatePostLogoutRequest() throws Exception {
 
-        mockXPathFactory();
-        mockDocumentBuilderFactory();
-        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
-        mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<DOMImplementationRegistry> domRegMock = mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+             MockedStatic<LoggerUtils> mockedLoggerUtils = mockStatic(LoggerUtils.class)) {
+            mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
 
-        Map<String, String> authenticatorProperties = new HashMap<>();
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
-                SSOConstants.POST);
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_LOGOUT_ENABLED, "true");
-        when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
+            Map<String, String> authenticatorProperties = new HashMap<>();
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
+                    SSOConstants.POST);
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_LOGOUT_ENABLED, "true");
+            when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
 
-        when(mockedHttpSession.getAttribute(SSOConstants.LOGOUT_USERNAME)).thenReturn("SomeUser");
-        when(mockedHttpSession.getAttribute(SSOConstants.LOGOUT_SESSION_INDEX)).thenReturn("123456789");
-        when(mockedHttpSession.getAttribute(SSOConstants.NAME_QUALIFIER)).thenReturn(NameIDType.UNSPECIFIED);
-        when(mockedHttpSession.getAttribute(SSOConstants.SP_NAME_QUALIFIER)).thenReturn(NameIDType.UNSPECIFIED);
-        when(mockedHttpServletRequest.getSession()).thenReturn(mockedHttpSession);
+            when(mockedHttpSession.getAttribute(SSOConstants.LOGOUT_USERNAME)).thenReturn("SomeUser");
+            when(mockedHttpSession.getAttribute(SSOConstants.LOGOUT_SESSION_INDEX)).thenReturn("123456789");
+            when(mockedHttpSession.getAttribute(SSOConstants.NAME_QUALIFIER)).thenReturn(NameIDType.UNSPECIFIED);
+            when(mockedHttpSession.getAttribute(SSOConstants.SP_NAME_QUALIFIER)).thenReturn(NameIDType.UNSPECIFIED);
+            when(mockedHttpServletRequest.getSession()).thenReturn(mockedHttpSession);
 
-        PrintWriter out = new PrintWriter("target/logout-request.txt");
-        when(mockedLogoutHttpServletResponse.getWriter()).thenReturn(out);
+            PrintWriter out = new PrintWriter("target/logout-request.txt");
+            when(mockedLogoutHttpServletResponse.getWriter()).thenReturn(out);
 
-        samlssoAuthenticator.initiateLogoutRequest(mockedHttpServletRequest, mockedLogoutHttpServletResponse,
-                mockedAuthenticationContext);
-        out.flush();
-        String postPage = FileUtils.readFileToString(new File("target/logout-request.txt"), "UTF-8");
-        assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
-        assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
+            samlssoAuthenticator.initiateLogoutRequest(mockedHttpServletRequest, mockedLogoutHttpServletResponse,
+                    mockedAuthenticationContext);
+            out.flush();
+            String postPage = FileUtils.readFileToString(new File("target/logout-request.txt"), "UTF-8");
+            assertTrue(postPage.contains("SAMLRequest"), "Failed to build the SAML request");
+            assertTrue(postPage.contains("RelayState"), "Failed to add relay state");
+        }
     }
 
     @Test(priority = 6)
     public void testInitiateRedirectLogoutRequest() throws Exception {
 
-        mockDocumentBuilderFactory();
+        try (MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory()) {
 
-        Map<String, String> authenticatorProperties = new HashMap<>();
+            Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL,
                 "https://localhost:9443/samlsso");
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD,
@@ -277,19 +287,23 @@ public class SAMLSSOAuthenticatorTest {
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.IS_LOGOUT_ENABLED, "true");
         when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
 
+        when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
+        when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
+
         when(mockedHttpSession.getAttribute(SSOConstants.LOGOUT_USERNAME)).thenReturn("SomeUser");
         when(mockedHttpSession.getAttribute(SSOConstants.LOGOUT_SESSION_INDEX)).thenReturn("123456789");
         when(mockedHttpSession.getAttribute(SSOConstants.NAME_QUALIFIER)).thenReturn(NameIDType.UNSPECIFIED);
         when(mockedHttpSession.getAttribute(SSOConstants.SP_NAME_QUALIFIER)).thenReturn(NameIDType.UNSPECIFIED);
         when(mockedHttpServletRequest.getSession()).thenReturn(mockedHttpSession);
 
-        samlssoAuthenticator.initiateLogoutRequest(mockedHttpServletRequest, mockedLogoutHttpServletResponse,
-                mockedAuthenticationContext);
+            samlssoAuthenticator.initiateLogoutRequest(mockedHttpServletRequest, mockedLogoutHttpServletResponse,
+                    mockedAuthenticationContext);
 
-        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(mockedLogoutHttpServletResponse).sendRedirect(captor.capture());
-        assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
-        assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
+            ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+            verify(mockedLogoutHttpServletResponse).sendRedirect(captor.capture());
+            assertTrue(captor.getValue().contains("SAMLRequest"), "Failed to build the SAML request");
+            assertTrue(captor.getValue().contains("RelayState"), "Failed to add relay state");
+        }
     }
 
     @Test(priority = 7)
@@ -333,47 +347,48 @@ public class SAMLSSOAuthenticatorTest {
     @Test
     public void testProcessAuthenticationResponse() throws Exception {
 
-        mockXPathFactory();
-        mockDocumentBuilderFactory();
-        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
-        mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<DOMImplementationRegistry> domRegMock = mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+             MockedStatic<LoggerUtils> mockedLoggerUtils = mockStatic(LoggerUtils.class)) {
+            mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
 
-        SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(mockedRealmService);
+            SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(mockedRealmService);
 
-        when(mockedRealmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID)).thenReturn(mockedUserRealm);
-        when(mockedUserRealm.getUserStoreManager()).thenReturn(mockedUserStoreManager);
-        when(mockedUserStoreManager.getRealmConfiguration()).thenReturn(mockedRealmConfiguration);
-        when(mockedRealmConfiguration.getUserStoreProperty(IdentityCoreConstants.MULTI_ATTRIBUTE_SEPARATOR))
-                .thenReturn(",");
+            when(mockedRealmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID)).thenReturn(mockedUserRealm);
+            when(mockedUserRealm.getUserStoreManager()).thenReturn(mockedUserStoreManager);
+            when(mockedUserStoreManager.getRealmConfiguration()).thenReturn(mockedRealmConfiguration);
+            when(mockedRealmConfiguration.getUserStoreProperty(IdentityCoreConstants.MULTI_ATTRIBUTE_SEPARATOR))
+                    .thenReturn(",");
 
-        when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
-        when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
+            when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
+            when(mockedAuthenticationContext.getExternalIdP()).thenReturn(mockedExternalIdPConfig);
 
-        DateTime issueInstant = new DateTime();
-        DateTime notOnOrAfter = issueInstant.toDateTime(DateTimeZone.UTC).plusMillis(5 * 60 * 1000);
-        String samlResponse = TestConstants.SAML_RESPONSE.replace("NotOnOrAfter=\"2017-10-06T14:18:59.302Z\"",
-                "NotOnOrAfter=\"" + notOnOrAfter + "\"");
-        when(mockedReturnedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_RESP))
-                .thenReturn(new String(Base64.encodeBase64(samlResponse.getBytes())));
+            DateTime issueInstant = new DateTime();
+            DateTime notOnOrAfter = issueInstant.toDateTime(DateTimeZone.UTC).plusMillis(5 * 60 * 1000);
+            String samlResponse = TestConstants.SAML_RESPONSE.replace("NotOnOrAfter=\"2017-10-06T14:18:59.302Z\"",
+                    "NotOnOrAfter=\"" + notOnOrAfter + "\"");
+            when(mockedReturnedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_RESP))
+                    .thenReturn(new String(Base64.encodeBase64(samlResponse.getBytes())));
 
-        when(mockedReturnedHttpServletRequest.getSession()).thenReturn(mockedHttpSession);
-        when(mockedReturnedHttpServletRequest.getSession(false)).thenReturn(mockedHttpSession);
-        when(mockedHttpSession.getAttribute("username")).thenReturn("admin");
+            when(mockedReturnedHttpServletRequest.getSession()).thenReturn(mockedHttpSession);
+            when(mockedReturnedHttpServletRequest.getSession(false)).thenReturn(mockedHttpSession);
+            when(mockedHttpSession.getAttribute("username")).thenReturn("admin");
 
-        Map<String, String> authenticatorProperties = new HashMap<>();
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID,
-                "SAMLSSOIdentity");
-        when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
+            Map<String, String> authenticatorProperties = new HashMap<>();
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID,
+                    "SAMLSSOIdentity");
+            when(mockedAuthenticationContext.getAuthenticatorProperties()).thenReturn(authenticatorProperties);
 
-        doCallRealMethod().when(mockedAuthenticationContext).setSubject(any(AuthenticatedUser.class));
-        doCallRealMethod().when(mockedAuthenticationContext).getSubject();
+            doCallRealMethod().when(mockedAuthenticationContext).setSubject(any(AuthenticatedUser.class));
+            doCallRealMethod().when(mockedAuthenticationContext).getSubject();
 
-        samlssoAuthenticator.processAuthenticationResponse(mockedReturnedHttpServletRequest,
-                mockedReturnedHttpServletResponse, mockedAuthenticationContext);
+            samlssoAuthenticator.processAuthenticationResponse(mockedReturnedHttpServletRequest,
+                    mockedReturnedHttpServletResponse, mockedAuthenticationContext);
 
-        assertEquals("admin", mockedAuthenticationContext.getSubject().getAuthenticatedSubjectIdentifier(), "Failed " +
-                "retrive the authenticated user from the SAML2 response");
+            assertEquals("admin", mockedAuthenticationContext.getSubject().getAuthenticatedSubjectIdentifier(), "Failed " +
+                    "retrive the authenticated user from the SAML2 response");
+        }
     }
 
     @DataProvider(name = "inboundRequestQueryParamProvider")
@@ -391,54 +406,49 @@ public class SAMLSSOAuthenticatorTest {
     public void testDynamicQueryParams(String[] inboundQueryParamValues, String requestQueryParamValue,
                                        String exceptedQueryParamValue) throws Exception {
 
-        mockXPathFactory();
-        mockDocumentBuilderFactory();
-        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
-        mockStatic(LoggerUtils.class);
-        when(LoggerUtils.isDiagnosticLogsEnabled()).thenReturn(true);
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<DOMImplementationRegistry> domRegMock = mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+             MockedStatic<LoggerUtils> mockedLoggerUtils = mockStatic(LoggerUtils.class)) {
+            mockedLoggerUtils.when(LoggerUtils::isDiagnosticLogsEnabled).thenReturn(true);
 
-        Map<String, String> authenticatorProperties = new HashMap<>();
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
-        authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD, SSOConstants.POST);
-        authenticatorProperties.put(FrameworkConstants.QUERY_PARAMS,
-                DYNAMIC_QUERY_PARAM + "={" + INBOUND_QUERY_KEY + "}");
+            Map<String, String> authenticatorProperties = new HashMap<>();
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SSO_URL, TestConstants.IDP_URL);
+            authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.REQUEST_METHOD, SSOConstants.POST);
+            authenticatorProperties.put(FrameworkConstants.QUERY_PARAMS,
+                    DYNAMIC_QUERY_PARAM + "={" + INBOUND_QUERY_KEY + "}");
 
-        AuthenticationContext context = new AuthenticationContext();
-        context.setContextIdentifier(TestConstants.RELAY_STATE);
-        context.setAuthenticatorProperties(authenticatorProperties);
+            AuthenticationContext context = new AuthenticationContext();
+            context.setContextIdentifier(TestConstants.RELAY_STATE);
+            context.setAuthenticatorProperties(authenticatorProperties);
 
-        when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
-        context.setExternalIdP(mockedExternalIdPConfig);
+            when(mockedExternalIdPConfig.getIdentityProvider()).thenReturn(mockedIdentityProvider);
+            context.setExternalIdP(mockedExternalIdPConfig);
 
-        when(mockedAuthenticationRequest.getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))
-                .thenReturn(new String[]{TestConstants.SAML2_POST_REQUEST});
-        when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.TRUE);
-        when(mockedAuthenticationRequest.getRequestQueryParam(INBOUND_QUERY_KEY)).thenReturn(inboundQueryParamValues);
+            when(mockedAuthenticationRequest.getRequestQueryParam(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ))
+                    .thenReturn(new String[]{TestConstants.SAML2_POST_REQUEST});
+            when(mockedAuthenticationRequest.isPost()).thenReturn(Boolean.TRUE);
+            when(mockedAuthenticationRequest.getRequestQueryParam(INBOUND_QUERY_KEY)).thenReturn(inboundQueryParamValues);
 
-        if (requestQueryParamValue != null) {
-            when(mockedHttpServletRequest.getParameter(INBOUND_QUERY_KEY)).thenReturn(requestQueryParamValue);
-        } else {
-            when(mockedHttpServletRequest.getParameter(INBOUND_QUERY_KEY)).thenReturn(null);
+            if (requestQueryParamValue != null) {
+                when(mockedHttpServletRequest.getParameter(INBOUND_QUERY_KEY)).thenReturn(requestQueryParamValue);
+            } else {
+                when(mockedHttpServletRequest.getParameter(INBOUND_QUERY_KEY)).thenReturn(null);
+            }
+
+            context.setAuthenticationRequest(mockedAuthenticationRequest);
+
+            PrintWriter out = new PrintWriter("target/auth-request.txt");
+            when(mockedAuthnHttpServletResponse.getWriter()).thenReturn(out);
+
+            samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse, context);
+            out.flush();
+
+            String resolvedQueryParams = context.getAuthenticatorProperties().get(FrameworkConstants.QUERY_PARAMS);
+            Map<String, String> queryParamMap = SSOUtils.getQueryMap(resolvedQueryParams);
+
+            String resolvedDynamicQueryParamValue = queryParamMap.get(DYNAMIC_QUERY_PARAM);
+            assertEquals(resolvedDynamicQueryParamValue, exceptedQueryParamValue);
         }
-
-        context.setAuthenticationRequest(mockedAuthenticationRequest);
-
-        PrintWriter out = new PrintWriter("target/auth-request.txt");
-        when(mockedAuthnHttpServletResponse.getWriter()).thenReturn(out);
-
-        samlssoAuthenticator.initiateAuthenticationRequest(mockedHttpServletRequest, mockedAuthnHttpServletResponse, context);
-        out.flush();
-
-        String resolvedQueryParams = context.getAuthenticatorProperties().get(FrameworkConstants.QUERY_PARAMS);
-        Map<String, String> queryParamMap = SSOUtils.getQueryMap(resolvedQueryParams);
-
-        String resolvedDynamicQueryParamValue = queryParamMap.get(DYNAMIC_QUERY_PARAM);
-        assertEquals(resolvedDynamicQueryParamValue, exceptedQueryParamValue);
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 }

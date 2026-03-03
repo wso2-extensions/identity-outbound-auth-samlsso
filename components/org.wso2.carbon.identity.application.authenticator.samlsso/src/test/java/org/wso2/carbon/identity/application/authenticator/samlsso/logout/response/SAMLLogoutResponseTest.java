@@ -19,7 +19,8 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.response;
 
 import org.mockito.Mock;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -32,10 +33,15 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context
 /**
  * Unit test cases for SAMLLogoutResponse
  */
-public class SAMLLogoutResponseTest extends PowerMockTestCase {
+public class SAMLLogoutResponseTest {
 
     @Mock
     private SAMLMessageContext mockedContext;
+
+    @BeforeMethod
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testBuildResponse() {

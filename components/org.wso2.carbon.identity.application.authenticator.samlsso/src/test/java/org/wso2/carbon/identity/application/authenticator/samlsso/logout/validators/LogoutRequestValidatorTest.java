@@ -30,8 +30,8 @@ import org.opensaml.saml.saml2.core.Issuer;
 import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml.saml2.core.impl.LogoutRequestBuilder;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.annotations.BeforeTest;
+import org.opensaml.saml.saml2.core.impl.NameIDBuilder;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
@@ -48,24 +48,15 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 /**
  * Unit test cases for LogoutRequestValidator
  */
-public class LogoutRequestValidatorTest extends PowerMockTestCase {
+public class LogoutRequestValidatorTest {
 
     @Mock
     private IdentityRequest mockedIdentityRequest;
 
-    @Mock
-    private NameID mockedNameId;
-
-    @Mock
-    private BaseID mockedBaseId;
-
-    @Mock
-    private EncryptedID mockedEncId;
-
-    @BeforeTest
+    @BeforeMethod
     public void setUp() {
 
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test(dataProvider = "logoutRequestBuilderDataProvider")
@@ -100,14 +91,19 @@ public class LogoutRequestValidatorTest extends PowerMockTestCase {
     @DataProvider(name = "logoutRequestBuilderDataProvider")
     public Object[][] logoutRequestBuilderData() {
 
+        // Create real NameID object instead of mock
+        NameIDBuilder nameIDBuilder = new NameIDBuilder();
+        NameID nameID = nameIDBuilder.buildObject();
+        nameID.setValue("testUser");
+
         return new Object[][]{
                 {
                         VERSION_20,
                         SP_ENTITY_ID,
                         ISSUER_FORMAT,
-                        mockedNameId,
-                        mockedBaseId,
-                        mockedEncId,
+                        nameID,
+                        null,
+                        null,
                         "false",
                         true
                 }
