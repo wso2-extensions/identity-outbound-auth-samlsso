@@ -45,22 +45,15 @@ public class MockUtils {
 
     public static MockedStatic<XPathFactory> mockXPathFactory() {
 
-        try {
-            // Use reflection to access the internal XPathFactory implementation
-            // Note: This requires --add-opens java.xml/com.sun.org.apache.xpath.internal.jaxp=ALL-UNNAMED
-            Class<?> xpathFactoryClass = Class.forName("com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl");
-            XPathFactory xPathFactory = (XPathFactory) xpathFactoryClass.getDeclaredConstructor().newInstance();
-            
-            MockedStatic<XPathFactory> xPathFactoryMock = mockStatic(XPathFactory.class);
-            xPathFactoryMock.when(XPathFactory::newInstance).thenReturn(xPathFactory);
-            return xPathFactoryMock;
-        } catch (Exception e) {
-            // Fallback: If reflection fails, just mock the static call to return null
-            // This will cause tests to fail but with a clearer error message
-            throw new RuntimeException("Failed to create XPathFactory mock. " +
-                    "Ensure JVM is started with: " +
-                    "--add-opens java.xml/com.sun.org.apache.xpath.internal.jaxp=ALL-UNNAMED", e);
-        }
+        // Create a real XPathFactory instance using the standard API before mocking
+        // This must be done before creating MockedStatic, otherwise the call will be intercepted
+        XPathFactory realFactory = XPathFactory.newInstance();
+        
+        // Now mock the static method to return the real factory instance
+        MockedStatic<XPathFactory> xPathFactoryMock = mockStatic(XPathFactory.class);
+        xPathFactoryMock.when(XPathFactory::newInstance).thenReturn(realFactory);
+        
+        return xPathFactoryMock;
     }
 
     public static MockedStatic<XMLInputFactory> mockXMLInputFactory() {
