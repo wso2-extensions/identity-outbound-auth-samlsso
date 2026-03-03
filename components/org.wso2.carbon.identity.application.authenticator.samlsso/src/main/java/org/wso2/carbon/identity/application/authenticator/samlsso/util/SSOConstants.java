@@ -85,6 +85,9 @@ public class SSOConstants {
 
         public static final String HTTPS_PROXY_HOST = "HTTPS_PROXY_HOST";
         public static final String HTTPS_PROXY_PORT = "HTTPS_PROXY_PORT";
+
+        public static final String USE_INTERMEDIATE_LOADER_PAGE_CONFIG_NAME =
+                "BrandingConfiguration.UseIntermediateLoaderPage";
     }
 
     /**
