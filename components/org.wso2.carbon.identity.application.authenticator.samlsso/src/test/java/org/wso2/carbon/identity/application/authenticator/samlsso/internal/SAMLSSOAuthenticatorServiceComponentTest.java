@@ -18,27 +18,21 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.internal;
 
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.reflect.Whitebox;
-import org.testng.IObjectFactory;
+import org.mockito.MockedStatic;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import java.lang.reflect.Method;
+
+import static org.mockito.Mockito.mockStatic;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 /**
  * Unit test cases for SAMLSSOAuthenticatorServiceComponent.
  */
-@PowerMockIgnore({"javax.xml.datatype.*", "org.mockito.*", "org.powermock.api.mockito.invocation.*",
-        "javax.crypto.Cipher"})
-@PrepareForTest({IdentityUtil.class})
 public class SAMLSSOAuthenticatorServiceComponentTest {
 
     @DataProvider(name = "intermediateLoaderPageConfigProvider")
@@ -62,24 +56,22 @@ public class SAMLSSOAuthenticatorServiceComponentTest {
             description = "Test useIntermediateLoaderPage with various config values")
     public void testUseIntermediateLoaderPage(String configValue, boolean expected) throws Exception {
 
-        mockStatic(IdentityUtil.class);
-        when(IdentityUtil.getProperty(SSOConstants.ServerConfig.USE_INTERMEDIATE_LOADER_PAGE_CONFIG_NAME))
-                .thenReturn(configValue);
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = mockStatic(IdentityUtil.class)) {
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                    SSOConstants.ServerConfig.USE_INTERMEDIATE_LOADER_PAGE_CONFIG_NAME))
+                    .thenReturn(configValue);
 
-        SAMLSSOAuthenticatorServiceComponent component = new SAMLSSOAuthenticatorServiceComponent();
-        boolean result = Whitebox.invokeMethod(component, "useIntermediateLoaderPage");
+            SAMLSSOAuthenticatorServiceComponent component = new SAMLSSOAuthenticatorServiceComponent();
+            Method method = SAMLSSOAuthenticatorServiceComponent.class.getDeclaredMethod("useIntermediateLoaderPage");
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(component);
 
-        if (expected) {
-            assertTrue(result, "Expected useIntermediateLoaderPage() to return true for config value: " + configValue);
-        } else {
-            assertFalse(result,
-                    "Expected useIntermediateLoaderPage() to return false for config value: " + configValue);
+            if (expected) {
+                assertTrue(result, "Expected useIntermediateLoaderPage() to return true for config value: " + configValue);
+            } else {
+                assertFalse(result,
+                        "Expected useIntermediateLoaderPage() to return false for config value: " + configValue);
+            }
         }
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 }

@@ -18,11 +18,10 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.util;
 
 import com.ctc.wstx.stax.WstxInputFactory;
-import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.xerces.dom.CoreDOMImplementationImpl;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.apache.xerces.util.SecurityManager;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
@@ -35,47 +34,53 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.xpath.XPathFactory;
 
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Mock Utils
  */
 public class MockUtils {
 
-    public static void mockXPathFactory() {
+    public static MockedStatic<XPathFactory> mockXPathFactory() {
 
-        mockStatic(XPathFactory.class);
-        XPathFactory xPathFactory = new XPathFactoryImpl();
-        when(XPathFactory.newInstance()).thenReturn(xPathFactory);
+        // Create a real XPathFactory instance using the standard API before mocking
+        // This must be done before creating MockedStatic, otherwise the call will be intercepted
+        XPathFactory realFactory = XPathFactory.newInstance();
+        
+        // Now mock the static method to return the real factory instance
+        MockedStatic<XPathFactory> xPathFactoryMock = mockStatic(XPathFactory.class);
+        xPathFactoryMock.when(XPathFactory::newInstance).thenReturn(realFactory);
+        
+        return xPathFactoryMock;
     }
 
-    public static void mockXMLInputFactory() {
+    public static MockedStatic<XMLInputFactory> mockXMLInputFactory() {
 
-        mockStatic(XMLInputFactory.class);
-        when(XMLInputFactory.newInstance()).thenReturn(new WstxInputFactory());
+        MockedStatic<XMLInputFactory> xmlInputFactoryMock = mockStatic(XMLInputFactory.class);
+        xmlInputFactoryMock.when(XMLInputFactory::newInstance).thenReturn(new WstxInputFactory());
+        return xmlInputFactoryMock;
     }
 
-    public static void mockDocumentBuilderFactory() throws ParserConfigurationException {
+    public static MockedStatic<IdentityUtil> mockDocumentBuilderFactory() throws ParserConfigurationException {
 
         DocumentBuilderFactory documentBuilderFactory = getSecuredDocumentBuilderFactory();
-        mockStatic(IdentityUtil.class);
-        when(IdentityUtil.getSecuredDocumentBuilderFactory()).thenReturn(documentBuilderFactory);
-
-        mockStatic(DocumentBuilderFactory.class);
-        when(DocumentBuilderFactory.newInstance()).thenReturn(new DocumentBuilderFactoryImpl());
+        MockedStatic<IdentityUtil> identityUtilMock = mockStatic(IdentityUtil.class);
+        identityUtilMock.when(IdentityUtil::getSecuredDocumentBuilderFactory).thenReturn(documentBuilderFactory);
+        return identityUtilMock;
     }
 
-    public static void mockDOMImplementationRegistry(DOMImplementationRegistry mockedDomImplementationRegistry)
-            throws Exception {
+    public static MockedStatic<DOMImplementationRegistry> mockDOMImplementationRegistry(
+            DOMImplementationRegistry mockedDomImplementationRegistry) throws Exception {
 
-        mockStatic(DOMImplementationRegistry.class);
-        when(DOMImplementationRegistry.newInstance()).thenReturn(mockedDomImplementationRegistry);
+        MockedStatic<DOMImplementationRegistry> domRegistryMock = mockStatic(DOMImplementationRegistry.class);
+        domRegistryMock.when(DOMImplementationRegistry::newInstance).thenReturn(mockedDomImplementationRegistry);
         when(mockedDomImplementationRegistry.getDOMImplementation("LS")).thenReturn(new CoreDOMImplementationImpl());
+        return domRegistryMock;
     }
 
-    public static void mockServiceURLBuilder() {
+    public static MockedStatic<ServiceURLBuilder> mockServiceURLBuilder() {
 
         ServiceURLBuilder builder = new ServiceURLBuilder() {
             String path = "";
@@ -111,14 +116,15 @@ public class MockUtils {
             public ServiceURL build() {
 
                 ServiceURL serviceURL = mock(ServiceURL.class);
-                PowerMockito.when(serviceURL.getAbsolutePublicURL()).thenReturn("https://localhost:9443" + path);
-                PowerMockito.when(serviceURL.getRelativePublicURL()).thenReturn(path);
+                when(serviceURL.getAbsolutePublicURL()).thenReturn("https://localhost:9443" + path);
+                when(serviceURL.getRelativePublicURL()).thenReturn(path);
                 return serviceURL;
             }
         };
 
-        mockStatic(ServiceURLBuilder.class);
-        PowerMockito.when(ServiceURLBuilder.create()).thenReturn(builder);
+        MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockStatic(ServiceURLBuilder.class);
+        serviceURLBuilderMock.when(ServiceURLBuilder::create).thenReturn(builder);
+        return serviceURLBuilderMock;
     }
 
     private static DocumentBuilderFactory getSecuredDocumentBuilderFactory() throws ParserConfigurationException {
@@ -137,3 +143,5 @@ public class MockUtils {
         return builderFactory;
     }
 }
+
+

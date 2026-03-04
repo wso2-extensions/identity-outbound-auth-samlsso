@@ -20,17 +20,15 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.signature.impl.SignatureImpl;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.wso2.carbon.core.util.KeyStoreManager;
@@ -68,13 +66,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPathFactory;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
@@ -124,10 +120,6 @@ import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENA
 /**
  * Unit test cases for DefaultSAML2SSOManager
  */
-@PowerMockIgnore({"javax.xml.datatype.*","org.mockito.*","org.powermock.api.mockito.invocation.*","javax.crypto.Cipher"})
-@PrepareForTest({FileBasedConfigurationBuilder.class, IdentityUtil.class, DocumentBuilderFactory.class,
-        KeyStoreManager.class, DOMImplementationRegistry.class, XPathFactory.class, FrameworkUtils.class,
-        ServiceURLBuilder.class, OrganizationManagementUtil.class})
 public class DefaultSAML2SSOManagerTest {
 
     @Mock
@@ -173,6 +165,8 @@ public class DefaultSAML2SSOManagerTest {
 
     @BeforeClass
     public void initTest() throws Exception {
+
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -318,30 +312,34 @@ public class DefaultSAML2SSOManagerTest {
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
 
-        mockStatic(FrameworkUtils.class);
-        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
-
-        mockXPathFactory();
-
         RequestData requestData = (RequestData) outboundRequestData;
-
         Map<String, String> authenticatorProperties = new HashMap<>();
 
-        setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
-                authenticatorProperties);
+        try (MockedStatic<FrameworkUtils> frameworkUtilsMock = mockStatic(FrameworkUtils.class);
+             MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock =
+                     mockStatic(FileBasedConfigurationBuilder.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class);
+             MockedStatic<DOMImplementationRegistry> domRegMock =
+                     mockDOMImplementationRegistry(mockedDomImplementationRegistry)) {
 
-        DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
-        defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
-        String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
-                TestConstants.IDP_URL, mockedAuthenticationContext);
-        assertNotNull(generatedRequest, "Failed to build federated authentication request.");
+            setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
+                    authenticatorProperties, identityUtilMock, fileBasedConfigBuilderMock, keyStoreManagerMock);
 
-        String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
-        assertNotNull(decodedRequest, "Failed to decode the generated request.");
+            DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
+            defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
+            String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
+                    TestConstants.IDP_URL, mockedAuthenticationContext);
+            assertNotNull(generatedRequest, "Failed to build federated authentication request.");
 
-        XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
-        if (!isLogout) {
-            assertAuthnRequest((AuthnRequest) xmlObject, requestData);
+            String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
+            assertNotNull(decodedRequest, "Failed to decode the generated request.");
+
+            XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
+            if (!isLogout) {
+                assertAuthnRequest((AuthnRequest) xmlObject, requestData);
+            }
         }
     }
 
@@ -351,52 +349,75 @@ public class DefaultSAML2SSOManagerTest {
 
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
-        mockXPathFactory();
+
         RequestData requestData = (RequestData) outboundRequestData;
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(ACS_URL, TestConstants.IDP_ACS_URL);
-        setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
-                authenticatorProperties);
-        DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
-        defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
-        String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
-                TestConstants.IDP_URL, mockedAuthenticationContext);
-        assertNotNull(generatedRequest, "Failed to build federated authentication request.");
 
-        String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
-        assertNotNull(decodedRequest, "Failed to decode the generated request.");
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock =
+                     mockStatic(FileBasedConfigurationBuilder.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class);
+             MockedStatic<DOMImplementationRegistry> domRegMock =
+                     mockDOMImplementationRegistry(mockedDomImplementationRegistry)) {
 
-        XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
-        if (!isLogout) {
-            assertAuthnRequest((AuthnRequest) xmlObject, requestData);
+            setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
+                    authenticatorProperties, identityUtilMock, fileBasedConfigBuilderMock, keyStoreManagerMock);
+
+            DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
+            defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
+            String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
+                    TestConstants.IDP_URL, mockedAuthenticationContext);
+            assertNotNull(generatedRequest, "Failed to build federated authentication request.");
+
+            String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
+            assertNotNull(decodedRequest, "Failed to decode the generated request.");
+
+            XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
+            if (!isLogout) {
+                assertAuthnRequest((AuthnRequest) xmlObject, requestData);
+            }
         }
     }
 
     @Test(dataProvider = "redirectRequestBuilderDataProvider")
     public void testBuildRequestWithMultipleAuthnContextClasses(boolean isLogout, String tenantDomain,
                                                                 Object inboundRequestData,
-                                                                Object outboundRequestData) throws Exception{
+                                                                Object outboundRequestData) throws Exception {
+
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
-        mockXPathFactory();
+
         RequestData requestData = (RequestData) outboundRequestData;
         Map<String, String> authenticatorProperties = new HashMap<>();
         authenticatorProperties.put(ACS_URL, TestConstants.IDP_ACS_URL);
         authenticatorProperties.put(AUTHENTICATION_CONTEXT_CLASS, TestConstants.AUTHENTICATION_CONTEXT_CLASSES);
-        setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
-                authenticatorProperties);
-        DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
-        defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
-        String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
-                TestConstants.IDP_URL, mockedAuthenticationContext);
-        assertNotNull(generatedRequest, "Failed to build federated authentication request.");
 
-        String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
-        assertNotNull(decodedRequest, "Failed to decode the generated request.");
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock =
+                     mockStatic(FileBasedConfigurationBuilder.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class);
+             MockedStatic<DOMImplementationRegistry> domRegMock =
+                     mockDOMImplementationRegistry(mockedDomImplementationRegistry)) {
 
-        XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
-        if (!isLogout) {
-            assertAuthnRequest((AuthnRequest) xmlObject, requestData);
+            setParametersForBuildAuthnRequest(isLogout, requestData, (RequestData) inboundRequestData,
+                    authenticatorProperties, identityUtilMock, fileBasedConfigBuilderMock, keyStoreManagerMock);
+
+            DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
+            defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
+            String generatedRequest = defaultSAML2SSOManager.buildRequest(mockedHttpServletRequest, false, false,
+                    TestConstants.IDP_URL, mockedAuthenticationContext);
+            assertNotNull(generatedRequest, "Failed to build federated authentication request.");
+
+            String decodedRequest = getDecodedSAMLRedirectRequest(generatedRequest);
+            assertNotNull(decodedRequest, "Failed to decode the generated request.");
+
+            XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
+            if (!isLogout) {
+                assertAuthnRequest((AuthnRequest) xmlObject, requestData);
+            }
         }
     }
 
@@ -514,45 +535,53 @@ public class DefaultSAML2SSOManagerTest {
     public void buildPostRequest(boolean isLogout, String tenantDomain, Object inboundRequestData,
                                  Object outboundRequestData) throws Exception {
 
-        mockStatic(OrganizationManagementUtil.class);
-        when(OrganizationManagementUtil.isOrganization(anyString())).thenReturn(false);
-        mockStatic(FrameworkUtils.class);
-        doNothing().when(FrameworkUtils.class, TestConstants.END_TENANT_FLOW);
-
         DefaultSAML2SSOManager.doBootstrap();
         when(mockedAuthenticationContext.getContextIdentifier()).thenReturn(TestConstants.RELAY_STATE);
-
-        mockXPathFactory();
 
         Map<String, String> authenticatorProperties = new HashMap<>();
         RequestData inboundData = (RequestData) inboundRequestData;
         RequestData outboundData = (RequestData) outboundRequestData;
 
-        setParametersForBuildAuthnRequest(isLogout, outboundData, inboundData, authenticatorProperties);
-        mockServiceURLBuilder();
+        try (MockedStatic<OrganizationManagementUtil> orgMgmtUtilMock =
+                     mockStatic(OrganizationManagementUtil.class);
+             MockedStatic<FrameworkUtils> frameworkUtilsMock = mockStatic(FrameworkUtils.class);
+             MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory();
+             MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock =
+                     mockStatic(FileBasedConfigurationBuilder.class);
+             MockedStatic<KeyStoreManager> keyStoreManagerMock = mockStatic(KeyStoreManager.class);
+             MockedStatic<DOMImplementationRegistry> domRegMock =
+                     mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+             MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockServiceURLBuilder()) {
 
-        DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
-        defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
-        String generatedRequest = defaultSAML2SSOManager.buildPostRequest(mockedHttpServletRequest, false, false,
-                TestConstants.IDP_URL, mockedAuthenticationContext);
-        assertNotNull(generatedRequest, "Failed to build federated authentication request.");
+            orgMgmtUtilMock.when(() -> OrganizationManagementUtil.isOrganization(anyString())).thenReturn(false);
 
-        String decodedRequest = getDecodedSAMLPostRequest(generatedRequest);
-        assertNotNull(decodedRequest, "Failed to decode the generated request.");
+            setParametersForBuildAuthnRequest(isLogout, outboundData, inboundData, authenticatorProperties,
+                    identityUtilMock, fileBasedConfigBuilderMock, keyStoreManagerMock);
 
-        XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
-        if (!isLogout) {
+            DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
+            defaultSAML2SSOManager.init(tenantDomain, authenticatorProperties, mockedIdentityProvider);
+            String generatedRequest = defaultSAML2SSOManager.buildPostRequest(mockedHttpServletRequest, false, false,
+                    TestConstants.IDP_URL, mockedAuthenticationContext);
+            assertNotNull(generatedRequest, "Failed to build federated authentication request.");
 
-            AuthnRequest authnRequest = (AuthnRequest) xmlObject;
-            assertAuthnRequest(authnRequest, outboundData);
+            String decodedRequest = getDecodedSAMLPostRequest(generatedRequest);
+            assertNotNull(decodedRequest, "Failed to decode the generated request.");
 
-            if (outboundData.isSignRequest()) {
-                assertNotNull(authnRequest.getSignature(), "Failed to sign the request");
-                if (outboundData.isIncludeCertProperty()) {
-                    assertNotNull(authnRequest.getSignature().getKeyInfo(), "Failed to add signing cert data");
+            XMLObject xmlObject = TestUtils.unmarshall(decodedRequest);
+            if (!isLogout) {
+
+                AuthnRequest authnRequest = (AuthnRequest) xmlObject;
+                assertAuthnRequest(authnRequest, outboundData);
+
+                if (outboundData.isSignRequest()) {
+                    assertNotNull(authnRequest.getSignature(), "Failed to sign the request");
+                    if (outboundData.isIncludeCertProperty()) {
+                        assertNotNull(authnRequest.getSignature().getKeyInfo(), "Failed to add signing cert data");
+                    }
+                } else {
+                    assertNull(authnRequest.getSignature(), "Invalid signature for request");
                 }
-            } else {
-                assertNull(authnRequest.getSignature(), "Invalid signature for request");
             }
         }
     }
@@ -573,19 +602,16 @@ public class DefaultSAML2SSOManagerTest {
 
         DefaultSAML2SSOManager.doBootstrap();
 
-        mockXPathFactory();
+        try (MockedStatic<XPathFactory> xpathMock = mockXPathFactory();
+             MockedStatic<IdentityUtil> identityUtilMock = mockDocumentBuilderFactory()) {
 
-        String samlRequest = buildSAMLRequest(true, (RequestData) requestData);
-        when(mockedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn
-                (samlRequest);
+            String samlRequest = buildSAMLRequest(true, (RequestData) requestData);
+            when(mockedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn(
+                    samlRequest);
 
-        DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
-        defaultSAML2SSOManager.doSLO(mockedHttpServletRequest);
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
+            DefaultSAML2SSOManager defaultSAML2SSOManager = new DefaultSAML2SSOManager();
+            defaultSAML2SSOManager.doSLO(mockedHttpServletRequest);
+        }
     }
 
     private void assertAuthnRequest(AuthnRequest authnRequest, RequestData requestData) {
@@ -632,15 +658,17 @@ public class DefaultSAML2SSOManagerTest {
         }
     }
 
-    private void setParametersForBuildAuthnRequest(boolean isLogout, RequestData requestData, RequestData
-            inboundRequestData, Map<String, String> authenticatorProperties) throws Exception {
+    private void setParametersForBuildAuthnRequest(boolean isLogout, RequestData requestData,
+            RequestData inboundRequestData, Map<String, String> authenticatorProperties,
+            MockedStatic<IdentityUtil> identityUtilMock,
+            MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock,
+            MockedStatic<KeyStoreManager> keyStoreManagerMock) throws Exception {
 
         if (requestData.isSignRequest()) {
             addSignatureProperties(authenticatorProperties, requestData.isIncludeCertProperty());
         }
 
         String samlRequest = buildSAMLRequest(isLogout, inboundRequestData);
-
 
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.SP_ENTITY_ID,
                 requestData.getSpEntityId());
@@ -657,8 +685,8 @@ public class DefaultSAML2SSOManagerTest {
         authenticatorProperties.put(IdentityApplicationConstants.Authenticator.SAML2SSO.INCLUDE_PROTOCOL_BINDING,
                 requestData.getProtocolBinding());
 
-        mockStatic(FileBasedConfigurationBuilder.class);
-        when(FileBasedConfigurationBuilder.getInstance()).thenReturn(mockedFileBasedConfigurationBuilder);
+        fileBasedConfigBuilderMock.when(FileBasedConfigurationBuilder::getInstance)
+                .thenReturn(mockedFileBasedConfigurationBuilder);
 
         Map<String, AuthenticatorConfig> authenticatorConfigMap = new HashMap<>();
         authenticatorConfigMap.put(SSOConstants.AUTHENTICATOR_NAME, mockedAuthenticatorConfig);
@@ -673,8 +701,8 @@ public class DefaultSAML2SSOManagerTest {
         } else {
             when(mockedFileBasedConfigurationBuilder.getAuthenticatorBean(SSOConstants.AUTHENTICATOR_NAME))
                     .thenReturn(null);
-            when(IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true)).thenReturn(requestData
-                    .getAcsUrl());
+            identityUtilMock.when(() -> IdentityUtil.getServerURL(FrameworkConstants.COMMONAUTH, true, true))
+                    .thenReturn(requestData.getAcsUrl());
         }
 
         if (StringUtils.isNotBlank(requestData.getAcsIndex())) {
@@ -695,33 +723,26 @@ public class DefaultSAML2SSOManagerTest {
         }
 
         if (requestData.isIncludePostParam()) {
-            when(mockedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn
-                    (samlRequest);
+            when(mockedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn(
+                    samlRequest);
         } else {
-            when(mockedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn
-                    (null);
+            when(mockedHttpServletRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).thenReturn(
+                    null);
             when(mockedAuthenticationContext.getQueryParams()).thenReturn(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ
                     + "=" + samlRequest);
         }
 
         when(mockedAuthenticationContext.getTenantDomain()).thenReturn(SUPER_TENANT_DOMAIN_NAME);
-        mockKeyStore();
-
-        mockDOMImplementationRegistry(mockedDomImplementationRegistry);
+        mockKeyStore(keyStoreManagerMock);
     }
 
     private String buildSAMLRequest(boolean isLogout, RequestData requestData) throws Exception {
 
-        mockDocumentBuilderFactory();
-
-        String samlRequest;
         if (!isLogout) {
-            samlRequest = TestUtils.buildRequest(false, requestData);
+            return TestUtils.buildRequest(false, requestData);
         } else {
-            samlRequest = TestUtils.buildRequest(true, requestData);
+            return TestUtils.buildRequest(true, requestData);
         }
-
-        return samlRequest;
     }
 
     private void addSignatureProperties(Map<String, String> authenticatorProperties, boolean includeCert) {
@@ -741,7 +762,7 @@ public class DefaultSAML2SSOManagerTest {
         }
     }
 
-    private void mockKeyStore() throws Exception {
+    private void mockKeyStore(MockedStatic<KeyStoreManager> keyStoreManagerMock) throws Exception {
 
         SAMLSSOAuthenticatorServiceDataHolder.getInstance().setRealmService(mockedRealmService);
         when(mockedRealmService.getTenantManager()).thenReturn(mockedTenantManager);
@@ -758,8 +779,8 @@ public class DefaultSAML2SSOManagerTest {
         x509CredentialImpl = new X509CredentialImpl(org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME,
                 TestConstants.IDP_CERTIFICATE);
 
-        mockStatic(KeyStoreManager.class);
-        when(KeyStoreManager.getInstance(org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_ID))
+        keyStoreManagerMock.when(() -> KeyStoreManager.getInstance(
+                        org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_ID))
                 .thenReturn(mockedSuperTenantKeyStoreManager);
         when(mockedSuperTenantKeyStoreManager.getDefaultPrivateKey()).thenReturn((PrivateKey) key);
         when(mockedSuperTenantKeyStoreManager.getDefaultPrimaryCertificate()).thenReturn((X509Certificate) certificate);

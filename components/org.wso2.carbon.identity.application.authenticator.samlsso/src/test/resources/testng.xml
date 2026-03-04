@@ -20,6 +20,8 @@
 <suite name="Application-Authenticator-SAMLSSO-Test-Suite">
     <test name="SAMLSSO-Outbound-Authenticator-Tests" preserve-order="true" parallel="false">
         <classes>
+            <!-- SAMLLogoutRequestProcessorTest must run first to avoid IdentityProviderManager class initialization issues -->
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessorTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtilsTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticatorTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceComponentTest"/>
@@ -33,7 +35,6 @@
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutRequestValidatorTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutResponseProcessorTest"/>
-            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutRequestProcessorTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContextTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.dao.SessionInfoDAOTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.logout.Utils.LogoutUtilTest"/>

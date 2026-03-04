@@ -19,11 +19,12 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.logout.response;
 
 import org.mockito.Mock;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.HttpIdentityResponse;
 
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_URL;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
@@ -32,12 +33,17 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.TestCon
 /**
  * Unit test cases for SAMLLogoutResponseFactory
  */
-public class SAMLLogoutResponseFactoryTest extends PowerMockTestCase {
+public class SAMLLogoutResponseFactoryTest {
 
     @Mock
     private SAMLLogoutResponse mockedIdentityResponse;
 
     private SAMLLogoutResponseFactory samlLogoutResponseFactory = new SAMLLogoutResponseFactory();
+
+    @BeforeMethod
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testCanHandle() {

@@ -171,14 +171,10 @@
                 <version>${jacoco.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-testng</artifactId>
-                <version>${powermock-module-testng.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>${powermock-module-testng.version}</version>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito-core.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
@@ -350,10 +346,10 @@
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
-        <jacoco.version>0.8.7</jacoco.version>
+        <jacoco.version>0.8.12</jacoco.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
-        <powermock-module-testng.version>2.0.9</powermock-module-testng.version>
+        <mockito-core.version>5.3.1</mockito-core.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <pax.logging.version>1.11.0</pax.logging.version>
         <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>

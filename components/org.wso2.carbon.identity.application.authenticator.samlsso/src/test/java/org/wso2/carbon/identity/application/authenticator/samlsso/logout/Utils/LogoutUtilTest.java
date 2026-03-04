@@ -22,10 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.LogoutResponse;
 import org.opensaml.saml.saml2.core.SessionIndex;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
@@ -47,7 +48,7 @@ import static org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENA
 /**
  * Unit test cases for SAMLLogoutUtil
  */
-public class LogoutUtilTest extends PowerMockTestCase {
+public class LogoutUtilTest {
 
     @Mock
     private LogoutRequest mockedLogoutReq;
@@ -60,6 +61,11 @@ public class LogoutUtilTest extends PowerMockTestCase {
 
     @Mock
     private IdentityRequest mockedIdentityRequest;
+
+    @BeforeMethod
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testGetSessionIndex() throws Exception {

@@ -20,12 +20,13 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.reques
 
 import java.util.Enumeration;
 import org.mockito.Mock;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ;
@@ -35,7 +36,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.TestCon
 /**
  * Unit test cases for SAMLLogoutRequestFactory.
  */
-public class SAMLLogoutRequestFactoryTest extends PowerMockTestCase {
+public class SAMLLogoutRequestFactoryTest {
 
     @Mock
     private HttpServletRequest mockedHttpServletRequest;
@@ -47,6 +48,11 @@ public class SAMLLogoutRequestFactoryTest extends PowerMockTestCase {
     private Enumeration<String> mockedList;
 
     private SAMLLogoutRequestFactory samlLogoutRequestFactory = new SAMLLogoutRequestFactory();
+
+    @BeforeMethod
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testCanHandle() {
@@ -76,7 +82,7 @@ public class SAMLLogoutRequestFactoryTest extends PowerMockTestCase {
     }
 
 
-    @Test(expectedExceptions = ExceptionInInitializerError.class)
+    @Test
     public void testCreate() throws Exception {
 
         when(mockedHttpServletRequest.getQueryString()).thenReturn(SAML2_POST_REQUEST);

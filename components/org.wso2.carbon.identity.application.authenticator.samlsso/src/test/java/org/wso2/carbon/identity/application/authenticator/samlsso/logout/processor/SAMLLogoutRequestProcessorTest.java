@@ -23,10 +23,8 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -62,9 +60,10 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.Mockito.withSettings;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_NAME;
@@ -85,13 +84,9 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
  * Unit test cases for SAMLLogoutRequestProcessor
  */
 @WithCarbonHome
-@PrepareForTest({IdentityDatabaseUtil.class, IdentityProviderManager.class, SAMLSSOAuthenticatorServiceDataHolder.class,
-        IdentityCoreServiceComponent.class, AuthenticationRequestCache.class, IdentityContextCache.class,
-        ServiceURLBuilder.class, FrameworkUtils.class, IdentityTenantUtil.class, SAMLLogoutUtil.class})
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.*","javax.crypto.Cipher"})
 @WithH2Database(files = {"dbscripts/h2.sql", "dbscripts/h2-with-tenant-id.sql",
         "dbscripts/h2-with-tenant-id-and-idp-id.sql"})
-public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
+public class SAMLLogoutRequestProcessorTest {
 
     private static Map<String, BasicDataSource> dataSourceMap = new HashMap<>();
     private static final String DB_NAME = "testSAMLSLO";
@@ -119,8 +114,7 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
     @Mock
     private SAMLLogoutRequest mockedRequest;
 
-    @Mock
-    private IdentityProviderManager mockedIdPManager;
+    // Don't store IdentityProviderManager mock as a field to avoid class redefinition issues in Java 21
 
     @Mock
     private RealmService mockedRealmService;
@@ -146,11 +140,9 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
     @BeforeMethod
     public void setUp() throws Exception {
 
-        SAMLMessageContext<String, String> samlMessageContext = new SAMLMessageContext<>(mockedRequest,
-                new HashMap<>());
-        when(samlMessageContext.getSAMLLogoutRequest().getTenantDomain()).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        MockitoAnnotations.openMocks(this);
     }
-
+        
     @Test
     public void testProcess() throws Exception {
 
@@ -158,15 +150,17 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         SAMLLogoutUtil.doBootstrap();
         mockRequest();
         setupDatabase(DB_NAME, "h2.sql", INSERT_SQL);
-        mockIdentityDatabaseUtil(DB_NAME);
-        mockIdentityProviderManager(getMockIdp());
-        mockSAMLSSOAuthenticatorServiceDataHolder();
-        mockIdentityCoreServiceComponent();
-        mockAuthenticationRequestCache();
-        mockIdentityContextCache();
-        mockServiceURLBuilder();
-
-        assertNotNull(processor.process(mockedRequest));
+        
+        try (MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock = mockIdentityDatabaseUtil(DB_NAME);
+             MockedStatic<IdentityProviderManager> identityProviderManagerMock = mockIdentityProviderManager(getMockIdp());
+             MockedStatic<SAMLSSOAuthenticatorServiceDataHolder> samlssoAuthenticatorServiceDataHolderMock = mockSAMLSSOAuthenticatorServiceDataHolder();
+             MockedStatic<IdentityCoreServiceComponent> identityCoreServiceComponentMock = mockIdentityCoreServiceComponent();
+             MockedStatic<AuthenticationRequestCache> authenticationRequestCacheMock = mockAuthenticationRequestCache();
+             MockedStatic<IdentityContextCache> identityContextCacheMock = mockIdentityContextCache();
+             MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockServiceURLBuilder()) {
+            
+            assertNotNull(processor.process(mockedRequest));
+        }
     }
 
     @Test
@@ -176,17 +170,19 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         SAMLLogoutUtil.doBootstrap();
         mockRequest();
         setupDatabase(DB_WITH_TENANT_ID_NAME, "h2-with-tenant-id.sql", INSERT_SQL_WITH_TENANT_ID);
-        mockIdentityDatabaseUtil(DB_WITH_TENANT_ID_NAME);
-        mockIdentityProviderManager(getMockIdp());
-        mockSAMLSSOAuthenticatorServiceDataHolder();
-        mockIdentityCoreServiceComponent();
-        mockAuthenticationRequestCache();
-        mockIdentityContextCache();
-        mockFrameworkUtils(true, false);
-        mockIdentityTenantUtil();
-        mockServiceURLBuilder();
-
-        assertNotNull(processor.process(mockedRequest));
+        
+        try (MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock = mockIdentityDatabaseUtil(DB_WITH_TENANT_ID_NAME);
+             MockedStatic<IdentityProviderManager> identityProviderManagerMock = mockIdentityProviderManager(getMockIdp());
+             MockedStatic<SAMLSSOAuthenticatorServiceDataHolder> samlssoAuthenticatorServiceDataHolderMock = mockSAMLSSOAuthenticatorServiceDataHolder();
+             MockedStatic<IdentityCoreServiceComponent> identityCoreServiceComponentMock = mockIdentityCoreServiceComponent();
+             MockedStatic<AuthenticationRequestCache> authenticationRequestCacheMock = mockAuthenticationRequestCache();
+             MockedStatic<IdentityContextCache> identityContextCacheMock = mockIdentityContextCache();
+             MockedStatic<FrameworkUtils> frameworkUtilsMock = mockFrameworkUtils(true, false);
+             MockedStatic<IdentityTenantUtil> identityTenantUtilMock = mockIdentityTenantUtil();
+             MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockServiceURLBuilder()) {
+            
+            assertNotNull(processor.process(mockedRequest));
+        }
     }
 
     @Test(expectedExceptions = SAMLLogoutException.class)
@@ -195,13 +191,15 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         SAMLLogoutRequestProcessor processor = new SAMLLogoutRequestProcessor();
         SAMLLogoutUtil.doBootstrap();
         mockRequest();
-        mockIdentityDatabaseUtil(DB_WITH_TENANT_ID_NAME);
-        mockIdentityProviderManager(getMockIdpWithoutSlo());
-        mockFrameworkUtils(true, false);
-        mockIdentityTenantUtil();
-        mockServiceURLBuilder();
-
-        assertNotNull(processor.process(mockedRequest));
+        
+        try (MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock = mockIdentityDatabaseUtil(DB_WITH_TENANT_ID_NAME);
+             MockedStatic<IdentityProviderManager> identityProviderManagerMock = mockIdentityProviderManager(getMockIdpWithoutSlo());
+             MockedStatic<FrameworkUtils> frameworkUtilsMock = mockFrameworkUtils(true, false);
+             MockedStatic<IdentityTenantUtil> identityTenantUtilMock = mockIdentityTenantUtil();
+             MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockServiceURLBuilder()) {
+            
+            assertNotNull(processor.process(mockedRequest));
+        }
     }
 
     @Test
@@ -212,17 +210,19 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         mockRequest();
         setupDatabase(DB_NAME_WITH_TENANT_ID_AND_IDP_ID_COLUMNS, "h2-with-tenant-id-and-idp-id.sql",
                 INSERT_SQL_WITH_TENANT_ID_AND_IDP_ID);
-        mockIdentityDatabaseUtil(DB_NAME_WITH_TENANT_ID_AND_IDP_ID_COLUMNS);
-        mockIdentityProviderManager(getMockIdp());
-        mockSAMLSSOAuthenticatorServiceDataHolder();
-        mockIdentityCoreServiceComponent();
-        mockAuthenticationRequestCache();
-        mockIdentityContextCache();
-        mockFrameworkUtils(true, true);
-        mockIdentityTenantUtil();
-        mockServiceURLBuilder();
-
-        assertNotNull(processor.process(mockedRequest));
+        
+        try (MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock = mockIdentityDatabaseUtil(DB_NAME_WITH_TENANT_ID_AND_IDP_ID_COLUMNS);
+             MockedStatic<IdentityProviderManager> identityProviderManagerMock = mockIdentityProviderManager(getMockIdp());
+             MockedStatic<SAMLSSOAuthenticatorServiceDataHolder> samlssoAuthenticatorServiceDataHolderMock = mockSAMLSSOAuthenticatorServiceDataHolder();
+             MockedStatic<IdentityCoreServiceComponent> identityCoreServiceComponentMock = mockIdentityCoreServiceComponent();
+             MockedStatic<AuthenticationRequestCache> authenticationRequestCacheMock = mockAuthenticationRequestCache();
+             MockedStatic<IdentityContextCache> identityContextCacheMock = mockIdentityContextCache();
+             MockedStatic<FrameworkUtils> frameworkUtilsMock = mockFrameworkUtils(true, true);
+             MockedStatic<IdentityTenantUtil> identityTenantUtilMock = mockIdentityTenantUtil();
+             MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockServiceURLBuilder()) {
+            
+            assertNotNull(processor.process(mockedRequest));
+        }
     }
 
     @Test(expectedExceptions = SAMLLogoutException.class)
@@ -231,74 +231,87 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         SAMLLogoutRequestProcessor processor = new SAMLLogoutRequestProcessor();
         SAMLLogoutUtil.doBootstrap();
         mockRequest();
-        mockIdentityDatabaseUtil(DB_NAME_WITH_TENANT_ID_AND_IDP_ID_COLUMNS);
-        mockIdentityProviderManager(getMockIdpWithoutSlo());
-        mockFrameworkUtils(true, true);
-        mockIdentityTenantUtil();
-        mockServiceURLBuilder();
-
-        assertNotNull(processor.process(mockedRequest));
+        
+        try (MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock = mockIdentityDatabaseUtil(DB_NAME_WITH_TENANT_ID_AND_IDP_ID_COLUMNS);
+             MockedStatic<IdentityProviderManager> identityProviderManagerMock = mockIdentityProviderManager(getMockIdpWithoutSlo());
+             MockedStatic<FrameworkUtils> frameworkUtilsMock = mockFrameworkUtils(true, true);
+             MockedStatic<IdentityTenantUtil> identityTenantUtilMock = mockIdentityTenantUtil();
+             MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockServiceURLBuilder()) {
+            
+            assertNotNull(processor.process(mockedRequest));
+        }
     }
 
     private void mockRequest() {
 
-        when(mockedRequest.isPost()).thenReturn(true);
-        PowerMockito.when(mockedRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).
+        when(mockedRequest.getParameter(SSOConstants.HTTP_POST_PARAM_SAML2_AUTH_REQ)).
                 thenReturn(SAML2_SLO_POST_REQUEST);
+        when(mockedRequest.isPost()).thenReturn(true);
     }
 
-    private void mockIdentityDatabaseUtil(String dbName) throws SQLException {
+    private MockedStatic<IdentityDatabaseUtil> mockIdentityDatabaseUtil(String dbName) throws SQLException {
 
-        mockStatic(IdentityDatabaseUtil.class);
-        when(IdentityDatabaseUtil.getDBConnection(false)).thenReturn(getConnection(dbName));
+        MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock = mockStatic(IdentityDatabaseUtil.class);
+        identityDatabaseUtilMock.when(() -> IdentityDatabaseUtil.getDBConnection(false)).thenReturn(getConnection(dbName));
+        return identityDatabaseUtilMock;
     }
 
-    private void mockIdentityProviderManager(IdentityProvider mockIdp) throws IdentityProviderManagementException {
+    private MockedStatic<IdentityProviderManager> mockIdentityProviderManager(IdentityProvider mockIdp) throws IdentityProviderManagementException {
 
-        mockStatic(IdentityProviderManager.class);
-        when(IdentityProviderManager.getInstance()).thenReturn(mockedIdPManager);
+        // Create a fresh mock instance for each test
+        IdentityProviderManager mockedIdPManager = mock(IdentityProviderManager.class, withSettings().lenient());
+        
+        MockedStatic<IdentityProviderManager> identityProviderManagerMock = mockStatic(IdentityProviderManager.class);
+        identityProviderManagerMock.when(IdentityProviderManager::getInstance).thenReturn(mockedIdPManager);
         when(mockedIdPManager.getIdPByName(IDP_NAME, SUPER_TENANT_DOMAIN)).thenReturn(mockIdp);
         when(mockedIdPManager.getIdPById(IDP_ID, SUPER_TENANT_DOMAIN)).thenReturn(mockIdp);
+        return identityProviderManagerMock;
     }
 
-    private void mockSAMLSSOAuthenticatorServiceDataHolder() {
+    private MockedStatic<SAMLSSOAuthenticatorServiceDataHolder> mockSAMLSSOAuthenticatorServiceDataHolder() {
 
-        mockStatic(SAMLSSOAuthenticatorServiceDataHolder.class);
-        when(SAMLSSOAuthenticatorServiceDataHolder.getInstance()).thenReturn(mockedAuthenticator);
+        MockedStatic<SAMLSSOAuthenticatorServiceDataHolder> samlssoAuthenticatorServiceDataHolderMock = mockStatic(SAMLSSOAuthenticatorServiceDataHolder.class);
+        samlssoAuthenticatorServiceDataHolderMock.when(SAMLSSOAuthenticatorServiceDataHolder::getInstance).thenReturn(mockedAuthenticator);
         when(mockedAuthenticator.getRealmService()).thenReturn(mockedRealmService);
+        return samlssoAuthenticatorServiceDataHolderMock;
     }
 
-    private void mockIdentityCoreServiceComponent() {
+    private MockedStatic<IdentityCoreServiceComponent> mockIdentityCoreServiceComponent() {
 
-        mockStatic(IdentityCoreServiceComponent.class);
-        when(IdentityCoreServiceComponent.getConfigurationContextService()).thenReturn(mockedService);
+        MockedStatic<IdentityCoreServiceComponent> identityCoreServiceComponentMock = mockStatic(IdentityCoreServiceComponent.class);
+        identityCoreServiceComponentMock.when(IdentityCoreServiceComponent::getConfigurationContextService).thenReturn(mockedService);
         when(mockedService.getServerConfigContext()).thenReturn(mockedContext);
         when(mockedContext.getAxisConfiguration()).thenReturn(mockedConfig);
+        return identityCoreServiceComponentMock;
     }
 
-    private void mockAuthenticationRequestCache() {
+    private MockedStatic<AuthenticationRequestCache> mockAuthenticationRequestCache() {
 
-        mockStatic(AuthenticationRequestCache.class);
-        when(AuthenticationRequestCache.getInstance()).thenReturn(mockedCache);
+        MockedStatic<AuthenticationRequestCache> authenticationRequestCacheMock = mockStatic(AuthenticationRequestCache.class);
+        authenticationRequestCacheMock.when(AuthenticationRequestCache::getInstance).thenReturn(mockedCache);
+        return authenticationRequestCacheMock;
     }
 
-    private void mockIdentityContextCache() {
+    private MockedStatic<IdentityContextCache> mockIdentityContextCache() {
 
-        mockStatic(IdentityContextCache.class);
-        when(IdentityContextCache.getInstance()).thenReturn(mockedIdentityCache);
+        MockedStatic<IdentityContextCache> identityContextCacheMock = mockStatic(IdentityContextCache.class);
+        identityContextCacheMock.when(IdentityContextCache::getInstance).thenReturn(mockedIdentityCache);
+        return identityContextCacheMock;
     }
 
-    private void mockFrameworkUtils(boolean isTenantIdColumnAvailable, boolean isIdpIdColumnAvailable) {
+    private MockedStatic<FrameworkUtils> mockFrameworkUtils(boolean isTenantIdColumnAvailable, boolean isIdpIdColumnAvailable) {
 
-        mockStatic(FrameworkUtils.class);
-        when(FrameworkUtils.isTenantIdColumnAvailableInFedAuthTable()).thenReturn(isTenantIdColumnAvailable);
-        when(FrameworkUtils.isIdpIdColumnAvailableInFedAuthTable()).thenReturn(isIdpIdColumnAvailable);
+        MockedStatic<FrameworkUtils> frameworkUtilsMock = mockStatic(FrameworkUtils.class);
+        frameworkUtilsMock.when(FrameworkUtils::isTenantIdColumnAvailableInFedAuthTable).thenReturn(isTenantIdColumnAvailable);
+        frameworkUtilsMock.when(FrameworkUtils::isIdpIdColumnAvailableInFedAuthTable).thenReturn(isIdpIdColumnAvailable);
+        return frameworkUtilsMock;
     }
 
-    private void mockIdentityTenantUtil() {
+    private MockedStatic<IdentityTenantUtil> mockIdentityTenantUtil() {
 
-        mockStatic(IdentityTenantUtil.class);
-        when(IdentityTenantUtil.getTenantId(SUPER_TENANT_DOMAIN)).thenReturn(Integer.parseInt(TENANT_ID));
+        MockedStatic<IdentityTenantUtil> identityTenantUtilMock = mockStatic(IdentityTenantUtil.class);
+        identityTenantUtilMock.when(() -> IdentityTenantUtil.getTenantId(SUPER_TENANT_DOMAIN)).thenReturn(Integer.parseInt(TENANT_ID));
+        return identityTenantUtilMock;
     }
 
     private IdentityProvider getMockIdp() {
@@ -374,13 +387,11 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
         initiateH2Base(dbName, getFilePath(initFileName));
 
         try (Connection connection1 = getConnection(dbName)) {
-            prepareConnection(connection1, false);
             PreparedStatement statement = connection1.prepareStatement(insertSql);
             statement.execute();
         }
 
         try (Connection connection1 = getConnection(dbName)) {
-            prepareConnection(connection1, false);
             PreparedStatement statement2 = connection1.prepareStatement(SELECT_SQL);
             statement2.setString(1, SAML_INDEX);
             ResultSet resultSet = statement2.executeQuery();
@@ -390,12 +401,6 @@ public class SAMLLogoutRequestProcessorTest extends PowerMockTestCase {
             }
             assertEquals(INBOUND_SESSION_INDEX, result, "Failed to handle for valid input");
         }
-    }
-
-    private void prepareConnection(Connection connection1, boolean b) {
-
-        mockStatic(IdentityDatabaseUtil.class);
-        PowerMockito.when(IdentityDatabaseUtil.getDBConnection(b)).thenReturn(connection1);
     }
 
     private void initiateH2Base(String databaseName, String scriptPath) throws Exception {
