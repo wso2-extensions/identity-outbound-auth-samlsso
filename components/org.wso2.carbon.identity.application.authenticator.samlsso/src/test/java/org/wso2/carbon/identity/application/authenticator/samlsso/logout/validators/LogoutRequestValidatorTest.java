@@ -30,8 +30,7 @@ import org.opensaml.saml.saml2.core.Issuer;
 import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml.saml2.core.impl.LogoutRequestBuilder;
-import org.opensaml.saml.saml2.core.impl.NameIDBuilder;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
@@ -53,9 +52,17 @@ public class LogoutRequestValidatorTest {
     @Mock
     private IdentityRequest mockedIdentityRequest;
 
-    @BeforeMethod
-    public void setUp() {
+    @Mock
+    private NameID mockedNameId;
 
+    @Mock
+    private BaseID mockedBaseId;
+
+    @Mock
+    private EncryptedID mockedEncId;
+
+    @BeforeTest
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -91,19 +98,14 @@ public class LogoutRequestValidatorTest {
     @DataProvider(name = "logoutRequestBuilderDataProvider")
     public Object[][] logoutRequestBuilderData() {
 
-        // Create real NameID object instead of mock
-        NameIDBuilder nameIDBuilder = new NameIDBuilder();
-        NameID nameID = nameIDBuilder.buildObject();
-        nameID.setValue("testUser");
-
         return new Object[][]{
                 {
                         VERSION_20,
                         SP_ENTITY_ID,
                         ISSUER_FORMAT,
-                        nameID,
-                        null,
-                        null,
+                        mockedNameId,
+                        mockedBaseId,
+                        mockedEncId,
                         "false",
                         true
                 }
