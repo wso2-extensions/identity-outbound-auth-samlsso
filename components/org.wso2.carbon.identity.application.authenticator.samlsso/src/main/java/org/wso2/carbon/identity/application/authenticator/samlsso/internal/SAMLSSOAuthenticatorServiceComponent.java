@@ -37,8 +37,10 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.process
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.processor.SAMLLogoutResponseProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request.SAMLLogoutRequestFactory;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponseFactory;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.core.util.IdentityIOStreamUtils;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.CarbonUtils;
@@ -83,7 +85,10 @@ public class SAMLSSOAuthenticatorServiceComponent {
             ctxt.getBundleContext()
                     .registerService(IdentityProcessor.class.getName(), new SAMLLogoutResponseProcessor(), null);
 
-            postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository" + File.separator + "resources" + File.separator + "identity" + File.separator + "pages" + File.separator + "samlsso_federate.html";
+            String htmlPageToUse =
+                    useIntermediateLoaderPage() ? "samlsso_federate_loader.html" : "samlsso_federate.html";
+            postPagePath = CarbonUtils.getCarbonHome() + File.separator + "repository" + File.separator + "resources" +
+                    File.separator + "identity" + File.separator + "pages" + File.separator + htmlPageToUse;
             fis = new FileInputStream(new File(postPagePath));
             postPage = new Scanner(fis, "UTF-8").useDelimiter("\\A").next();
             if (log.isDebugEnabled()) {
@@ -189,6 +194,21 @@ public class SAMLSSOAuthenticatorServiceComponent {
 
     public static String getPostPage() {
         return postPage;
+    }
+
+    /**
+     * If this configuration is set to true, SAML POST request will be sent using an intermediate page that
+     * only contains a loader icon as the visual component
+     * (Ref: repository/resources/identity/pages/samlsso_federate_loader.html).
+     * Otherwise, SAML POST request will be sent using the existing SAML SSO federate page which contains
+     * additional text components (Ref: repository/resources/identity/pages/samlsso_federate.html).
+     *
+     * @return true if the configuration is set to true, false otherwise.
+     */
+    private boolean useIntermediateLoaderPage() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(
+                SSOConstants.ServerConfig.USE_INTERMEDIATE_LOADER_PAGE_CONFIG_NAME));
     }
 }
 

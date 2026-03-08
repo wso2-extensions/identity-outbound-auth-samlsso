@@ -20,8 +20,9 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.proces
 
 import java.util.HashMap;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.InboundUtil;
@@ -30,10 +31,10 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.logout.request
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.response.SAMLLogoutResponse;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.application.authentication.framework.inbound.InboundConstants.RequestProcessor.CONTEXT_KEY;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.util.MockUtils.mockServiceURLBuilder;
@@ -44,8 +45,7 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.TestCon
 /**
  * Unit test cases for SAMLLogoutRequestProcessor
  */
-@PrepareForTest({InboundUtil.class, ServiceURLBuilder.class})
-public class SAMLLogoutResponseProcessorTest extends PowerMockTestCase {
+public class SAMLLogoutResponseProcessorTest {
 
     @Mock
     private SAMLLogoutRequest mockedLogoutRequest;
@@ -55,6 +55,11 @@ public class SAMLLogoutResponseProcessorTest extends PowerMockTestCase {
 
     private SAMLLogoutResponseProcessor mockedProcessor = new SAMLLogoutResponseProcessor();
 
+    @BeforeMethod
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
     public void testProcess() {
 
@@ -62,10 +67,12 @@ public class SAMLLogoutResponseProcessorTest extends PowerMockTestCase {
         SAMLMessageContext context = new SAMLMessageContext(mockedLogoutRequest, new HashMap());
         context.setResponse(HTTP_POST_PARAM_SAML2_RESP);
         context.setAcsUrl(IDP_URL);
-        mockStatic(InboundUtil.class);
-        when(InboundUtil.getContextFromCache(anyString())).thenReturn(context);
-        SAMLLogoutResponse.SAMLLogoutResponseBuilder builder = mockedProcessor.process(mockedIdentityRequest);
-        assertEquals(context.getResponse(), builder.build().getResponse(), "Failed to handle for valid input");
+        
+        try (MockedStatic<InboundUtil> inboundUtilMock = mockStatic(InboundUtil.class)) {
+            inboundUtilMock.when(() -> InboundUtil.getContextFromCache(anyString())).thenReturn(context);
+            SAMLLogoutResponse.SAMLLogoutResponseBuilder builder = mockedProcessor.process(mockedIdentityRequest);
+            assertEquals(context.getResponse(), builder.build().getResponse(), "Failed to handle for valid input");
+        }
     }
 
     @Test
@@ -75,15 +82,18 @@ public class SAMLLogoutResponseProcessorTest extends PowerMockTestCase {
         SAMLMessageContext context = new SAMLMessageContext(mockedLogoutRequest, new HashMap());
         context.setResponse(HTTP_POST_PARAM_SAML2_RESP);
         context.setAcsUrl(IDP_URL);
-        mockStatic(InboundUtil.class);
-        when(InboundUtil.getContextFromCache(anyString())).thenReturn(context);
-        assertTrue(mockedProcessor.canHandle(mockedIdentityRequest));
+        
+        try (MockedStatic<InboundUtil> inboundUtilMock = mockStatic(InboundUtil.class)) {
+            inboundUtilMock.when(() -> InboundUtil.getContextFromCache(anyString())).thenReturn(context);
+            assertTrue(mockedProcessor.canHandle(mockedIdentityRequest));
+        }
     }
 
     @Test
     public void testGetCallbackPath() {
 
-        mockServiceURLBuilder();
-        assertEquals(mockedProcessor.getCallbackPath(null), "https://localhost:9443/identity");
+        try (MockedStatic<ServiceURLBuilder> serviceURLBuilderMock = mockServiceURLBuilder()) {
+            assertEquals(mockedProcessor.getCallbackPath(null), "https://localhost:9443/identity");
+        }
     }
 }

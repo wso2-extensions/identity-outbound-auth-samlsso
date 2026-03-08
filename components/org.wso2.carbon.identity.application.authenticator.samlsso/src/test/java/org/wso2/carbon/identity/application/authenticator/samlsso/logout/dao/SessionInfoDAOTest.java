@@ -27,16 +27,14 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.StringUtils;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mockStatic;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.IDP_NAME;
 import static org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants.INBOUND_SESSION_INDEX;
@@ -44,9 +42,8 @@ import static org.wso2.carbon.identity.application.authenticator.samlsso.TestCon
 /**
  * Unit test cases for SessionInfoDAO
  */
-@PrepareForTest({IdentityDatabaseUtil.class})
 @WithH2Database(files = {"dbscripts/h2.sql"})
-public class SessionInfoDAOTest extends PowerMockTestCase {
+public class SessionInfoDAOTest {
 
     private static Map<String, BasicDataSource> dataSourceMap = new HashMap<>();
     private static final String DB_NAME = "testSAMLSLO";
@@ -57,8 +54,15 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
 
         initiateH2Base(DB_NAME, getFilePath("h2.sql"));
 
-        try (Connection connection1 = getConnection(DB_NAME)) {
-            prepareConnection(connection1, false);
+        try (Connection connection1 = getConnection(DB_NAME);
+             MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock = mockStatic(IdentityDatabaseUtil.class)) {
+            
+            identityDatabaseUtilMock.when(() -> IdentityDatabaseUtil.getDBConnection(false)).thenReturn(connection1);
+
+            // Delete existing data to avoid constraint violation when tests run together
+            String deleteSql = "DELETE FROM IDN_FED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID = '" + SAML_INDEX + "'";
+            PreparedStatement deleteStatement = connection1.prepareStatement(deleteSql);
+            deleteStatement.execute();
 
             String sql = "INSERT INTO IDN_FED_AUTH_SESSION_MAPPING " +
                     "(IDP_SESSION_ID, SESSION_ID, IDP_NAME,  AUTHENTICATOR_ID, PROTOCOL_TYPE) VALUES ( '" +
@@ -68,10 +72,13 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
             statement.execute();
         }
 
-        try (Connection connection1 = getConnection(DB_NAME)) {
-            prepareConnection(connection1, false);
+        try (Connection connection2 = getConnection(DB_NAME);
+             MockedStatic<IdentityDatabaseUtil> identityDatabaseUtilMock2 = mockStatic(IdentityDatabaseUtil.class)) {
+            
+            identityDatabaseUtilMock2.when(() -> IdentityDatabaseUtil.getDBConnection(false)).thenReturn(connection2);
+            
             String query = "SELECT * FROM IDN_FED_AUTH_SESSION_MAPPING WHERE IDP_SESSION_ID=?";
-            PreparedStatement statement2 = connection1.prepareStatement(query);
+            PreparedStatement statement2 = connection2.prepareStatement(query);
             statement2.setString(1, "94911684-8ef8-407b-bc59-e435b6270858");
             ResultSet resultSet = statement2.executeQuery();
             String result = null;
@@ -80,12 +87,6 @@ public class SessionInfoDAOTest extends PowerMockTestCase {
             }
             assertEquals(INBOUND_SESSION_INDEX, result, "Failed to handle for valid input");
         }
-    }
-
-    private void prepareConnection(Connection connection1, boolean b) {
-
-        mockStatic(IdentityDatabaseUtil.class);
-        when(IdentityDatabaseUtil.getDBConnection(b)).thenReturn(connection1);
     }
 
     private void initiateH2Base(String databaseName, String scriptPath) throws Exception {

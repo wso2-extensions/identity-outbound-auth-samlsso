@@ -21,7 +21,8 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.logout.reques
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.mockito.Mock;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertTrue;
@@ -29,13 +30,18 @@ import static org.testng.Assert.assertTrue;
 /**
  * Unit test cases for  SAMLLogoutRequestTest
  */
-public class SAMLLogoutRequestTest extends PowerMockTestCase {
+public class SAMLLogoutRequestTest {
 
     @Mock
     private HttpServletRequest mockedHttpRequest;
 
     @Mock
     private HttpServletResponse mockedHttpResponse;
+
+    @BeforeMethod
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testBuildRequest() throws Exception {

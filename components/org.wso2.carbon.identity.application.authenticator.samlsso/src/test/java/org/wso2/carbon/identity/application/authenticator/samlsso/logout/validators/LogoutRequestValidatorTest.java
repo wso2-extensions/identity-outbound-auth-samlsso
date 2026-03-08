@@ -30,7 +30,6 @@ import org.opensaml.saml.saml2.core.Issuer;
 import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml.saml2.core.impl.LogoutRequestBuilder;
-import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -48,7 +47,7 @@ import static org.wso2.carbon.identity.application.common.util.IdentityApplicati
 /**
  * Unit test cases for LogoutRequestValidator
  */
-public class LogoutRequestValidatorTest extends PowerMockTestCase {
+public class LogoutRequestValidatorTest {
 
     @Mock
     private IdentityRequest mockedIdentityRequest;
@@ -64,8 +63,7 @@ public class LogoutRequestValidatorTest extends PowerMockTestCase {
 
     @BeforeTest
     public void setUp() {
-
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test(dataProvider = "logoutRequestBuilderDataProvider")
