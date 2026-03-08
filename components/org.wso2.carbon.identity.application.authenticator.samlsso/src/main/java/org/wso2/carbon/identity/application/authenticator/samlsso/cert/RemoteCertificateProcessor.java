@@ -46,6 +46,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -57,7 +58,23 @@ public class RemoteCertificateProcessor {
 
     private static final RemoteCertificateProcessor INSTANCE = new RemoteCertificateProcessor();
 
-    private RemoteCertificateProcessor() {}
+    /**
+     * Number of locks for synchronizing metadata fetches.
+     */
+    private static final int LOCK_COUNT = 64;
+
+    /**
+     * Array of locks used to synchronize metadata fetches for different metadata URLs.
+     */
+    private final ReentrantLock[] locks;
+
+    private RemoteCertificateProcessor() {
+
+        locks = new ReentrantLock[LOCK_COUNT];
+        for (int i = 0; i < LOCK_COUNT; i++) {
+            locks[i] = new ReentrantLock();
+        }
+    }
 
     /**
      * Returns the singleton instance of {@link RemoteCertificateProcessor}.
@@ -178,6 +195,7 @@ public class RemoteCertificateProcessor {
 
         SAMLCertCache cache = SAMLCertCache.getInstance();
         SAMLCertCacheKey cacheKey = new SAMLCertCacheKey(metadataUrl);
+        Duration blockDuration = Duration.ofMillis(getCertRefreshRetryBlockDuration());
 
         SAMLCertCacheEntry cacheEntry = cache.getValueFromCache(cacheKey, tenantDomain);
         if (cacheEntry == null) {
@@ -189,11 +207,7 @@ public class RemoteCertificateProcessor {
         }
 
         RemoteCertificate cached = cacheEntry.getRemoteCertificate();
-        Duration blockDuration = Duration.ofMillis(getCertRefreshRetryBlockDuration());
-        Instant now = Instant.now();
-
-        if (cached.getLastRetrievedAt() != null
-                && !now.isAfter(cached.getLastRetrievedAt().plus(blockDuration))) {
+        if (isWithinBlockWindow(cached, blockDuration)) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Skipping certificate refresh for metadata URL: " + metadataUrl
                         + ". Block duration has not elapsed. Block duration: "
@@ -202,39 +216,65 @@ public class RemoteCertificateProcessor {
             return false;
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Attempting to refresh signing certificates from metadata URL: " + metadataUrl);
-        }
-
-        RemoteCertificate fresh = SAMLMetadataCertificateResolver.getInstance()
-                .getSigningCertificatesFromMetadata(metadataUrl, entityId);
-
-        if (!fresh.equals(cached)) {
-            // Certificates have changed — evict and replace the cache entry.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Refreshed certificates differ from cached certificates for metadata URL: "
-                        + metadataUrl + ". Replacing cache entry.");
+        ReentrantLock lock = getLockForKey(metadataUrl);
+        lock.lock();
+        try {
+            // Double-check: another thread may have already refreshed while we were waiting for the lock.
+            SAMLCertCacheEntry lockedEntry = cache.getValueFromCache(cacheKey, tenantDomain);
+            if (lockedEntry == null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("No existing cache entry for metadata URL: " + metadataUrl
+                            + ". Skipping certificate refresh.");
+                }
+                return false;
             }
-            cache.clearCacheEntry(cacheKey, tenantDomain);
-            cache.addToCache(cacheKey, new SAMLCertCacheEntry(fresh), tenantDomain);
-            return true;
-        } else {
-            // Certificates are unchanged — potential DoS. Update lastRetrievedAt to reset the block window.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Refreshed certificates match the existing cache entry for metadata URL: " + metadataUrl
-                        + ". Treating as a potential DoS attempt. Updating lastRetrievedAt.");
+
+            RemoteCertificate lockedCached = lockedEntry.getRemoteCertificate();
+            if (isWithinBlockWindow(lockedCached, blockDuration)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skipping certificate refresh for metadata URL: " + metadataUrl
+                            + ". Block duration has not elapsed after acquiring lock.");
+                }
+                return false;
             }
-            cached.setLastRetrievedAt(now);
-            return false;
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Attempting to refresh signing certificates from metadata URL: " + metadataUrl);
+            }
+
+            Instant now = Instant.now();
+            RemoteCertificate fresh = SAMLMetadataCertificateResolver.getInstance()
+                    .getSigningCertificatesFromMetadata(metadataUrl, entityId);
+
+            if (!fresh.equals(lockedCached)) {
+                // Certificates have changed — evict and replace the cache entry.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Refreshed certificates differ from cached certificates for metadata URL: "
+                            + metadataUrl + ". Replacing cache entry.");
+                }
+                cache.clearCacheEntry(cacheKey, tenantDomain);
+                cache.addToCache(cacheKey, new SAMLCertCacheEntry(fresh), tenantDomain);
+                return true;
+            } else {
+                // Certificates are unchanged — potential DoS. Update lastRetrievedAt to reset the block window.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Refreshed certificates match the existing cache entry for metadata URL: " + metadataUrl
+                            + ". Treating as a potential DoS attempt. Updating lastRetrievedAt.");
+                }
+                lockedCached.setLastRetrievedAt(now);
+                return false;
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
     /**
      * Returns the list of signing {@link X509Certificate}s for the given metadata URL.
      *
-     * @param metadataUrl The SAML metadata endpoint URL used as the cache key.
-     * @param entityId    The IdP entity ID used when fetching from the metadata resolver to verify
-     *                    that the retrieved EntityDescriptor matches the expected entity.
+     * @param metadataUrl  The SAML metadata endpoint URL used as the cache key.
+     * @param entityId     The IdP entity ID used when fetching from the metadata resolver to verify
+     *                     that the retrieved EntityDescriptor matches the expected entity.
      * @param tenantDomain The tenant domain used to scope the {@link SAMLCertCache} operations so that
      *                     cached certificates are isolated per tenant.
      * @return The list of resolved signing certificates.
@@ -262,19 +302,66 @@ public class RemoteCertificateProcessor {
             }
         }
 
-        // Cache miss or stale — fetch from remote metadata endpoint.
-        RemoteCertificate remoteCertificate = SAMLMetadataCertificateResolver.getInstance()
-                .getSigningCertificatesFromMetadata(metadataUrl, entityId);
+        ReentrantLock lock = getLockForKey(metadataUrl);
+        lock.lock();
+        try {
+            // Double-check: another thread may have already fetched while we were waiting for the lock.
+            SAMLCertCacheEntry lockedEntry = cache.getValueFromCache(cacheKey, tenantDomain);
+            if (lockedEntry != null) {
+                RemoteCertificate cached = lockedEntry.getRemoteCertificate();
+                if (!isStale(cached)) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Using cached SAML signing certificates for metadata URL "
+                                + "(populated by another thread): " + metadataUrl);
+                    }
+                    return cached.getCertificates();
+                }
+            }
 
-        cache.clearCacheEntry(cacheKey, tenantDomain);
-        cache.addToCache(cacheKey, new SAMLCertCacheEntry(remoteCertificate), tenantDomain);
+            // Cache miss or still stale — fetch from remote metadata endpoint.
+            RemoteCertificate remoteCertificate = SAMLMetadataCertificateResolver.getInstance()
+                    .getSigningCertificatesFromMetadata(metadataUrl, entityId);
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Fetched and cached " + remoteCertificate.getCertificates().size()
-                    + " signing certificate(s) from metadata URL: " + metadataUrl);
+            cache.clearCacheEntry(cacheKey, tenantDomain);
+            cache.addToCache(cacheKey, new SAMLCertCacheEntry(remoteCertificate), tenantDomain);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Fetched and cached " + remoteCertificate.getCertificates().size()
+                        + " signing certificate(s) from metadata URL: " + metadataUrl);
+            }
+
+            return remoteCertificate.getCertificates();
+        } finally {
+            lock.unlock();
         }
+    }
 
-        return remoteCertificate.getCertificates();
+    /**
+     * Returns the lock corresponding to the given key using a consistent hashing strategy.
+     * This ensures that the same lock is used for the same metadata URL, while allowing for concurrent
+     * fetches for different URLs.
+     * 
+     * @param key The key to map to a lock (in this case, the metadata URL).
+     * @return The lock corresponding to the given key.
+     */
+    private ReentrantLock getLockForKey(String key) {
+
+        int index = (key.hashCode() & Integer.MAX_VALUE) % LOCK_COUNT;
+        return locks[index];
+    }
+
+    /**
+     * Determines whether the block duration since the last retrieval attempt has elapsed for a
+     * cached {@link RemoteCertificate}.
+     * 
+     * @param remoteCertificate The cached remote certificate to evaluate.
+     * @param blockDuration     The configured minimum interval between consecutive refresh attempts.
+     * @return True if the block window is still active; false otherwise.
+     */
+    private boolean isWithinBlockWindow(RemoteCertificate remoteCertificate, Duration blockDuration) {
+
+        return remoteCertificate.getLastRetrievedAt() != null
+                && !Instant.now().isAfter(remoteCertificate.getLastRetrievedAt().plus(blockDuration));
     }
 
     /**
