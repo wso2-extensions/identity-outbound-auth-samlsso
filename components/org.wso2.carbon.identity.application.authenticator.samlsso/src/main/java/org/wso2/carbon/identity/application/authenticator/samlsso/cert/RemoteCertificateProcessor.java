@@ -40,14 +40,22 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
+import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
+import org.opensaml.security.SecurityException;
+import org.opensaml.security.credential.Credential;
+import org.opensaml.security.credential.impl.CollectionCredentialResolver;
+import org.opensaml.xmlsec.config.DefaultSecurityConfigurationBootstrap;
+import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver;
+import org.opensaml.xmlsec.signature.support.impl.ExplicitKeySignatureTrustEngine;
+
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-
 
 /**
  * Handles SAML signature verification using certificates resolved from a remote SAML metadata endpoint.
@@ -160,8 +168,8 @@ public class RemoteCertificateProcessor {
         }
 
         if (isExceptionThrown) {
-            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode(),
-                    ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getMessage(),
+            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                    ErrorMessages.SIGNATURE_VALIDATION_FAILED.getMessage(),
                     validationException);
         }
     }
@@ -514,5 +522,70 @@ public class RemoteCertificateProcessor {
             }
         }
         return SSOConstants.DEFAULT_CERT_CACHE_MAX_LIFETIME_MS;
+    }
+
+    /**
+     * Validates a query string signature using the signing certificates resolved from the IdP's SAML metadata endpoint.
+     * 
+     * @param signature        The signature bytes to validate.
+     * @param signedContent    The original content that was signed, used to verify the signature.
+     * @param algorithmUri     The URI of the signature algorithm used, e.g. "http://www.w3.org/2000/09/xmldsig#rsa-sha1".
+     * @param criteriaSet      The criteria set used for resolving credentials.
+     * @param identityProvider The identity provider whose certificates are used for validation.
+     * @param tenantDomain     The tenant domain of the identity provider.
+     * @return true if the signature is valid, false otherwise.
+     * @throws SAMLSSOException if an error occurs during signature validation.
+     */
+    public boolean validateQueryStringSignature(byte[] signature, byte[] signedContent,
+            String algorithmUri, CriteriaSet criteriaSet,
+            IdentityProvider identityProvider, String tenantDomain) throws SAMLSSOException {
+
+        String metadataUrl = resolveMetadataUrl(identityProvider);
+        if (StringUtils.isBlank(metadataUrl)) {
+            throw new SAMLSSOException(ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode(),
+                    String.format(ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getMessage(),
+                            identityProvider.getIdentityProviderName()));
+        }
+
+        String entityId = resolveEntityId(identityProvider);
+        if (StringUtils.isBlank(entityId)) {
+            throw new SAMLSSOException(ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getCode(),
+                    String.format(ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getMessage(),
+                            identityProvider.getIdentityProviderName()));
+        }
+
+        List<X509Certificate> certificates = resolveCertificates(metadataUrl, entityId, tenantDomain);
+        if (certificates == null || certificates.isEmpty()) {
+            throw new SAMLSSOException(ErrorMessages.NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA.getCode(),
+                    String.format(ErrorMessages.NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA.getMessage(),
+                            identityProvider.getIdentityProviderName()));
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Found " + certificates.size() + " remote signing certificate(s) for IdP: "
+                    + identityProvider.getIdentityProviderName()
+                    + ". Attempting query string signature validation.");
+        }
+
+        try {
+            for (X509Certificate certificate : certificates) {
+                X509CredentialImpl credential = new X509CredentialImpl(certificate, entityId);
+                List<Credential> credentials = new ArrayList<>();
+                credentials.add(credential);
+                CollectionCredentialResolver credentialResolver =
+                        new CollectionCredentialResolver(credentials);
+                KeyInfoCredentialResolver keyResolver = DefaultSecurityConfigurationBootstrap
+                        .buildBasicInlineKeyInfoCredentialResolver();
+                ExplicitKeySignatureTrustEngine engine =
+                        new ExplicitKeySignatureTrustEngine(credentialResolver, keyResolver);
+                if (engine.validate(signature, signedContent, algorithmUri, criteriaSet, null)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (SecurityException e) {
+            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                    ErrorMessages.SIGNATURE_VALIDATION_FAILED.getMessage(), e);
+        }
     }
 }

@@ -1251,7 +1251,7 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             if (ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode().equals(e.getErrorCode())) {
                 log.debug("Remote certificate processor signature validation failed. Falling back to " +
                         "configured certificate-based validation.");
-            } else if (ErrorMessages.SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.getCode()
+            } else if (ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode()
                     .equals(e.getErrorCode())) {
                 log.debug("Remote certificate processor signature validation failed. Attempting certificate " +
                         "refresh and retrying validation.");

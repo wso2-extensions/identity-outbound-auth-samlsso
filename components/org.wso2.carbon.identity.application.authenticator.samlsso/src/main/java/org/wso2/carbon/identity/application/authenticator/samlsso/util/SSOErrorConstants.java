@@ -98,6 +98,8 @@ public class SSOErrorConstants {
                 "Signature do not confirm to SAML signature profile. Possible XML Signature Wrapping Attack!"),
         SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE("SAM-60045",
                 "Signature validation failed for SAML Response"),
+        SIGNATURE_VALIDATION_FAILED("SAM-60046",
+                "Signature validation failed for SAML message"),
         // Tenant and IDP  related Exceptions
         RETRIEVING_TENANT_ID_FAILED("SAM-60061",
                 "Exception occurred while retrieving Tenant ID from tenant domain %S"),
@@ -136,7 +138,12 @@ public class SSOErrorConstants {
         IDP_ENTITY_ID_NOT_CONFIGURED("SAM-65150",
                 "IDP entity ID is not configured for IdP: %s"),
         NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA("SAM-65151",
-                "No signing certificates found in SAML metadata for IdP: %s");
+                "No signing certificates found in SAML metadata for IdP: %s"),
+        REMOTE_CERT_VALIDATION_FAILED_FOR_LOGOUT_REQUEST("SAM-65152",
+                "Process of validating the signature using remote certificates failed for the logout request " +
+                        "with issuer: %s"),
+        LOGOUT_REQUEST_QUERY_STRING_PARSING_FAILED("SAM-65153",
+                "Failed to extract signature parameters from the logout request query string for issuer: %s");
 
         private final String code;
         private final String message;
