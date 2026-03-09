@@ -296,7 +296,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.25.260</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.10.58</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.15.0, 8.0.0)</carbon.identity.framework.imp.pkg.version.range>
 
         <identity.organization.management.core.version>1.0.85</identity.organization.management.core.version>
@@ -345,7 +345,7 @@
         <maven.buildnumber.plugin.version>1.4</maven.buildnumber.plugin.version>
 
         <!-- Unit test versions -->
-        <testng.version>6.9.10</testng.version>
+        <testng.version>7.10.1</testng.version>
         <jacoco.version>0.8.12</jacoco.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>

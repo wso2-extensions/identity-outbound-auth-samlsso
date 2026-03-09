@@ -43,7 +43,7 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
-import org.wso2.carbon.identity.core.internal.IdentityCoreServiceComponent;
+import org.wso2.carbon.identity.core.internal.component.IdentityCoreServiceComponent;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
