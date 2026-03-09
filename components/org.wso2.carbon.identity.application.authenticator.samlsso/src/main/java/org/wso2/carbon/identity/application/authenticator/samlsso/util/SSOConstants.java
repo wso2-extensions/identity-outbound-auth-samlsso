@@ -59,13 +59,29 @@ public class SSOConstants {
 
     public static final String SAML_AUTHN_REQUEST_PROVIDER_NAME = "samlAuthnRequestProviderName";
     public static final String SAML_METADATA_URI = "samlMetadataUri";
-    public static final String CERT_REFRESH_RETRY_BLOCK_DURATION = "CertRefreshRetryBlockDuration";
-    public static final String CERT_CACHE_MAX_LIFETIME = "CertCacheMaxLifetime";
+    public static final String REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION = "RemoteCertificateRefreshRetryBlockDuration";
+    public static final String REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME = "RemoteCertificateCacheMaxLifetime";
 
     // Default block duration for retrying certificate refresh after a failure: 5 minutes in milliseconds.
-    public static final long DEFAULT_CERT_REFRESH_RETRY_BLOCK_DURATION_MS = 300000L;
+    public static final long DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS = 300000L;
     // Default maximum lifetime for cached certificates: 24 hours in milliseconds.
-    public static final long DEFAULT_CERT_CACHE_MAX_LIFETIME_MS = 86400000L;
+    public static final long DEFAULT_REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME_MS = 86400000L;
+
+    public static final String REMOTE_CERTIFICATE_CLIENT_CONNECTION_TIMEOUT = "RemoteCertificateClientConnectionTimeout";
+    public static final String REMOTE_CERTIFICATE_CLIENT_READ_TIMEOUT = "RemoteCertificateClientReadTimeout";
+    public static final String REMOTE_CERTIFICATE_CLIENT_CONNECTION_REQUEST_TIMEOUT = "RemoteCertificateClientConnectionRequestTimeout";
+    public static final String REMOTE_CERTIFICATE_CLIENT_CONNECTION_POOL_SIZE = "RemoteCertificateClientConnectionPoolSize";
+    public static final String REMOTE_CERTIFICATE_CLIENT_MAX_CONNECTION_PER_ROUTE = "RemoteCertificateClientMaxConnectionPerRoute";
+    public static final String REMOTE_CERTIFICATE_RETRY_COUNT = "RemoteCertificateRetryCount";
+    public static final String REMOTE_CERTIFICATE_CLIENT_RESPONSE_LIMIT = "RemoteCertificateClientResponseLimit";
+
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_TIMEOUT_MS = 1000;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_READ_TIMEOUT_MS = 1000;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_REQUEST_TIMEOUT_MS = 1000;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_POOL_SIZE = 20;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_MAX_CONNECTION_PER_ROUTE = 3;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_RETRY_COUNT = 0;
+    public static final long DEFAULT_REMOTE_CERTIFICATE_CLIENT_RESPONSE_LIMIT = 512000L;
 
     public class StatusCodes {
         private StatusCodes() {

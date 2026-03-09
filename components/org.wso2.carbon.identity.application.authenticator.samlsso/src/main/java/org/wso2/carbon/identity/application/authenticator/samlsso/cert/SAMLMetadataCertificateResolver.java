@@ -29,6 +29,7 @@ import org.opensaml.security.credential.UsageType;
 import org.opensaml.xmlsec.signature.X509Data;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.model.RemoteCertificate;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 
@@ -70,7 +71,14 @@ public class SAMLMetadataCertificateResolver extends AbstractAPIClientManager {
 
     private SAMLMetadataCertificateResolver() throws APIClientException {
 
-        super(new APIClientConfig.Builder().build());
+        super(new APIClientConfig.Builder()
+                .httpConnectionTimeoutInMillis(getClientConnectionTimeout())
+                .httpReadTimeoutInMillis(getClientReadTimeout())
+                .httpConnectionRequestTimeoutInMillis(getClientConnectionRequestTimeout())
+                .poolSizeToBeSet(getClientConnectionPoolSize())
+                .defaultMaxPerRoute(getClientMaxConnectionPerRoute())
+                .responseLimitInBytes(getClientResponseLimit())
+                .build());
     }
 
     /**
@@ -155,6 +163,7 @@ public class SAMLMetadataCertificateResolver extends AbstractAPIClientManager {
                     .build();
 
             APIInvocationConfig invocationConfig = new APIInvocationConfig();
+            invocationConfig.setAllowedRetryCount(getRetryCount());
 
             APIResponse response = callAPI(requestContext, invocationConfig);
 
@@ -279,6 +288,92 @@ public class SAMLMetadataCertificateResolver extends AbstractAPIClientManager {
             throw new SAMLSSOException(METADATA_CERT_DECODE_FAILED.getCode(),
                     METADATA_CERT_DECODE_FAILED.getMessage(), e);
         }
+    }
+
+    /**
+     * Reads and parses an integer configuration parameter for the SAML metadata HTTP client
+     * from the file-based authenticator configuration.
+     *
+     * @param paramName    The parameter key in the authenticator configuration.
+     * @param defaultValue The value to return if the parameter is absent or cannot be parsed.
+     * @return The configured integer value, or {@code defaultValue} if not set or invalid.
+     */
+    private static int getClientIntParam(String paramName, int defaultValue) {
+
+        String value = SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME).get(paramName);
+        if (StringUtils.isNotBlank(value)) {
+            try {
+                return Integer.parseInt(value.trim());
+            } catch (NumberFormatException e) {
+                LOG.error("Invalid value for '" + paramName + "': '" + value + "'. Using default "
+                        + defaultValue + ".");
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Reads and parses a long configuration parameter for the SAML metadata HTTP client
+     * from the file-based authenticator configuration.
+     *
+     * @param paramName    The parameter key in the authenticator configuration.
+     * @param defaultValue The value to return if the parameter is absent or cannot be parsed.
+     * @return The configured long value, or {@code defaultValue} if not set or invalid.
+     */
+    private static long getClientLongParam(String paramName, long defaultValue) {
+
+        String value = SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME).get(paramName);
+        if (StringUtils.isNotBlank(value)) {
+            try {
+                return Long.parseLong(value.trim());
+            } catch (NumberFormatException e) {
+                LOG.error("Invalid value for '" + paramName + "': '" + value + "'. Using default "
+                        + defaultValue + ".");
+            }
+        }
+        return defaultValue;
+    }
+
+    private static int getClientConnectionTimeout() {
+
+        return getClientIntParam(SSOConstants.REMOTE_CERTIFICATE_CLIENT_CONNECTION_TIMEOUT,
+                SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_TIMEOUT_MS);
+    }
+
+    private static int getClientReadTimeout() {
+
+        return getClientIntParam(SSOConstants.REMOTE_CERTIFICATE_CLIENT_READ_TIMEOUT,
+                SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CLIENT_READ_TIMEOUT_MS);
+    }
+
+    private static int getClientConnectionRequestTimeout() {
+
+        return getClientIntParam(SSOConstants.REMOTE_CERTIFICATE_CLIENT_CONNECTION_REQUEST_TIMEOUT,
+                SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_REQUEST_TIMEOUT_MS);
+    }
+
+    private static int getClientConnectionPoolSize() {
+
+        return getClientIntParam(SSOConstants.REMOTE_CERTIFICATE_CLIENT_CONNECTION_POOL_SIZE,
+                SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_POOL_SIZE);
+    }
+
+    private static int getClientMaxConnectionPerRoute() {
+
+        return getClientIntParam(SSOConstants.REMOTE_CERTIFICATE_CLIENT_MAX_CONNECTION_PER_ROUTE,
+                SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CLIENT_MAX_CONNECTION_PER_ROUTE);
+    }
+
+    private static int getRetryCount() {
+
+        return getClientIntParam(SSOConstants.REMOTE_CERTIFICATE_RETRY_COUNT,
+                SSOConstants.DEFAULT_REMOTE_CERTIFICATE_RETRY_COUNT);
+    }
+
+    private static long getClientResponseLimit() {
+
+        return getClientLongParam(SSOConstants.REMOTE_CERTIFICATE_CLIENT_RESPONSE_LIMIT,
+                SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CLIENT_RESPONSE_LIMIT);
     }
 
 }

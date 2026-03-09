@@ -25,8 +25,6 @@ import org.opensaml.core.xml.XMLObject;
 import org.opensaml.xmlsec.signature.impl.SignatureImpl;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidator;
-import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
-import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCache;
 import org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCacheEntry;
 import org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCacheKey;
@@ -35,6 +33,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509Cr
 import org.wso2.carbon.identity.application.authenticator.samlsso.model.RemoteCertificate;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -52,9 +51,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -464,64 +461,47 @@ public class RemoteCertificateProcessor {
     }
 
     /**
-     * Returns the parameter map from the file-based authenticator configuration for the given authenticator name.
-     *
-     * @param authenticatorName The name of the authenticator whose parameter map should be retrieved.
-     * @return The parameter map from the authenticator config, or an empty map if the config is not found
-     *         or contains no parameters.
-     */
-    private Map<String, String> getAuthenticatorParamMap(String authenticatorName) {
-
-        AuthenticatorConfig authenticatorConfig = FileBasedConfigurationBuilder.getInstance()
-                .getAuthenticatorBean(authenticatorName);
-        if (authenticatorConfig != null && authenticatorConfig.getParameterMap() != null) {
-            return authenticatorConfig.getParameterMap();
-        }
-        return Collections.emptyMap();
-    }
-
-    /**
-     * Returns the configured CertRefreshRetryBlockDuration from the SAML SSO authenticator's
+     * Returns the configured RemoteCertificateRefreshRetryBlockDuration from the SAML SSO authenticator's
      * file-based configuration as milliseconds.
      *
      * @return The cert refresh retry block duration in milliseconds.
      */
     private long getCertRefreshRetryBlockDuration() {
 
-        String value = getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME)
-                .get(SSOConstants.CERT_REFRESH_RETRY_BLOCK_DURATION);
+        String value = SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME)
+                .get(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION);
         if (StringUtils.isNotBlank(value)) {
             try {
                 return Long.parseLong(value.trim());
             } catch (NumberFormatException e) {
-                LOG.error("Invalid value for '" + SSOConstants.CERT_REFRESH_RETRY_BLOCK_DURATION
+                LOG.error("Invalid value for '" + SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION
                         + "': '" + value + "'. Using default "
-                        + SSOConstants.DEFAULT_CERT_REFRESH_RETRY_BLOCK_DURATION_MS + "ms.");
+                        + SSOConstants.DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS + "ms.");
             }
         }
-        return SSOConstants.DEFAULT_CERT_REFRESH_RETRY_BLOCK_DURATION_MS;
+        return SSOConstants.DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS;
     }
 
     /**
-     * Returns the configured CertCacheMaxLifetime from the SAML SSO authenticator's
+     * Returns the configured RemoteCertificateCacheMaxLifetime from the SAML SSO authenticator's
      * file-based configuration as milliseconds.
      *
      * @return The cert cache max lifetime in milliseconds.
      */
     private long getCertCacheMaxLifetime() {
 
-        String value = getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME)
-                .get(SSOConstants.CERT_CACHE_MAX_LIFETIME);
+        String value = SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME)
+                .get(SSOConstants.REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME);
         if (StringUtils.isNotBlank(value)) {
             try {
                 return Long.parseLong(value.trim());
             } catch (NumberFormatException e) {
-                LOG.error("Invalid value for '" + SSOConstants.CERT_CACHE_MAX_LIFETIME
+                LOG.error("Invalid value for '" + SSOConstants.REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME
                         + "': '" + value + "'. Using default "
-                        + SSOConstants.DEFAULT_CERT_CACHE_MAX_LIFETIME_MS + "ms.");
+                        + SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME_MS + "ms.");
             }
         }
-        return SSOConstants.DEFAULT_CERT_CACHE_MAX_LIFETIME_MS;
+        return SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME_MS;
     }
 
     /**
