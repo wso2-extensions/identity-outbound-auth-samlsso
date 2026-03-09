@@ -253,6 +253,7 @@
                     </systemPropertyVariables>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>
+                        ${argLine}
                         --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED
                         --add-opens java.base/jdk.internal.util=ALL-UNNAMED
@@ -288,6 +289,7 @@
                     </execution>
                     <execution>
                         <id>default-report</id>
+                        <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
