@@ -30,6 +30,9 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCert
 import org.wso2.carbon.identity.application.authenticator.samlsso.model.RemoteCertificate;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
+import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.Property;
 
 import java.lang.reflect.Method;
 import java.security.cert.X509Certificate;
@@ -55,6 +58,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -436,6 +440,152 @@ public class RemoteCertificateProcessorTest {
         assertTrue(result, "Should return true when cacheDuration has expired even if validUntil is in the future.");
     }
 
+    @Test(description = "When getFederatedAuthenticatorConfigs() returns null, "
+            + "resolveProperty should return null.")
+    public void testResolveProperty_NullConfigs_ReturnsNull() throws Exception {
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs()).thenReturn(null);
+
+        String result = invokeResolveProperty(idp, "anyProperty");
+
+        assertNull(result, "Should return null when federated authenticator configs array is null.");
+    }
+
+    @Test(description = "When no config has the SAML SSO authenticator name, "
+            + "resolveProperty should return null.")
+    public void testResolveProperty_NoMatchingAuthenticatorConfig_ReturnsNull() throws Exception {
+
+        FederatedAuthenticatorConfig otherConfig = mock(FederatedAuthenticatorConfig.class);
+        when(otherConfig.getName()).thenReturn("OtherAuthenticator");
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs())
+                .thenReturn(new FederatedAuthenticatorConfig[]{otherConfig});
+
+        String result = invokeResolveProperty(idp, "anyProperty");
+
+        assertNull(result, "Should return null when no config matches the SAML SSO authenticator name.");
+    }
+
+    @Test(description = "When the matching authenticator config has a null properties array, "
+            + "resolveProperty should return null.")
+    public void testResolveProperty_NullPropertiesArray_ReturnsNull() throws Exception {
+
+        FederatedAuthenticatorConfig samlConfig = mock(FederatedAuthenticatorConfig.class);
+        when(samlConfig.getName()).thenReturn(SSOConstants.AUTHENTICATOR_NAME);
+        when(samlConfig.getProperties()).thenReturn(null);
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs())
+                .thenReturn(new FederatedAuthenticatorConfig[]{samlConfig});
+
+        String result = invokeResolveProperty(idp, "anyProperty");
+
+        assertNull(result, "Should return null when properties array on the matching config is null.");
+    }
+
+    @Test(description = "When the matching config has the target property, "
+            + "resolveProperty should return its value.")
+    public void testResolveProperty_PropertyFound_ReturnsValue() throws Exception {
+
+        Property targetProperty = mock(Property.class);
+        when(targetProperty.getName()).thenReturn("metadataUrl");
+        when(targetProperty.getValue()).thenReturn("https://idp.example.com/metadata");
+
+        FederatedAuthenticatorConfig samlConfig = mock(FederatedAuthenticatorConfig.class);
+        when(samlConfig.getName()).thenReturn(SSOConstants.AUTHENTICATOR_NAME);
+        when(samlConfig.getProperties()).thenReturn(new Property[]{targetProperty});
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs())
+                .thenReturn(new FederatedAuthenticatorConfig[]{samlConfig});
+
+        String result = invokeResolveProperty(idp, "metadataUrl");
+
+        assertEquals(result, "https://idp.example.com/metadata",
+                "Should return the value of the matching property.");
+    }
+
+    @Test(description = "When the matching config has properties but none matches the target name, "
+            + "resolveProperty should return null.")
+    public void testResolveProperty_PropertyNotFound_ReturnsNull() throws Exception {
+
+        Property otherProperty = mock(Property.class);
+        when(otherProperty.getName()).thenReturn("someOtherProperty");
+
+        FederatedAuthenticatorConfig samlConfig = mock(FederatedAuthenticatorConfig.class);
+        when(samlConfig.getName()).thenReturn(SSOConstants.AUTHENTICATOR_NAME);
+        when(samlConfig.getProperties()).thenReturn(new Property[]{otherProperty});
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs())
+                .thenReturn(new FederatedAuthenticatorConfig[]{samlConfig});
+
+        String result = invokeResolveProperty(idp, "metadataUrl");
+
+        assertNull(result, "Should return null when the target property is not in the properties array.");
+    }
+
+    @Test(description = "When the properties array contains a null element before the target property, "
+            + "resolveProperty should skip it and return the target property value.")
+    public void testResolveProperty_NullElementInPropertiesArray_SkipsNullAndReturnsValue() throws Exception {
+
+        Property targetProperty = mock(Property.class);
+        when(targetProperty.getName()).thenReturn("metadataUrl");
+        when(targetProperty.getValue()).thenReturn("https://idp.example.com/metadata");
+
+        FederatedAuthenticatorConfig samlConfig = mock(FederatedAuthenticatorConfig.class);
+        when(samlConfig.getName()).thenReturn(SSOConstants.AUTHENTICATOR_NAME);
+        when(samlConfig.getProperties()).thenReturn(new Property[]{null, targetProperty});
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs())
+                .thenReturn(new FederatedAuthenticatorConfig[]{samlConfig});
+
+        String result = invokeResolveProperty(idp, "metadataUrl");
+
+        assertEquals(result, "https://idp.example.com/metadata",
+                "Should skip null elements and return the value of the matching property.");
+    }
+
+    @Test(description = "When configs contain a non-matching authenticator followed by the SAML SSO authenticator "
+            + "with the target property, resolveProperty should return the correct value.")
+    public void testResolveProperty_MultipleConfigs_ReturnsValueFromSamlConfig() throws Exception {
+
+        FederatedAuthenticatorConfig otherConfig = mock(FederatedAuthenticatorConfig.class);
+        when(otherConfig.getName()).thenReturn("OtherAuthenticator");
+
+        Property targetProperty = mock(Property.class);
+        when(targetProperty.getName()).thenReturn("metadataUrl");
+        when(targetProperty.getValue()).thenReturn("https://idp.example.com/metadata");
+
+        FederatedAuthenticatorConfig samlConfig = mock(FederatedAuthenticatorConfig.class);
+        when(samlConfig.getName()).thenReturn(SSOConstants.AUTHENTICATOR_NAME);
+        when(samlConfig.getProperties()).thenReturn(new Property[]{targetProperty});
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs())
+                .thenReturn(new FederatedAuthenticatorConfig[]{otherConfig, samlConfig});
+
+        String result = invokeResolveProperty(idp, "metadataUrl");
+
+        assertEquals(result, "https://idp.example.com/metadata",
+                "Should skip non-matching configs and return the value from the SAML SSO config.");
+    }
+
+    /**
+     * Invokes the private {@code resolveProperty} method on the singleton instance via reflection.
+     */
+    private String invokeResolveProperty(IdentityProvider identityProvider, String propertyName)
+            throws Exception {
+
+        Method method = RemoteCertificateProcessor.class.getDeclaredMethod(
+                "resolveProperty", IdentityProvider.class, String.class);
+        method.setAccessible(true);
+        return (String) method.invoke(RemoteCertificateProcessor.getInstance(), identityProvider, propertyName);
+    }
+
     /**
      * Invokes the private {@code isWithinBlockWindow} method on the singleton instance via reflection.
      */
@@ -456,5 +606,173 @@ public class RemoteCertificateProcessorTest {
                 "isStale", RemoteCertificate.class);
         method.setAccessible(true);
         return (boolean) method.invoke(RemoteCertificateProcessor.getInstance(), cert);
+    }
+
+    @Test(description = "When the param map contains a valid numeric value for "
+            + "REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, getCertRefreshRetryBlockDuration "
+            + "should return the parsed long value.")
+    public void testGetCertRefreshRetryBlockDuration_ValidValue_ReturnsParsedValue() throws Exception {
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "600000");
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+
+            long result = invokeGetCertRefreshRetryBlockDuration();
+
+            assertEquals(result, 600000L,
+                    "Should return the parsed long value from the param map.");
+        }
+    }
+
+    @Test(description = "When the param map has no entry for "
+            + "REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, getCertRefreshRetryBlockDuration "
+            + "should return the default value.")
+    public void testGetCertRefreshRetryBlockDuration_MissingValue_ReturnsDefault() throws Exception {
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(new HashMap<>());
+
+            long result = invokeGetCertRefreshRetryBlockDuration();
+
+            assertEquals(result, SSOConstants.DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS,
+                    "Should return the default value when the param map has no entry for the key.");
+        }
+    }
+
+    @Test(description = "When the param map contains a blank value for "
+            + "REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, getCertRefreshRetryBlockDuration "
+            + "should return the default value.")
+    public void testGetCertRefreshRetryBlockDuration_BlankValue_ReturnsDefault() throws Exception {
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "   ");
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+
+            long result = invokeGetCertRefreshRetryBlockDuration();
+
+            assertEquals(result, SSOConstants.DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS,
+                    "Should return the default value when the configured value is blank.");
+        }
+    }
+
+    @Test(description = "When the param map contains a non-numeric value for "
+            + "REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, getCertRefreshRetryBlockDuration "
+            + "should fall back to the default value.")
+    public void testGetCertRefreshRetryBlockDuration_InvalidValue_ReturnsDefault() throws Exception {
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "not-a-number");
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+
+            long result = invokeGetCertRefreshRetryBlockDuration();
+
+            assertEquals(result, SSOConstants.DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS,
+                    "Should return the default value when the configured value is not a valid number.");
+        }
+    }
+
+    @Test(description = "When the param map contains a valid numeric value for "
+            + "REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME, getCertCacheMaxLifetime should return "
+            + "the parsed long value.")
+    public void testGetCertCacheMaxLifetime_ValidValue_ReturnsParsedValue() throws Exception {
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME, "172800000");
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+
+            long result = invokeGetCertCacheMaxLifetime();
+
+            assertEquals(result, 172800000L,
+                    "Should return the parsed long value from the param map.");
+        }
+    }
+
+    @Test(description = "When the param map has no entry for REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME, "
+            + "getCertCacheMaxLifetime should return the default value.")
+    public void testGetCertCacheMaxLifetime_MissingValue_ReturnsDefault() throws Exception {
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(new HashMap<>());
+
+            long result = invokeGetCertCacheMaxLifetime();
+
+            assertEquals(result, SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME_MS,
+                    "Should return the default value when the param map has no entry for the key.");
+        }
+    }
+
+    @Test(description = "When the param map contains a blank value for "
+            + "REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME, getCertCacheMaxLifetime should return "
+            + "the default value.")
+    public void testGetCertCacheMaxLifetime_BlankValue_ReturnsDefault() throws Exception {
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME, "   ");
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+
+            long result = invokeGetCertCacheMaxLifetime();
+
+            assertEquals(result, SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME_MS,
+                    "Should return the default value when the configured value is blank.");
+        }
+    }
+
+    @Test(description = "When the param map contains a non-numeric value for "
+            + "REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME, getCertCacheMaxLifetime should fall back to "
+            + "the default value.")
+    public void testGetCertCacheMaxLifetime_InvalidValue_ReturnsDefault() throws Exception {
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME, "not-a-number");
+
+        try (MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+
+            long result = invokeGetCertCacheMaxLifetime();
+
+            assertEquals(result, SSOConstants.DEFAULT_REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME_MS,
+                    "Should return the default value when the configured value is not a valid number.");
+        }
+    }
+
+    /**
+     * Invokes the private {@code getCertRefreshRetryBlockDuration} method on the singleton instance
+     * via reflection.
+     */
+    private long invokeGetCertRefreshRetryBlockDuration() throws Exception {
+
+        Method method = RemoteCertificateProcessor.class
+                .getDeclaredMethod("getCertRefreshRetryBlockDuration");
+        method.setAccessible(true);
+        return (long) method.invoke(RemoteCertificateProcessor.getInstance());
+    }
+
+    /**
+     * Invokes the private {@code getCertCacheMaxLifetime} method on the singleton instance via
+     * reflection.
+     */
+    private long invokeGetCertCacheMaxLifetime() throws Exception {
+
+        Method method = RemoteCertificateProcessor.class.getDeclaredMethod("getCertCacheMaxLifetime");
+        method.setAccessible(true);
+        return (long) method.invoke(RemoteCertificateProcessor.getInstance());
     }
 }
