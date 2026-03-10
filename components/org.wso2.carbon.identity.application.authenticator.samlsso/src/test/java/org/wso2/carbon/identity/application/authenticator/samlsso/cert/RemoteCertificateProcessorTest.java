@@ -18,39 +18,56 @@
 
 package org.wso2.carbon.identity.application.authenticator.samlsso.cert;
 
+import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import org.opensaml.security.SecurityException;
+import org.opensaml.xmlsec.config.DefaultSecurityConfigurationBootstrap;
+import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver;
+import org.opensaml.xmlsec.signature.support.impl.ExplicitKeySignatureTrustEngine;
+import org.opensaml.xmlsec.signature.impl.SignatureImpl;
+import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCache;
 import org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCacheEntry;
 import org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCacheKey;
+import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.model.RemoteCertificate;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
 import java.lang.reflect.Method;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -61,6 +78,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * Unit tests for {@link RemoteCertificateProcessor}.
@@ -774,5 +792,805 @@ public class RemoteCertificateProcessorTest {
         Method method = RemoteCertificateProcessor.class.getDeclaredMethod("getCertCacheMaxLifetime");
         method.setAccessible(true);
         return (long) method.invoke(RemoteCertificateProcessor.getInstance());
+    }
+
+    @Test(description = "When the metadata URL is not configured for the IdP, "
+            + "refreshCertificates should throw SAMLSSOException with "
+            + "METADATA_URL_NOT_CONFIGURED_FOR_IDP error code.")
+    public void testRefreshCertificates_BlankMetadataUrl_ThrowsSAMLSSOException() {
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs()).thenReturn(null);
+        when(idp.getIdentityProviderName()).thenReturn("TestIdP");
+
+        try {
+            RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+            fail("Expected SAMLSSOException to be thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(),
+                    ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode(),
+                    "Error code should indicate metadata URL is not configured.");
+        }
+    }
+
+    @Test(description = "When the IdP entity ID is not configured, "
+            + "refreshCertificates should throw SAMLSSOException with "
+            + "IDP_ENTITY_ID_NOT_CONFIGURED error code.")
+    public void testRefreshCertificates_BlankEntityId_ThrowsSAMLSSOException() {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, null);
+
+        try {
+            RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+            fail("Expected SAMLSSOException to be thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(),
+                    ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getCode(),
+                    "Error code should indicate entity ID is not configured.");
+        }
+    }
+
+    @Test(description = "When there is no existing cache entry for the IdP, "
+            + "refreshCertificates should return false without invoking the metadata resolver.")
+    public void testRefreshCertificates_NoCacheEntry_ReturnsFalse() throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION,
+                String.valueOf(SSOConstants.DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS));
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SAMLMetadataCertificateResolver> resolverStatic =
+                        mockStatic(SAMLMetadataCertificateResolver.class);
+                MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            resolverStatic.when(SAMLMetadataCertificateResolver::getInstance).thenReturn(mockResolver);
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(null);
+
+            boolean result = RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+
+            assertFalse(result, "Should return false when there is no existing cache entry.");
+            verify(mockResolver, never()).getSigningCertificatesFromMetadata(anyString(), anyString());
+        }
+    }
+
+    @Test(description = "When the cached certificate is still within its block window, "
+            + "refreshCertificates should return false without acquiring the lock or calling the resolver.")
+    public void testRefreshCertificates_WithinBlockWindow_ReturnsFalse() throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        RemoteCertificate cached = new RemoteCertificate.Builder(Collections.emptyList())
+                .lastRetrievedAt(Instant.now())
+                .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(cached);
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "300000");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SAMLMetadataCertificateResolver> resolverStatic =
+                        mockStatic(SAMLMetadataCertificateResolver.class);
+                MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            resolverStatic.when(SAMLMetadataCertificateResolver::getInstance).thenReturn(mockResolver);
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+
+            boolean result = RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+
+            assertFalse(result, "Should return false when the block window has not yet elapsed.");
+            verify(mockResolver, never()).getSigningCertificatesFromMetadata(anyString(), anyString());
+        }
+    }
+
+    @Test(description = "When the pre-lock check finds a cache entry but the double-check inside the lock "
+            + "finds null (entry was concurrently evicted while waiting for the lock), "
+            + "refreshCertificates should return false without invoking the metadata resolver.")
+    public void testRefreshCertificates_DoubleCheckNullEntry_ReturnsFalse() throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        RemoteCertificate cached = new RemoteCertificate.Builder(Collections.emptyList()).build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(cached);
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "300000");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SAMLMetadataCertificateResolver> resolverStatic =
+                        mockStatic(SAMLMetadataCertificateResolver.class);
+                MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            resolverStatic.when(SAMLMetadataCertificateResolver::getInstance).thenReturn(mockResolver);
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry)
+                    .thenReturn(null);
+
+            boolean result = RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+
+            assertFalse(result,
+                    "Should return false when the double-check inside the lock finds no cache entry.");
+            verify(mockResolver, never()).getSigningCertificatesFromMetadata(anyString(), anyString());
+        }
+    }
+
+    @Test(description = "When the refreshed certificates are identical to the cached ones, "
+            + "refreshCertificates should update lastRetrievedAt to reset the block window and return false.")
+    public void testRefreshCertificates_CertsUnchanged_UpdatesLastRetrievedAtAndReturnsFalse()
+            throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        Instant validUntil = Instant.now().plusSeconds(3600);
+        RemoteCertificate cached = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(validUntil)
+                .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(cached);
+        RemoteCertificate fresh = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(validUntil)
+                .build();
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "300000");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SAMLMetadataCertificateResolver> resolverStatic =
+                        mockStatic(SAMLMetadataCertificateResolver.class);
+                MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            resolverStatic.when(SAMLMetadataCertificateResolver::getInstance).thenReturn(mockResolver);
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            when(mockResolver.getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID))
+                    .thenReturn(fresh);
+
+            boolean result = RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+
+            assertFalse(result, "Should return false when the refreshed certificates are unchanged.");
+            verify(mockCache, never()).clearCacheEntry(any(SAMLCertCacheKey.class), anyString());
+            verify(mockCache, never()).addToCache(any(SAMLCertCacheKey.class), any(), anyString());
+            assertTrue(cached.getLastRetrievedAt() != null,
+                    "lastRetrievedAt should be updated on the cached object to reset the block window.");
+        }
+    }
+
+    @Test(description = "When the refreshed certificates differ from the cached ones, "
+            + "refreshCertificates should evict the stale cache entry, store the fresh one, and return true.")
+    public void testRefreshCertificates_CertsChanged_ReplacesCacheAndReturnsTrue()
+            throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        RemoteCertificate cached = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(Instant.now().plusSeconds(3600))
+                .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(cached);
+        RemoteCertificate fresh = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(Instant.now().plusSeconds(7200))
+                .build();
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "300000");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SAMLMetadataCertificateResolver> resolverStatic =
+                        mockStatic(SAMLMetadataCertificateResolver.class);
+                MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            resolverStatic.when(SAMLMetadataCertificateResolver::getInstance).thenReturn(mockResolver);
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            when(mockResolver.getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID))
+                    .thenReturn(fresh);
+
+            boolean result = RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+
+            assertTrue(result, "Should return true when the refreshed certificates have changed.");
+            verify(mockCache).clearCacheEntry(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN));
+            verify(mockCache).addToCache(any(SAMLCertCacheKey.class), any(SAMLCertCacheEntry.class),
+                    eq(TENANT_DOMAIN));
+        }
+    }
+
+    @Test(description = "When two threads concurrently attempt to refresh certificates, the first thread "
+            + "that acquires the lock should complete the refresh and update lastRetrievedAt. "
+            + "The second thread should discover the active block window on its double-check inside "
+            + "the lock and return false without invoking the metadata resolver.")
+    public void testRefreshCertificates_ConcurrentRefresh_SecondThreadEscapesViaDoubleCheck()
+            throws Exception {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+
+        RemoteCertificate staleRemoteCert = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(Instant.now().plusSeconds(3600))
+                .build();
+        RemoteCertificate refreshedRemoteCert = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(Instant.now().plusSeconds(3600))
+                .lastRetrievedAt(Instant.now())
+                .build();
+
+        AtomicReference<SAMLCertCacheEntry> cacheState =
+                new AtomicReference<>(new SAMLCertCacheEntry(staleRemoteCert));
+
+        // Obtain the same ReentrantLock that refreshCertificates will use for METADATA_URL.
+        Method getLockMethod = RemoteCertificateProcessor.class
+                .getDeclaredMethod("getLockForKey", String.class);
+        getLockMethod.setAccessible(true);
+        ReentrantLock theLock = (ReentrantLock) getLockMethod
+                .invoke(RemoteCertificateProcessor.getInstance(), METADATA_URL);
+
+        CountDownLatch thread1HasLock = new CountDownLatch(1);
+
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put(SSOConstants.REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION, "300000");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SAMLMetadataCertificateResolver> resolverStatic =
+                        mockStatic(SAMLMetadataCertificateResolver.class);
+                MockedStatic<SSOUtils> ssoUtilsStatic = mockStatic(SSOUtils.class)) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            resolverStatic.when(SAMLMetadataCertificateResolver::getInstance).thenReturn(mockResolver);
+            ssoUtilsStatic.when(() -> SSOUtils.getAuthenticatorParamMap(SSOConstants.AUTHENTICATOR_NAME))
+                    .thenReturn(paramMap);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenAnswer(inv -> cacheState.get());
+
+            // Thread 1 simulates a competing thread that already holds the lock and is mid-refresh.
+            // It holds the lock, waits for the main thread (Thread 2) to block at lock.lock(), then
+            // replaces the cache state with a freshly-retrieved entry (lastRetrievedAt = now) before
+            // releasing the lock. Thread 2's double-check will then see an active block window.
+            Thread thread1 = new Thread(() -> {
+                theLock.lock();
+                try {
+                    thread1HasLock.countDown();
+                    Thread.sleep(200); // Hold the lock while Thread 2 blocks on lock.lock().
+                    cacheState.set(new SAMLCertCacheEntry(refreshedRemoteCert));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    theLock.unlock();
+                }
+            });
+            thread1.start();
+
+            assertTrue(thread1HasLock.await(5, TimeUnit.SECONDS),
+                    "Thread 1 should acquire the lock and signal within 5 seconds.");
+
+            // Thread 2 (main thread): passes the pre-lock check (stale entry, block window inactive),
+            // blocks on lock.lock() while Thread 1 holds it, then on the double-check inside the lock
+            // finds that lastRetrievedAt was just updated — block window is now active — and returns false.
+            boolean result = RemoteCertificateProcessor.getInstance().refreshCertificates(idp, TENANT_DOMAIN);
+
+            thread1.join(5000);
+
+            assertFalse(result,
+                    "Thread 2 should return false after escaping via the double-check inside the lock.");
+            verify(mockResolver, never()).getSigningCertificatesFromMetadata(anyString(), anyString());
+        }
+    }
+
+    @Test(description = "When the metadata URL is not configured for the IdP, "
+            + "validateSignature should throw SAMLSSOException with "
+            + "METADATA_URL_NOT_CONFIGURED_FOR_IDP error code.")
+    public void testValidateSignature_BlankMetadataUrl_ThrowsSAMLSSOException() {
+
+        SignatureImpl mockSignature = mock(SignatureImpl.class);
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs()).thenReturn(null);
+        when(idp.getIdentityProviderName()).thenReturn("TestIdP");
+
+        try {
+            RemoteCertificateProcessor.getInstance().validateSignature(mockSignature, idp, TENANT_DOMAIN);
+            fail("Expected SAMLSSOException to be thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(),
+                    ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode(),
+                    "Error code should indicate metadata URL is not configured.");
+        }
+    }
+
+    @Test(description = "When the IdP entity ID is not configured, "
+            + "validateSignature should throw SAMLSSOException with "
+            + "IDP_ENTITY_ID_NOT_CONFIGURED error code.")
+    public void testValidateSignature_BlankEntityId_ThrowsSAMLSSOException() {
+
+        SignatureImpl mockSignature = mock(SignatureImpl.class);
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, null);
+
+        try {
+            RemoteCertificateProcessor.getInstance().validateSignature(mockSignature, idp, TENANT_DOMAIN);
+            fail("Expected SAMLSSOException to be thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(),
+                    ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getCode(),
+                    "Error code should indicate entity ID is not configured.");
+        }
+    }
+
+    @Test(description = "When resolveCertificates returns an empty certificate list, "
+            + "validateSignature should throw SAMLSSOException with "
+            + "NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA error code.")
+    public void testValidateSignature_EmptyCertificateList_ThrowsSAMLSSOException() {
+
+        SignatureImpl mockSignature = mock(SignatureImpl.class);
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        RemoteCertificate remoteCertificate = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(Instant.now().plusSeconds(3600))
+                .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class)) {
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+
+            try {
+                RemoteCertificateProcessor.getInstance().validateSignature(mockSignature, idp, TENANT_DOMAIN);
+                fail("Expected SAMLSSOException to be thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(),
+                        ErrorMessages.NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA.getCode(),
+                        "Error code should indicate no signing certificates were found in metadata.");
+            }
+        }
+    }
+
+    @Test(description = "When a single certificate is resolved and SignatureValidator.validate succeeds, "
+            + "validateSignature should complete without throwing any exception.")
+    public void testValidateSignature_SingleCertValidationSucceeds_NoExceptionThrown()
+            throws SAMLSSOException {
+
+        SignatureImpl mockSignature = mock(SignatureImpl.class);
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate = new RemoteCertificate.Builder(Collections.singletonList(mockCert))
+                .validUntil(Instant.now().plusSeconds(3600))
+                .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SignatureValidator> validatorStatic = mockStatic(SignatureValidator.class)) {
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            // Default behavior for a void static method is to do nothing — validation succeeds.
+            validatorStatic.when(() -> SignatureValidator.validate(any(), any()))
+                    .thenAnswer(invocation -> null);
+
+            RemoteCertificateProcessor.getInstance().validateSignature(mockSignature, idp, TENANT_DOMAIN);
+        }
+    }
+
+    @Test(description = "When a single certificate is resolved and SignatureValidator.validate throws "
+            + "SignatureException, validateSignature should throw SAMLSSOException with "
+            + "SIGNATURE_VALIDATION_FAILED error code and the SignatureException as the cause.")
+    public void testValidateSignature_SingleCertValidationFails_ThrowsSAMLSSOExceptionWithCause() {
+
+        SignatureImpl mockSignature = mock(SignatureImpl.class);
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate = new RemoteCertificate.Builder(Collections.singletonList(mockCert))
+                .validUntil(Instant.now().plusSeconds(3600))
+                .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+        SignatureException signatureException = new SignatureException("Signature validation failed");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SignatureValidator> validatorStatic = mockStatic(SignatureValidator.class)) {
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            validatorStatic.when(() -> SignatureValidator.validate(any(), any()))
+                    .thenThrow(signatureException);
+
+            try {
+                RemoteCertificateProcessor.getInstance().validateSignature(mockSignature, idp, TENANT_DOMAIN);
+                fail("Expected SAMLSSOException to be thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(),
+                        ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                        "Error code should indicate signature validation failed.");
+                assertSame(e.getCause(), signatureException,
+                        "The cause should be the original SignatureException.");
+            }
+        }
+    }
+
+    @Test(description = "When two certificates are resolved and SignatureValidator.validate fails on the "
+            + "first but succeeds on the second, validateSignature should complete without throwing "
+            + "any exception.")
+    public void testValidateSignature_MultipleCerts_FirstFailsSecondSucceeds_NoExceptionThrown()
+            throws SAMLSSOException {
+
+        SignatureImpl mockSignature = mock(SignatureImpl.class);
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert1 = mock(X509Certificate.class);
+        X509Certificate mockCert2 = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate =
+                new RemoteCertificate.Builder(Arrays.asList(mockCert1, mockCert2))
+                        .validUntil(Instant.now().plusSeconds(3600))
+                        .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SignatureValidator> validatorStatic = mockStatic(SignatureValidator.class)) {
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            AtomicInteger callCount = new AtomicInteger(0);
+            validatorStatic.when(() -> SignatureValidator.validate(any(), any()))
+                    .thenAnswer(invocation -> {
+                        if (callCount.getAndIncrement() == 0) {
+                            throw new SignatureException("First certificate validation failed");
+                        }
+                        return null;
+                    });
+
+            RemoteCertificateProcessor.getInstance().validateSignature(mockSignature, idp, TENANT_DOMAIN);
+        }
+    }
+
+    @Test(description = "When two certificates are resolved and SignatureValidator.validate fails for "
+            + "both, validateSignature should throw SAMLSSOException with SIGNATURE_VALIDATION_FAILED "
+            + "error code, with the second SignatureException suppressed under the first.")
+    public void testValidateSignature_AllCertsFailValidation_ThrowsSAMLSSOExceptionWithSuppressed() {
+
+        SignatureImpl mockSignature = mock(SignatureImpl.class);
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert1 = mock(X509Certificate.class);
+        X509Certificate mockCert2 = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate =
+                new RemoteCertificate.Builder(Arrays.asList(mockCert1, mockCert2))
+                        .validUntil(Instant.now().plusSeconds(3600))
+                        .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+        SignatureException firstException = new SignatureException("First certificate validation failed");
+        SignatureException secondException = new SignatureException("Second certificate validation failed");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<SignatureValidator> validatorStatic = mockStatic(SignatureValidator.class)) {
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            AtomicInteger callCount = new AtomicInteger(0);
+            validatorStatic.when(() -> SignatureValidator.validate(any(), any()))
+                    .thenAnswer(invocation -> {
+                        if (callCount.getAndIncrement() == 0) {
+                            throw firstException;
+                        }
+                        throw secondException;
+                    });
+
+            try {
+                RemoteCertificateProcessor.getInstance().validateSignature(mockSignature, idp, TENANT_DOMAIN);
+                fail("Expected SAMLSSOException to be thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(),
+                        ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                        "Error code should indicate signature validation failed.");
+                assertSame(e.getCause(), firstException,
+                        "The cause should be the first SignatureException.");
+                assertEquals(e.getCause().getSuppressed().length, 1,
+                        "There should be exactly one suppressed exception.");
+                assertSame(e.getCause().getSuppressed()[0], secondException,
+                        "The suppressed exception should be the second SignatureException.");
+            }
+        }
+    }
+
+    @Test(description = "When the metadata URL is not configured for the IdP, "
+            + "validateQueryStringSignature should throw SAMLSSOException with "
+            + "METADATA_URL_NOT_CONFIGURED_FOR_IDP error code.")
+    public void testValidateQueryStringSignature_BlankMetadataUrl_ThrowsSAMLSSOException() {
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs()).thenReturn(null);
+        when(idp.getIdentityProviderName()).thenReturn("TestIdP");
+
+        try {
+            RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                    new byte[0], new byte[0], "algorithmUri", mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+            fail("Expected SAMLSSOException to be thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(),
+                    ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode(),
+                    "Error code should indicate metadata URL is not configured.");
+        }
+    }
+
+    @Test(description = "When the IdP entity ID is not configured, "
+            + "validateQueryStringSignature should throw SAMLSSOException with "
+            + "IDP_ENTITY_ID_NOT_CONFIGURED error code.")
+    public void testValidateQueryStringSignature_BlankEntityId_ThrowsSAMLSSOException() {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, null);
+
+        try {
+            RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                    new byte[0], new byte[0], "algorithmUri", mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+            fail("Expected SAMLSSOException to be thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(),
+                    ErrorMessages.IDP_ENTITY_ID_NOT_CONFIGURED.getCode(),
+                    "Error code should indicate entity ID is not configured.");
+        }
+    }
+
+    @Test(description = "When resolveCertificates returns an empty certificate list, "
+            + "validateQueryStringSignature should throw SAMLSSOException with "
+            + "NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA error code.")
+    public void testValidateQueryStringSignature_EmptyCertificateList_ThrowsSAMLSSOException() {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        RemoteCertificate remoteCertificate = new RemoteCertificate.Builder(Collections.emptyList())
+                .validUntil(Instant.now().plusSeconds(3600))
+                .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class)) {
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+
+            try {
+                RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                        new byte[0], new byte[0], "algorithmUri", mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+                fail("Expected SAMLSSOException to be thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(),
+                        ErrorMessages.NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA.getCode(),
+                        "Error code should indicate no signing certificates were found in metadata.");
+            }
+        }
+    }
+
+    @Test(description = "When a single certificate is resolved and the trust engine validates "
+            + "the signature successfully, validateQueryStringSignature should return true.")
+    public void testValidateQueryStringSignature_SingleCert_TrustEngineReturnsTrue_ReturnsTrue()
+            throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate =
+                new RemoteCertificate.Builder(Collections.singletonList(mockCert))
+                        .validUntil(Instant.now().plusSeconds(3600))
+                        .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<DefaultSecurityConfigurationBootstrap> bootstrapStatic =
+                        mockStatic(DefaultSecurityConfigurationBootstrap.class);
+                MockedConstruction<ExplicitKeySignatureTrustEngine> engineMock =
+                        mockConstruction(ExplicitKeySignatureTrustEngine.class, (mock, context) ->
+                                when(mock.validate(any(), any(), anyString(), any(), isNull()))
+                                        .thenReturn(true))) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            bootstrapStatic.when(
+                    DefaultSecurityConfigurationBootstrap::buildBasicInlineKeyInfoCredentialResolver)
+                    .thenReturn(mock(KeyInfoCredentialResolver.class));
+
+            boolean result = RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                    new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                    mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+
+            assertTrue(result,
+                    "Should return true when the trust engine validates the signature successfully.");
+        }
+    }
+
+    @Test(description = "When a single certificate is resolved and the trust engine returns false, "
+            + "validateQueryStringSignature should return false.")
+    public void testValidateQueryStringSignature_SingleCert_TrustEngineReturnsFalse_ReturnsFalse()
+            throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate =
+                new RemoteCertificate.Builder(Collections.singletonList(mockCert))
+                        .validUntil(Instant.now().plusSeconds(3600))
+                        .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<DefaultSecurityConfigurationBootstrap> bootstrapStatic =
+                        mockStatic(DefaultSecurityConfigurationBootstrap.class);
+                MockedConstruction<ExplicitKeySignatureTrustEngine> engineMock =
+                        mockConstruction(ExplicitKeySignatureTrustEngine.class, (mock, context) ->
+                                when(mock.validate(any(), any(), anyString(), any(), isNull()))
+                                        .thenReturn(false))) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            bootstrapStatic.when(
+                    DefaultSecurityConfigurationBootstrap::buildBasicInlineKeyInfoCredentialResolver)
+                    .thenReturn(mock(KeyInfoCredentialResolver.class));
+
+            boolean result = RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                    new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                    mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+
+            assertFalse(result,
+                    "Should return false when the trust engine returns false for the only certificate.");
+        }
+    }
+
+    @Test(description = "When multiple certificates are resolved and the first fails but the second "
+            + "succeeds, validateQueryStringSignature should return true without checking further.")
+    public void testValidateQueryStringSignature_MultipleCerts_FirstFailsSecondSucceeds_ReturnsTrue()
+            throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert1 = mock(X509Certificate.class);
+        X509Certificate mockCert2 = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate =
+                new RemoteCertificate.Builder(Arrays.asList(mockCert1, mockCert2))
+                        .validUntil(Instant.now().plusSeconds(3600))
+                        .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<DefaultSecurityConfigurationBootstrap> bootstrapStatic =
+                        mockStatic(DefaultSecurityConfigurationBootstrap.class);
+                MockedConstruction<ExplicitKeySignatureTrustEngine> engineMock =
+                        mockConstruction(ExplicitKeySignatureTrustEngine.class, (mock, context) -> {
+                            // context.getCount() is 1-based: first engine returns false, second returns true.
+                            when(mock.validate(any(), any(), anyString(), any(), isNull()))
+                                    .thenReturn(context.getCount() > 1);
+                        })) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            bootstrapStatic.when(
+                    DefaultSecurityConfigurationBootstrap::buildBasicInlineKeyInfoCredentialResolver)
+                    .thenReturn(mock(KeyInfoCredentialResolver.class));
+
+            boolean result = RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                    new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                    mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+
+            assertTrue(result,
+                    "Should return true when the second certificate's trust engine validates the signature.");
+            assertEquals(engineMock.constructed().size(), 2,
+                    "Both trust engines should have been constructed before finding a valid one.");
+        }
+    }
+
+    @Test(description = "When multiple certificates are resolved and all fail validation, "
+            + "validateQueryStringSignature should return false.")
+    public void testValidateQueryStringSignature_AllCertsFail_ReturnsFalse() throws SAMLSSOException {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert1 = mock(X509Certificate.class);
+        X509Certificate mockCert2 = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate =
+                new RemoteCertificate.Builder(Arrays.asList(mockCert1, mockCert2))
+                        .validUntil(Instant.now().plusSeconds(3600))
+                        .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<DefaultSecurityConfigurationBootstrap> bootstrapStatic =
+                        mockStatic(DefaultSecurityConfigurationBootstrap.class);
+                MockedConstruction<ExplicitKeySignatureTrustEngine> engineMock =
+                        mockConstruction(ExplicitKeySignatureTrustEngine.class, (mock, context) ->
+                                when(mock.validate(any(), any(), anyString(), any(), isNull()))
+                                        .thenReturn(false))) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            bootstrapStatic.when(
+                    DefaultSecurityConfigurationBootstrap::buildBasicInlineKeyInfoCredentialResolver)
+                    .thenReturn(mock(KeyInfoCredentialResolver.class));
+
+            boolean result = RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                    new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                    mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+
+            assertFalse(result, "Should return false when all certificates fail validation.");
+            assertEquals(engineMock.constructed().size(), 2,
+                    "Both trust engines should have been constructed and tried.");
+        }
+    }
+
+    @Test(description = "When the trust engine throws SecurityException during validation, "
+            + "validateQueryStringSignature should throw SAMLSSOException with "
+            + "SIGNATURE_VALIDATION_FAILED error code and the SecurityException as the cause.")
+    public void testValidateQueryStringSignature_SecurityExceptionThrown_ThrowsSAMLSSOException() {
+
+        IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
+        X509Certificate mockCert = mock(X509Certificate.class);
+        RemoteCertificate remoteCertificate =
+                new RemoteCertificate.Builder(Collections.singletonList(mockCert))
+                        .validUntil(Instant.now().plusSeconds(3600))
+                        .build();
+        SAMLCertCacheEntry cacheEntry = new SAMLCertCacheEntry(remoteCertificate);
+        SecurityException securityException = new SecurityException("Security failure during validation");
+
+        try (MockedStatic<SAMLCertCache> cacheStatic = mockStatic(SAMLCertCache.class);
+                MockedStatic<DefaultSecurityConfigurationBootstrap> bootstrapStatic =
+                        mockStatic(DefaultSecurityConfigurationBootstrap.class);
+                MockedConstruction<ExplicitKeySignatureTrustEngine> engineMock =
+                        mockConstruction(ExplicitKeySignatureTrustEngine.class, (mock, context) ->
+                                when(mock.validate(any(), any(), anyString(), any(), isNull()))
+                                        .thenThrow(securityException))) {
+
+            cacheStatic.when(SAMLCertCache::getInstance).thenReturn(mockCache);
+            when(mockCache.getValueFromCache(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN)))
+                    .thenReturn(cacheEntry);
+            bootstrapStatic.when(
+                    DefaultSecurityConfigurationBootstrap::buildBasicInlineKeyInfoCredentialResolver)
+                    .thenReturn(mock(KeyInfoCredentialResolver.class));
+
+            try {
+                RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                        new byte[]{1, 2, 3}, new byte[]{4, 5, 6},
+                        "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                        mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+                fail("Expected SAMLSSOException to be thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(),
+                        ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                        "Error code should indicate signature validation failed.");
+                assertSame(e.getCause(), securityException,
+                        "The cause should be the original SecurityException.");
+            }
+        }
+    }
+
+    /**
+     * Creates a mock {@link IdentityProvider} configured with the SAML SSO authenticator containing
+     * the given metadata URL and entity ID properties.
+     *
+     * @param metadataUrl The metadata URL to configure, or null to omit.
+     * @param entityId    The IdP entity ID to configure, or null to omit.
+     * @return A configured mock {@link IdentityProvider}.
+     */
+    private IdentityProvider buildIdentityProvider(String metadataUrl, String entityId) {
+
+        List<Property> properties = new ArrayList<>();
+        if (metadataUrl != null) {
+            Property metadataProp = mock(Property.class);
+            when(metadataProp.getName()).thenReturn(SSOConstants.SAML_METADATA_URI);
+            when(metadataProp.getValue()).thenReturn(metadataUrl);
+            properties.add(metadataProp);
+        }
+        if (entityId != null) {
+            Property entityIdProp = mock(Property.class);
+            when(entityIdProp.getName())
+                    .thenReturn(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID);
+            when(entityIdProp.getValue()).thenReturn(entityId);
+            properties.add(entityIdProp);
+        }
+
+        FederatedAuthenticatorConfig samlConfig = mock(FederatedAuthenticatorConfig.class);
+        when(samlConfig.getName()).thenReturn(SSOConstants.AUTHENTICATOR_NAME);
+        when(samlConfig.getProperties()).thenReturn(properties.toArray(new Property[0]));
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getFederatedAuthenticatorConfigs())
+                .thenReturn(new FederatedAuthenticatorConfig[]{samlConfig});
+        when(idp.getIdentityProviderName()).thenReturn("TestIdP");
+        return idp;
     }
 }
