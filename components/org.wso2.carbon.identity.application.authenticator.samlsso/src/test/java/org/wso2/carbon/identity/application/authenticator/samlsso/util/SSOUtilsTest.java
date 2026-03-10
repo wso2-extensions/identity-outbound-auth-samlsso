@@ -17,14 +17,22 @@
  */
 package org.wso2.carbon.identity.application.authenticator.samlsso.util;
 
+import org.mockito.MockedStatic;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authenticator.samlsso.TestConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test cases for SSOUtils
@@ -267,5 +275,65 @@ public class SSOUtilsTest {
         Assert.assertEquals(queryParams.get("Signature"), TestConstants.SIGNATURE_PARAMETER, "Failed to extract the " +
                 "Signature query param");
         Assert.assertEquals(queryParams.get("empty"), "", "Failed to extract the empty query param");
+    }
+
+    @Test
+    public void testGetAuthenticatorParamMapWhenAuthenticatorConfigIsNull() {
+
+        FileBasedConfigurationBuilder mockedBuilder = mock(FileBasedConfigurationBuilder.class);
+        try (MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock =
+                     mockStatic(FileBasedConfigurationBuilder.class)) {
+            fileBasedConfigBuilderMock.when(FileBasedConfigurationBuilder::getInstance).thenReturn(mockedBuilder);
+            when(mockedBuilder.getAuthenticatorBean("testAuthenticator")).thenReturn(null);
+
+            Map<String, String> result = SSOUtils.getAuthenticatorParamMap("testAuthenticator");
+
+            Assert.assertNotNull(result, "Result should not be null");
+            Assert.assertEquals(result, Collections.emptyMap(),
+                    "Should return empty map when authenticator config is null");
+        }
+    }
+
+    @Test
+    public void testGetAuthenticatorParamMapWhenParameterMapIsNull() {
+
+        FileBasedConfigurationBuilder mockedBuilder = mock(FileBasedConfigurationBuilder.class);
+        AuthenticatorConfig mockedConfig = mock(AuthenticatorConfig.class);
+        try (MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock =
+                     mockStatic(FileBasedConfigurationBuilder.class)) {
+            fileBasedConfigBuilderMock.when(FileBasedConfigurationBuilder::getInstance).thenReturn(mockedBuilder);
+            when(mockedBuilder.getAuthenticatorBean("testAuthenticator")).thenReturn(mockedConfig);
+            when(mockedConfig.getParameterMap()).thenReturn(null);
+
+            Map<String, String> result = SSOUtils.getAuthenticatorParamMap("testAuthenticator");
+
+            Assert.assertNotNull(result, "Result should not be null");
+            Assert.assertEquals(result, Collections.emptyMap(),
+                    "Should return empty map when parameter map is null");
+        }
+    }
+
+    @Test
+    public void testGetAuthenticatorParamMapReturnsConfiguredParams() {
+
+        FileBasedConfigurationBuilder mockedBuilder = mock(FileBasedConfigurationBuilder.class);
+        AuthenticatorConfig mockedConfig = mock(AuthenticatorConfig.class);
+        Map<String, String> expectedParams = new HashMap<>();
+        expectedParams.put("param1", "value1");
+        expectedParams.put("param2", "value2");
+        try (MockedStatic<FileBasedConfigurationBuilder> fileBasedConfigBuilderMock =
+                     mockStatic(FileBasedConfigurationBuilder.class)) {
+            fileBasedConfigBuilderMock.when(FileBasedConfigurationBuilder::getInstance).thenReturn(mockedBuilder);
+            when(mockedBuilder.getAuthenticatorBean("testAuthenticator")).thenReturn(mockedConfig);
+            when(mockedConfig.getParameterMap()).thenReturn(expectedParams);
+
+            Map<String, String> result = SSOUtils.getAuthenticatorParamMap("testAuthenticator");
+
+            Assert.assertNotNull(result, "Result should not be null");
+            Assert.assertEquals(result, expectedParams,
+                    "Should return the parameter map from the authenticator config");
+            Assert.assertEquals(result.get("param1"), "value1", "Should contain configured param1");
+            Assert.assertEquals(result.get("param2"), "value2", "Should contain configured param2");
+        }
     }
 }

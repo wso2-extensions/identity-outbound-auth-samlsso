@@ -41,6 +41,8 @@
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCacheKeyTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCacheEntryTest"/>
             <class name="org.wso2.carbon.identity.application.authenticator.samlsso.cache.SAMLCertCacheTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.model.RemoteCertificateTest"/>
+            <class name="org.wso2.carbon.identity.application.authenticator.samlsso.cert.RemoteCertificateProcessorTest"/>
         </classes>
     </test>
 </suite>
