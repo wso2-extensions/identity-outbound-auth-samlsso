@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019-2026, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
+ * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -33,12 +33,14 @@ import org.opensaml.saml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml.saml2.core.impl.StatusCodeBuilder;
 import org.opensaml.saml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.security.SecurityException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.cert.RemoteCertificateProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.validators.LogoutReqSignatureValidator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.DefaultSAML2SSOManager;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -237,20 +239,62 @@ public class SAMLLogoutUtil {
     }
 
     /**
-     * Validate the signature of the LogoutRequest against the given certificate.
-     *
-     * @param logoutRequest {@link LogoutRequest}object to be validated.
-     * @return true           If signature of the Logout Request is valid.
-     * @throws SAMLLogoutException Error when validating the signature.
+     * Validate the signature of the logout request using the certificate configured in the identity provider or
+     * the certificate(s) obtained from the remote metadata endpoint.
+     * 
+     * @param logoutRequest      Logout request sent by the federated IdP. The signature of this request needs to be validated.
+     * @param samlMessageContext Context of the SAML message which contains the details of the logout request and the IdP.
+     * @return true if the signature is valid, false otherwise.
+     * @throws SAMLLogoutException If signature validation process fails.
      */
     public static boolean isValidSignature(LogoutRequest logoutRequest, SAMLMessageContext
             samlMessageContext) throws SAMLLogoutException {
 
         String issuer = logoutRequest.getIssuer().getValue();
-        X509Certificate x509Certificate = generateX509Certificate(samlMessageContext.
-                getFederatedIdP().getCertificate());
-
         LogoutReqSignatureValidator signatureValidator = new LogoutReqSignatureValidator();
+
+        // Attempt remote metadata-based certificate validation first.
+        // If no metadata URL is configured for the IdP, fall back to the certificate stored in the IdP configuration.
+        try {
+            return signatureValidator.validateWithRemoteCertificates(logoutRequest, samlMessageContext);
+        } catch (SAMLSSOException e) {
+            if (ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode().equals(e.getErrorCode())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No metadata URL configured for IdP: "
+                            + samlMessageContext.getFederatedIdP().getIdentityProviderName()
+                            + ". Falling back to certificate-based signature validation.");
+                }
+            } else if (ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode().equals(e.getErrorCode())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Remote certificate-based signature validation failed for logout request from IdP: "
+                            + samlMessageContext.getFederatedIdP().getIdentityProviderName()
+                            + ". Attempting certificate refresh and retrying validation.");
+                }
+                try {
+                    boolean certsRefreshed = RemoteCertificateProcessor.getInstance()
+                            .refreshCertificates(samlMessageContext.getFederatedIdP(),
+                                    samlMessageContext.getTenantDomain());
+                    if (!certsRefreshed) {
+                        throw new SAMLLogoutException(
+                                String.format(ErrorMessages.REMOTE_CERT_VALIDATION_FAILED_FOR_LOGOUT_REQUEST
+                                        .getMessage(), issuer), e);
+                    }
+                    return signatureValidator.validateWithRemoteCertificates(logoutRequest, samlMessageContext);
+                } catch (SAMLSSOException refreshOrRetryException) {
+                    throw new SAMLLogoutException(
+                            String.format(ErrorMessages.REMOTE_CERT_VALIDATION_FAILED_FOR_LOGOUT_REQUEST
+                                    .getMessage(), issuer), refreshOrRetryException);
+                }
+            } else {
+                throw new SAMLLogoutException(
+                        String.format(ErrorMessages.REMOTE_CERT_VALIDATION_FAILED_FOR_LOGOUT_REQUEST
+                                .getMessage(), issuer), e);
+            }
+        }
+
+        // Fall back to the certificate stored in the IdP configuration.
+        X509Certificate x509Certificate = generateX509Certificate(
+                samlMessageContext.getFederatedIdP().getCertificate());
         try {
             if (samlMessageContext.getSAMLLogoutRequest().isPost()) {
                 return signatureValidator.validateXMLSignature(logoutRequest,

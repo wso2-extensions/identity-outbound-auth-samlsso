@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020-2026, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -98,6 +98,8 @@ public class SSOErrorConstants {
                 "Signature do not confirm to SAML signature profile. Possible XML Signature Wrapping Attack!"),
         SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE("SAM-60045",
                 "Signature validation failed for SAML Response"),
+        SIGNATURE_VALIDATION_FAILED("SAM-60046",
+                "Signature validation failed for SAML message"),
         // Tenant and IDP  related Exceptions
         RETRIEVING_TENANT_ID_FAILED("SAM-60061",
                 "Exception occurred while retrieving Tenant ID from tenant domain %S"),
@@ -115,7 +117,33 @@ public class SSOErrorConstants {
         HTTP_POST_NOT_SUPPORTED("SAM-65131", "HTTP-POST is not supported"),
         INSTANTIATION_FAILED("SAM-65132", "Error while instantiation"),
         UNABLE_TO_RETRIEVE_BUILDER_FOR_OBJECT_QNAME("SAM-65133",
-                "Unable to retrieve builder for object QName %s");
+                "Unable to retrieve builder for object QName %s"),
+        // SAML metadata certificate resolution related exceptions.
+        METADATA_URL_BLANK("SAM-65141", "Certificate resolution failed due to blank metadata URL."),
+        METADATA_FETCH_HTTP_ERROR("SAM-65142",
+                "Received HTTP %d while fetching SAML metadata from: %s"),
+        METADATA_EMPTY_RESPONSE_BODY("SAM-65143",
+                "Empty response body received from metadata endpoint: %s"),
+        METADATA_FETCH_FAILED("SAM-65144", "Failed to fetch SAML metadata from: %s"),
+        METADATA_NOT_ENTITY_DESCRIPTOR("SAM-65145",
+                "Parsed XML from %s is not a SAML 2 EntityDescriptor. Actual type: %s"),
+        METADATA_CERT_INVALID_BASE64("SAM-65146",
+                "Certificate value in SAML metadata is not valid Base64."),
+        METADATA_CERT_DECODE_FAILED("SAM-65147",
+                "Failed to decode X.509 certificate from SAML metadata."),
+        METADATA_ENTITY_ID_MISMATCH("SAM-65148",
+                "SAML metadata entity ID mismatch. Expected: '%s', but found: '%s'."),
+        METADATA_URL_NOT_CONFIGURED_FOR_IDP("SAM-65149",
+                "SAML metadata URL is not configured for IdP: %s"),
+        IDP_ENTITY_ID_NOT_CONFIGURED("SAM-65150",
+                "IDP entity ID is not configured for IdP: %s"),
+        NO_SIGNING_CERTIFICATES_FOUND_IN_METADATA("SAM-65151",
+                "No signing certificates found in SAML metadata for IdP: %s"),
+        REMOTE_CERT_VALIDATION_FAILED_FOR_LOGOUT_REQUEST("SAM-65152",
+                "Process of validating the signature using remote certificates failed for the logout request " +
+                        "with issuer: %s"),
+        LOGOUT_REQUEST_QUERY_STRING_PARSING_FAILED("SAM-65153",
+                "Failed to extract signature parameters from the logout request query string for issuer: %s");
 
         private final String code;
         private final String message;

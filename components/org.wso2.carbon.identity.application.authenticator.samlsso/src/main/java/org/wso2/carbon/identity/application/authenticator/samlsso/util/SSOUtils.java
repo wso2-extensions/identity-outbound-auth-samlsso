@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2015-2026, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -52,6 +52,8 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
+import org.wso2.carbon.identity.application.authentication.framework.config.builder.FileBasedConfigurationBuilder;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
@@ -74,6 +76,7 @@ import java.security.NoSuchProviderException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -655,5 +658,22 @@ public class SSOUtils {
         } catch (CertificateException | NoSuchAlgorithmException e3) {
             throw new java.lang.SecurityException("Error in loading keystore in path: " + keyStorePath + ": " + e3);
         }
+    }
+
+    /**
+     * Returns the parameter map from the file-based authenticator configuration for the given authenticator name.
+     *
+     * @param authenticatorName The name of the authenticator whose parameter map should be retrieved.
+     * @return The parameter map from the authenticator config, or an empty map if the config is not found
+     *         or contains no parameters.
+     */
+    public static Map<String, String> getAuthenticatorParamMap(String authenticatorName) {
+
+        AuthenticatorConfig authenticatorConfig = FileBasedConfigurationBuilder.getInstance()
+                .getAuthenticatorBean(authenticatorName);
+        if (authenticatorConfig != null && authenticatorConfig.getParameterMap() != null) {
+            return authenticatorConfig.getParameterMap();
+        }
+        return Collections.emptyMap();
     }
 }

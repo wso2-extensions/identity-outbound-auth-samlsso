@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2014-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -90,6 +90,7 @@ import org.wso2.carbon.identity.application.authentication.framework.model.Authe
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.SAMLSSOAuthenticator;
 import org.wso2.carbon.identity.application.authenticator.samlsso.artifact.SAMLSSOArtifactResolutionService;
+import org.wso2.carbon.identity.application.authenticator.samlsso.cert.RemoteCertificateProcessor;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.ArtifactResolutionException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.internal.SAMLSSOAuthenticatorServiceDataHolder;
@@ -1240,6 +1241,30 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
             AUDIT_LOG.warn(logMsg);
             throw new SAMLSSOException(ErrorMessages.SIGNATURE_NOT_CONFIRM_TO_SAML_SIGNATURE_PROFILE.getCode(),
                     logMsg, ex);
+        }
+
+        // Attempt signature validation against certificates resolved from the IdP's remote metadata endpoint.
+        try {
+            RemoteCertificateProcessor.getInstance().validateSignature(signature, identityProvider, tenantDomain);
+            return;
+        } catch (SAMLSSOException e) {
+            if (ErrorMessages.METADATA_URL_NOT_CONFIGURED_FOR_IDP.getCode().equals(e.getErrorCode())) {
+                log.debug("Remote certificate processor signature validation failed. Falling back to " +
+                        "configured certificate-based validation.");
+            } else if (ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode()
+                    .equals(e.getErrorCode())) {
+                log.debug("Remote certificate processor signature validation failed. Attempting certificate " +
+                        "refresh and retrying validation.");
+                boolean certsRefreshed = RemoteCertificateProcessor.getInstance()
+                        .refreshCertificates(identityProvider, tenantDomain);
+                if (!certsRefreshed) {
+                    throw e;
+                }
+                RemoteCertificateProcessor.getInstance().validateSignature(signature, identityProvider, tenantDomain);
+                return;
+            } else {
+                throw e;
+            }
         }
 
         if (ArrayUtils.isEmpty(identityProvider.getCertificateInfoArray())) {

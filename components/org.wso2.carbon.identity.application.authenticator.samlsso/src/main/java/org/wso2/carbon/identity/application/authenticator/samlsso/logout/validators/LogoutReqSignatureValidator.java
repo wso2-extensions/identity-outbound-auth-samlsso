@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019-2026, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
+ * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -38,7 +38,12 @@ import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.opensaml.xmlsec.signature.support.impl.ExplicitKeySignatureTrustEngine;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authenticator.samlsso.cert.RemoteCertificateProcessor;
+import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
 import org.wso2.carbon.identity.application.authenticator.samlsso.manager.X509CredentialImpl;
+import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorConstants.ErrorMessages;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.base.IdentityException;
 
 import java.io.UnsupportedEncodingException;
@@ -47,6 +52,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.opensaml.saml.saml2.core.LogoutRequest;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.SIGNATURE;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.SIGNATURE_ALGORITHM;
@@ -110,6 +117,48 @@ public class LogoutReqSignatureValidator {
             }
         }
         return false;
+    }
+
+    /**
+     * Validate the signature of the SAML LogoutRequest using certificates resolved from remote SAML metadata.
+     * 
+     * @param logoutRequest      SAML LogoutRequest.
+     * @param samlMessageContext Context containing necessary information for signature validation, including the IdP and tenant domain.
+     * @return true if the signature is valid, false otherwise.
+     * @throws SAMLSSOException If signature validation process fails or if there is an error in fetching or processing remote metadata.
+     */
+    public boolean validateWithRemoteCertificates(LogoutRequest logoutRequest,
+            SAMLMessageContext samlMessageContext) throws SAMLSSOException {
+
+        IdentityProvider identityProvider = samlMessageContext.getFederatedIdP();
+        String tenantDomain = samlMessageContext.getTenantDomain();
+
+        if (samlMessageContext.getSAMLLogoutRequest().isPost()) {
+            if (logoutRequest.getSignature() == null) {
+                return false;
+            }
+            RemoteCertificateProcessor.getInstance()
+                    .validateSignature(logoutRequest.getSignature(), identityProvider, tenantDomain);
+            return true;
+        } else {
+            String issuer = logoutRequest.getIssuer().getValue();
+            String queryString = samlMessageContext.getSAMLLogoutRequest().getQueryString();
+            try {
+                byte[] signature = getSignature(queryString);
+                byte[] signedContent = getSignedContent(queryString);
+                String algorithmUri = getSignatureAlgorithm(queryString);
+                CriteriaSet criteriaSet = buildCriteriaSet(issuer);
+                return RemoteCertificateProcessor.getInstance()
+                        .validateQueryStringSignature(
+                                signature, signedContent, algorithmUri, criteriaSet,
+                                identityProvider, tenantDomain);
+            } catch (SecurityException | IdentityException e) {
+                throw new SAMLSSOException(
+                        ErrorMessages.LOGOUT_REQUEST_QUERY_STRING_PARSING_FAILED.getCode(),
+                        String.format(ErrorMessages.LOGOUT_REQUEST_QUERY_STRING_PARSING_FAILED.getMessage(),
+                                issuer), e);
+            }
+        }
     }
 
     /**

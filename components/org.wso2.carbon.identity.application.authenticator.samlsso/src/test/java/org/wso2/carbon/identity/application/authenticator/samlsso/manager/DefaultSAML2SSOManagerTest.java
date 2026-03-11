@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017-2026, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -20,8 +20,14 @@ package org.wso2.carbon.identity.application.authenticator.samlsso.manager;
 
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import org.opensaml.saml.security.impl.SAMLSignatureProfileValidator;
+import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureValidator;
+import org.wso2.carbon.identity.application.authenticator.samlsso.cert.RemoteCertificateProcessor;
+import org.wso2.carbon.identity.application.common.model.CertificateInfo;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.core.AuthnRequest;
@@ -68,8 +74,14 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.xpath.XPathFactory;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -162,6 +174,9 @@ public class DefaultSAML2SSOManagerTest {
     private Certificate certificate;
 
     private X509Credential x509CredentialImpl;
+
+    private static final String VALIDATE_SIG_CERT_1 = "MIICMzCCAZygAwIBAgIJALiPnVsvq8dsMA0GCSqGSIb3DQEBBQUAMFMxCzAJBgNV";
+    private static final String VALIDATE_SIG_CERT_2 = "MIICMzCCAZygAwIBAgIJALiPnVsvq8dsAA0GBSqGSIb3DQEBBQUAMFMxCzAJBgNQ";
 
     @BeforeClass
     public void initTest() throws Exception {
@@ -809,20 +824,345 @@ public class DefaultSAML2SSOManagerTest {
         return new String(base64DecodedByteArray, "UTF-8");
     }
 
-    @Test
-    public void validateSignatureExceptionTest() throws Exception {
+    /**
+     * Returns a DefaultSAML2SSOManager with identityProvider and tenantDomain fields pre-set via reflection.
+     */
+    private DefaultSAML2SSOManager createManagerWithIdP(IdentityProvider idp) throws Exception {
 
-        Class<?> clazz = DefaultSAML2SSOManager.class;
-        Object defaultSAML2SSOManager = clazz.newInstance();
-        Method validateSignature = defaultSAML2SSOManager.getClass().getDeclaredMethod("validateSignature",
-                XMLObject.class);
-        validateSignature.setAccessible(true);
+        DefaultSAML2SSOManager mgr = new DefaultSAML2SSOManager();
+        Field idpField = DefaultSAML2SSOManager.class.getDeclaredField("identityProvider");
+        idpField.setAccessible(true);
+        idpField.set(mgr, idp);
+        Field tdField = DefaultSAML2SSOManager.class.getDeclaredField("tenantDomain");
+        tdField.setAccessible(true);
+        tdField.set(mgr, SUPER_TENANT_DOMAIN_NAME);
+        return mgr;
+    }
+
+    /**
+     * Invokes the protected validateSignature(XMLObject) method and unwraps InvocationTargetException.
+     */
+    private void invokeValidateSignature(DefaultSAML2SSOManager mgr, XMLObject sig) throws Throwable {
+
+        Method m = DefaultSAML2SSOManager.class.getDeclaredMethod("validateSignature", XMLObject.class);
+        m.setAccessible(true);
         try {
-            validateSignature.invoke(defaultSAML2SSOManager, mockedSignatureImpl);
-            fail("IllegalAccessException or InvocationTargetException should have been thrown");
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            assertTrue(true);
+            m.invoke(mgr, sig);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
         }
     }
 
+    @Test(description = "When SAMLSignatureProfileValidator.validate() throws SignatureException, "
+            + "validateSignature should throw SAMLSSOException with SIGNATURE_NOT_CONFIRM_TO_SAML_SIGNATURE_PROFILE.")
+    public void testValidateSignature_ProfileValidationFails_ThrowsSignatureProfileException() throws Exception {
+
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doThrow(new SignatureException("Invalid SAML signature profile"))
+                                     .when(mock).validate(any(SignatureImpl.class)))) {
+
+            try {
+                invokeValidateSignature(mgr, mockedSignatureImpl);
+                fail("Expected SAMLSSOException");
+            } catch (Throwable e) {
+                assertEquals(((SAMLSSOException) e).getErrorCode(), "SAM-60044");
+            }
+        }
+    }
+
+    @Test(description = "When RemoteCertificateProcessor.validateSignature() succeeds, "
+            + "validateSignature should complete without throwing.")
+    public void testValidateSignature_RemoteCertValidationSucceeds_NoException() throws Throwable {
+
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)))) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doNothing().when(mockRCP).validateSignature(any(), any(), any());
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class)) {
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+                invokeValidateSignature(mgr, mockedSignatureImpl);
+            }
+        }
+    }
+
+    @Test(description = "When METADATA_URL_NOT_CONFIGURED_FOR_IDP is thrown and no certs are configured, "
+            + "validateSignature should throw SAMLSSOException with SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.")
+    public void testValidateSignature_RemoteMetadataNotConfigured_NoCerts_ThrowsValidationFailed()
+            throws Exception {
+
+        when(mockedIdentityProvider.getCertificateInfoArray()).thenReturn(null);
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)))) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-65149", "No metadata URL."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class)) {
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+
+                try {
+                    invokeValidateSignature(mgr, mockedSignatureImpl);
+                    fail("Expected SAMLSSOException");
+                } catch (Throwable e) {
+                    assertEquals(((SAMLSSOException) e).getErrorCode(), "SAM-60045");
+                }
+            }
+        }
+    }
+
+    @Test(description = "When METADATA_URL_NOT_CONFIGURED_FOR_IDP is thrown and empty cert array is configured, "
+            + "validateSignature should throw SAMLSSOException with SIGNATURE_VALIDATION_FAILED_FOR_SAML_RESPONSE.")
+    public void testValidateSignature_RemoteMetadataNotConfigured_EmptyCerts_ThrowsValidationFailed()
+            throws Exception {
+
+        when(mockedIdentityProvider.getCertificateInfoArray()).thenReturn(new CertificateInfo[0]);
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)))) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-65149", "No metadata URL."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class)) {
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+
+                try {
+                    invokeValidateSignature(mgr, mockedSignatureImpl);
+                    fail("Expected SAMLSSOException");
+                } catch (Throwable e) {
+                    assertEquals(((SAMLSSOException) e).getErrorCode(), "SAM-60045");
+                }
+            }
+        }
+    }
+
+    @Test(description = "When METADATA_URL_NOT_CONFIGURED_FOR_IDP is thrown and a configured cert validates, "
+            + "validateSignature should fall back to cert-based validation and complete without throwing.")
+    public void testValidateSignature_RemoteMetadataNotConfigured_FallbackCertSucceeds() throws Throwable {
+
+        CertificateInfo mockCertInfo = mock(CertificateInfo.class);
+        when(mockCertInfo.getCertValue()).thenReturn(VALIDATE_SIG_CERT_1);
+        when(mockedIdentityProvider.getCertificateInfoArray()).thenReturn(new CertificateInfo[]{mockCertInfo});
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)));
+             MockedConstruction<X509CredentialImpl> ignoredCred = mockConstruction(X509CredentialImpl.class)) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-65149", "No metadata URL."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class);
+                 MockedStatic<SignatureValidator> svStatic = mockStatic(SignatureValidator.class)) {
+
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+                svStatic.when(() -> SignatureValidator.validate(any(), any())).thenAnswer(inv -> null);
+
+                invokeValidateSignature(mgr, mockedSignatureImpl);
+                assertEquals(ignoredCred.constructed().size(), 1);
+                svStatic.verify(() -> SignatureValidator.validate(any(), any()), times(1));
+            }
+        }
+    }
+
+    @Test(description = "When SIGNATURE_VALIDATION_FAILED is thrown and refreshCertificates() returns false, "
+            + "validateSignature should rethrow the original exception.")
+    public void testValidateSignature_RemoteValidationFailed_NoRefresh_Rethrows() throws Exception {
+
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)))) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-60046", "Signature validation failed."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+            when(mockRCP.refreshCertificates(any(), any())).thenReturn(false);
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class)) {
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+
+                try {
+                    invokeValidateSignature(mgr, mockedSignatureImpl);
+                    fail("Expected SAMLSSOException");
+                } catch (Throwable e) {
+                    assertEquals(((SAMLSSOException) e).getErrorCode(), "SAM-60046");
+                }
+            }
+        }
+    }
+
+    @Test(description = "When SIGNATURE_VALIDATION_FAILED is thrown, refreshCertificates() returns true, "
+            + "and the retry succeeds, validateSignature should complete without throwing.")
+    public void testValidateSignature_RemoteValidationFailed_RefreshAndRetrySucceeds() throws Throwable {
+
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)))) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-60046", "Signature validation failed."))
+                    .doNothing()
+                    .when(mockRCP).validateSignature(any(), any(), any());
+            when(mockRCP.refreshCertificates(any(), any())).thenReturn(true);
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class)) {
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+                invokeValidateSignature(mgr, mockedSignatureImpl);
+            }
+        }
+    }
+
+    @Test(description = "When SIGNATURE_VALIDATION_FAILED is thrown, refresh succeeds, but retry also fails, "
+            + "validateSignature should propagate the retry exception.")
+    public void testValidateSignature_RemoteValidationFailed_RefreshButRetryAlsoFails() throws Exception {
+
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)))) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-60046", "First failure."))
+                    .doThrow(new SAMLSSOException("SAM-60046", "Retry failure."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+            when(mockRCP.refreshCertificates(any(), any())).thenReturn(true);
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class)) {
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+
+                try {
+                    invokeValidateSignature(mgr, mockedSignatureImpl);
+                    fail("Expected SAMLSSOException");
+                } catch (Throwable e) {
+                    assertEquals(((SAMLSSOException) e).getErrorCode(), "SAM-60046");
+                    assertEquals(((SAMLSSOException) e).getMessage(), "Retry failure.");
+                }
+            }
+        }
+    }
+
+    @Test(description = "When RemoteCertificateProcessor throws an unrecognized error code, "
+            + "validateSignature should propagate that exception as-is.")
+    public void testValidateSignature_RemoteThrowsUnrecognizedCode_PropagatesException() throws Exception {
+
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)))) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-OTHER-99", "Unexpected remote error."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class)) {
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+
+                try {
+                    invokeValidateSignature(mgr, mockedSignatureImpl);
+                    fail("Expected SAMLSSOException");
+                } catch (Throwable e) {
+                    assertEquals(((SAMLSSOException) e).getErrorCode(), "SAM-OTHER-99");
+                }
+            }
+        }
+    }
+
+    @Test(description = "When remote metadata is not configured and multiple configured certs are tried, "
+            + "first fails but second succeeds; validateSignature should complete without throwing.")
+    public void testValidateSignature_FallbackMultipleCerts_FirstFailsSecondSucceeds() throws Throwable {
+
+        CertificateInfo mockCertInfo1 = mock(CertificateInfo.class);
+        CertificateInfo mockCertInfo2 = mock(CertificateInfo.class);
+        when(mockCertInfo1.getCertValue()).thenReturn(VALIDATE_SIG_CERT_1);
+        when(mockCertInfo2.getCertValue()).thenReturn(VALIDATE_SIG_CERT_2);
+        when(mockedIdentityProvider.getCertificateInfoArray())
+                .thenReturn(new CertificateInfo[]{mockCertInfo1, mockCertInfo2});
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)));
+             MockedConstruction<X509CredentialImpl> ignoredCred = mockConstruction(X509CredentialImpl.class)) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-65149", "No metadata URL."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class);
+                 MockedStatic<SignatureValidator> svStatic = mockStatic(SignatureValidator.class)) {
+
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+                svStatic.when(() -> SignatureValidator.validate(any(), any()))
+                        .thenThrow(new SignatureException("Cert 1 invalid"))
+                        .thenAnswer(inv -> null);
+
+                invokeValidateSignature(mgr, mockedSignatureImpl);
+                assertEquals(ignoredCred.constructed().size(), 2);
+                svStatic.verify(() -> SignatureValidator.validate(any(), any()), times(2));
+            }
+        }
+    }
+
+    @Test(description = "When remote metadata is not configured and all configured certs fail, "
+            + "validateSignature should throw SAMLSSOException indicating SAML response validation failure.")
+    public void testValidateSignature_FallbackAllCertsFail_ThrowsException() throws Exception {
+
+        CertificateInfo mockCertInfo1 = mock(CertificateInfo.class);
+        CertificateInfo mockCertInfo2 = mock(CertificateInfo.class);
+        when(mockCertInfo1.getCertValue()).thenReturn(VALIDATE_SIG_CERT_1);
+        when(mockCertInfo2.getCertValue()).thenReturn(VALIDATE_SIG_CERT_2);
+        when(mockedIdentityProvider.getCertificateInfoArray())
+                .thenReturn(new CertificateInfo[]{mockCertInfo1, mockCertInfo2});
+        DefaultSAML2SSOManager mgr = createManagerWithIdP(mockedIdentityProvider);
+
+        try (MockedConstruction<SAMLSignatureProfileValidator> ignored =
+                     mockConstruction(SAMLSignatureProfileValidator.class, (mock, ctx) ->
+                             doNothing().when(mock).validate(any(SignatureImpl.class)));
+             MockedConstruction<X509CredentialImpl> ignoredCred = mockConstruction(X509CredentialImpl.class)) {
+
+            RemoteCertificateProcessor mockRCP = mock(RemoteCertificateProcessor.class);
+            doThrow(new SAMLSSOException("SAM-65149", "No metadata URL."))
+                    .when(mockRCP).validateSignature(any(), any(), any());
+
+            try (MockedStatic<RemoteCertificateProcessor> rcpStatic = mockStatic(RemoteCertificateProcessor.class);
+                 MockedStatic<SignatureValidator> svStatic = mockStatic(SignatureValidator.class)) {
+
+                rcpStatic.when(RemoteCertificateProcessor::getInstance).thenReturn(mockRCP);
+                svStatic.when(() -> SignatureValidator.validate(any(), any()))
+                        .thenThrow(new SignatureException("Cert 1 invalid"))
+                        .thenThrow(new SignatureException("Cert 2 invalid"));
+
+                try {
+                    invokeValidateSignature(mgr, mockedSignatureImpl);
+                    fail("Expected SAMLSSOException");
+                } catch (Throwable e) {
+                    assertTrue(e.getMessage().contains("Signature validation failed for SAML Response"));
+                    assertTrue(e.getCause() instanceof SignatureException);
+                }
+            }
+        }
+    }
 }

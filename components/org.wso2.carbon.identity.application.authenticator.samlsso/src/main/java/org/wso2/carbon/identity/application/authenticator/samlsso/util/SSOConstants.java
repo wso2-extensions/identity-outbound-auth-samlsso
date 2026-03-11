@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2015-2026, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -58,6 +58,30 @@ public class SSOConstants {
     public static final Pattern SAML_SLO_ENDPOINT_URL_PATTERN = Pattern.compile("(.*)/identity/saml/slo/?");
 
     public static final String SAML_AUTHN_REQUEST_PROVIDER_NAME = "samlAuthnRequestProviderName";
+    public static final String SAML_METADATA_URI = "samlMetadataUri";
+    public static final String REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION = "RemoteCertificateRefreshRetryBlockDuration";
+    public static final String REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME = "RemoteCertificateCacheMaxLifetime";
+
+    // Default block duration for retrying certificate refresh after a failure: 5 minutes in milliseconds.
+    public static final long DEFAULT_REMOTE_CERTIFICATE_REFRESH_RETRY_BLOCK_DURATION_MS = 300000L;
+    // Default maximum lifetime for cached certificates: 24 hours in milliseconds.
+    public static final long DEFAULT_REMOTE_CERTIFICATE_CACHE_MAX_LIFETIME_MS = 86400000L;
+
+    public static final String REMOTE_CERTIFICATE_CLIENT_CONNECTION_TIMEOUT = "RemoteCertificateClientConnectionTimeout";
+    public static final String REMOTE_CERTIFICATE_CLIENT_READ_TIMEOUT = "RemoteCertificateClientReadTimeout";
+    public static final String REMOTE_CERTIFICATE_CLIENT_CONNECTION_REQUEST_TIMEOUT = "RemoteCertificateClientConnectionRequestTimeout";
+    public static final String REMOTE_CERTIFICATE_CLIENT_CONNECTION_POOL_SIZE = "RemoteCertificateClientConnectionPoolSize";
+    public static final String REMOTE_CERTIFICATE_CLIENT_MAX_CONNECTION_PER_ROUTE = "RemoteCertificateClientMaxConnectionPerRoute";
+    public static final String REMOTE_CERTIFICATE_RETRY_COUNT = "RemoteCertificateRetryCount";
+    public static final String REMOTE_CERTIFICATE_CLIENT_RESPONSE_LIMIT = "RemoteCertificateClientResponseLimit";
+
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_TIMEOUT_MS = 1000;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_READ_TIMEOUT_MS = 1000;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_REQUEST_TIMEOUT_MS = 1000;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_CONNECTION_POOL_SIZE = 20;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_CLIENT_MAX_CONNECTION_PER_ROUTE = 3;
+    public static final int DEFAULT_REMOTE_CERTIFICATE_RETRY_COUNT = 0;
+    public static final long DEFAULT_REMOTE_CERTIFICATE_CLIENT_RESPONSE_LIMIT = 512000L;
 
     public class StatusCodes {
         private StatusCodes() {
