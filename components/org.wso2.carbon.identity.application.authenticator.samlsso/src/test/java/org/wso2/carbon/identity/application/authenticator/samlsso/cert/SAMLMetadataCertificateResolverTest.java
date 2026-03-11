@@ -411,6 +411,88 @@ public class SAMLMetadataCertificateResolverTest {
         assertEquals(result.size(), 0, "Should return empty list when keyDescriptors is null.");
     }
 
+    @Test(description = "When a KeyDescriptor has a null use (unspecified), "
+            + "it should be treated as a signing key and its certificate should be returned.")
+    public void testExtractCertificates_NullUseKeyDescriptor_TreatedAsSigning() throws Exception {
+
+        X509Certificate mockJavaCert = mock(X509Certificate.class);
+
+        org.opensaml.xmlsec.signature.X509Certificate mockCertElement =
+                mock(org.opensaml.xmlsec.signature.X509Certificate.class);
+        when(mockCertElement.getValue()).thenReturn(VALID_BASE64_DER);
+
+        X509Data mockX509Data = mock(X509Data.class);
+        when(mockX509Data.getX509Certificates()).thenReturn(Collections.singletonList(mockCertElement));
+
+        KeyInfo mockKeyInfo = mock(KeyInfo.class);
+        when(mockKeyInfo.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data));
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(null);
+        when(mockKeyDescriptor.getKeyInfo()).thenReturn(mockKeyInfo);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
+                     mockStatic(IdentityApplicationManagementUtil.class)) {
+            utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(anyString()))
+                    .thenReturn(mockJavaCert);
+
+            List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+            assertEquals(result.size(), 1,
+                    "A KeyDescriptor with null use should be treated as signing and its certificate returned.");
+            assertSame(result.get(0), mockJavaCert, "Should be the decoded certificate.");
+        }
+    }
+
+    @Test(description = "When KeyDescriptors include one with null use and one with ENCRYPTION use, "
+            + "only the null-use descriptor's certificate should be returned.")
+    public void testExtractCertificates_NullUseAndEncryptionDescriptors_OnlyNullUseReturned() throws Exception {
+
+        X509Certificate mockJavaCert = mock(X509Certificate.class);
+
+        org.opensaml.xmlsec.signature.X509Certificate mockCertElement =
+                mock(org.opensaml.xmlsec.signature.X509Certificate.class);
+        when(mockCertElement.getValue()).thenReturn(VALID_BASE64_DER);
+
+        X509Data mockX509Data = mock(X509Data.class);
+        when(mockX509Data.getX509Certificates()).thenReturn(Collections.singletonList(mockCertElement));
+
+        KeyInfo mockKeyInfo = mock(KeyInfo.class);
+        when(mockKeyInfo.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data));
+
+        KeyDescriptor nullUseDescriptor = mock(KeyDescriptor.class);
+        when(nullUseDescriptor.getUse()).thenReturn(null);
+        when(nullUseDescriptor.getKeyInfo()).thenReturn(mockKeyInfo);
+
+        KeyDescriptor encryptionDescriptor = mock(KeyDescriptor.class);
+        when(encryptionDescriptor.getUse()).thenReturn(UsageType.ENCRYPTION);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors())
+                .thenReturn(Arrays.asList(nullUseDescriptor, encryptionDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
+                     mockStatic(IdentityApplicationManagementUtil.class)) {
+            utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(anyString()))
+                    .thenReturn(mockJavaCert);
+
+            List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+            assertEquals(result.size(), 1,
+                    "Only the null-use descriptor should contribute a certificate; ENCRYPTION should be skipped.");
+            assertSame(result.get(0), mockJavaCert, "Should be the certificate from the null-use descriptor.");
+        }
+    }
+
     @Test(description = "When a KeyDescriptor has ENCRYPTION usage type, "
             + "it should be skipped and extractCertificates should return an empty list.")
     public void testExtractCertificates_EncryptionKeyDescriptor_Skipped() throws Exception {

@@ -35,6 +35,7 @@ import javax.security.auth.x500.X500Principal;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 
@@ -294,6 +295,73 @@ public class RemoteCertificateTest {
         RemoteCertificate rc2 = new RemoteCertificate.Builder(Collections.emptyList()).build();
 
         assertEquals(rc1, rc2);
+    }
+
+    @Test(description = "Equal objects must produce the same hashCode (equals/hashCode contract).")
+    public void testHashCodeEqualObjectsHaveSameHashCode() {
+
+        RemoteCertificate rc1 = new RemoteCertificate.Builder(Collections.singletonList(mockCert1))
+                .validUntil(FIXED_INSTANT)
+                .cacheDuration(CACHE_DURATION_1H)
+                .build();
+
+        RemoteCertificate rc2 = new RemoteCertificate.Builder(Collections.singletonList(mockCert1))
+                .validUntil(FIXED_INSTANT)
+                .cacheDuration(CACHE_DURATION_1H)
+                .build();
+
+        assertEquals(rc1.hashCode(), rc2.hashCode());
+    }
+
+    @Test(description = "hashCode differs when validUntil differs.")
+    public void testHashCodeDiffersWhenValidUntilDiffers() {
+
+        RemoteCertificate rc1 = new RemoteCertificate.Builder(Collections.singletonList(mockCert1))
+                .validUntil(FIXED_INSTANT)
+                .build();
+
+        RemoteCertificate rc2 = new RemoteCertificate.Builder(Collections.singletonList(mockCert1))
+                .validUntil(OTHER_INSTANT)
+                .build();
+
+        assertNotEquals(rc1.hashCode(), rc2.hashCode());
+    }
+
+    @Test(description = "hashCode differs when cacheDuration differs.")
+    public void testHashCodeDiffersWhenCacheDurationDiffers() {
+
+        RemoteCertificate rc1 = new RemoteCertificate.Builder(Collections.singletonList(mockCert1))
+                .cacheDuration(CACHE_DURATION_1H)
+                .build();
+
+        RemoteCertificate rc2 = new RemoteCertificate.Builder(Collections.singletonList(mockCert1))
+                .cacheDuration(CACHE_DURATION_2H)
+                .build();
+
+        assertNotEquals(rc1.hashCode(), rc2.hashCode());
+    }
+
+    @Test(description = "hashCode differs when the certificate set differs.")
+    public void testHashCodeDiffersWhenCertsDiffer() {
+
+        RemoteCertificate rc1 = new RemoteCertificate.Builder(Collections.singletonList(mockCert1))
+                .validUntil(FIXED_INSTANT)
+                .build();
+
+        RemoteCertificate rc2 = new RemoteCertificate.Builder(Collections.singletonList(mockCert2))
+                .validUntil(FIXED_INSTANT)
+                .build();
+
+        assertNotEquals(rc1.hashCode(), rc2.hashCode());
+    }
+
+    @Test(description = "hashCode is order-independent for the certificate list.")
+    public void testHashCodeIsOrderIndependentForCertificates() {
+
+        RemoteCertificate rc1 = new RemoteCertificate.Builder(Arrays.asList(mockCert1, mockCert2)).build();
+        RemoteCertificate rc2 = new RemoteCertificate.Builder(Arrays.asList(mockCert2, mockCert1)).build();
+
+        assertEquals(rc1.hashCode(), rc2.hashCode());
     }
 
     private RemoteCertificate buildDefault() {

@@ -1397,9 +1397,8 @@ public class RemoteCertificateProcessorTest {
     }
 
     @Test(description = "When a single certificate is resolved and the trust engine returns false, "
-            + "validateQueryStringSignature should return false.")
-    public void testValidateQueryStringSignature_SingleCert_TrustEngineReturnsFalse_ReturnsFalse()
-            throws SAMLSSOException {
+            + "validateQueryStringSignature should throw SAMLSSOException with SIGNATURE_VALIDATION_FAILED.")
+    public void testValidateQueryStringSignature_SingleCert_TrustEngineReturnsFalse_ThrowsSAMLSSOException() {
 
         IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
         X509Certificate mockCert = mock(X509Certificate.class);
@@ -1424,12 +1423,15 @@ public class RemoteCertificateProcessorTest {
                     DefaultSecurityConfigurationBootstrap::buildBasicInlineKeyInfoCredentialResolver)
                     .thenReturn(mock(KeyInfoCredentialResolver.class));
 
-            boolean result = RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
-                    new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
-                    mock(CriteriaSet.class), idp, TENANT_DOMAIN);
-
-            assertFalse(result,
-                    "Should return false when the trust engine returns false for the only certificate.");
+            try {
+                RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                        new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                        mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+                fail("Expected SAMLSSOException was not thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(), ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                        "Should throw SIGNATURE_VALIDATION_FAILED when the only certificate fails.");
+            }
         }
     }
 
@@ -1476,8 +1478,8 @@ public class RemoteCertificateProcessorTest {
     }
 
     @Test(description = "When multiple certificates are resolved and all fail validation, "
-            + "validateQueryStringSignature should return false.")
-    public void testValidateQueryStringSignature_AllCertsFail_ReturnsFalse() throws SAMLSSOException {
+            + "validateQueryStringSignature should throw SAMLSSOException with SIGNATURE_VALIDATION_FAILED.")
+    public void testValidateQueryStringSignature_AllCertsFail_ThrowsSAMLSSOException() {
 
         IdentityProvider idp = buildIdentityProvider(METADATA_URL, ENTITY_ID);
         X509Certificate mockCert1 = mock(X509Certificate.class);
@@ -1503,13 +1505,17 @@ public class RemoteCertificateProcessorTest {
                     DefaultSecurityConfigurationBootstrap::buildBasicInlineKeyInfoCredentialResolver)
                     .thenReturn(mock(KeyInfoCredentialResolver.class));
 
-            boolean result = RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
-                    new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
-                    mock(CriteriaSet.class), idp, TENANT_DOMAIN);
-
-            assertFalse(result, "Should return false when all certificates fail validation.");
-            assertEquals(engineMock.constructed().size(), 2,
-                    "Both trust engines should have been constructed and tried.");
+            try {
+                RemoteCertificateProcessor.getInstance().validateQueryStringSignature(
+                        new byte[]{1, 2, 3}, new byte[]{4, 5, 6}, "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                        mock(CriteriaSet.class), idp, TENANT_DOMAIN);
+                fail("Expected SAMLSSOException was not thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(), ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                        "Should throw SIGNATURE_VALIDATION_FAILED when all certificates fail.");
+                assertEquals(engineMock.constructed().size(), 2,
+                        "Both trust engines should have been constructed and tried.");
+            }
         }
     }
 

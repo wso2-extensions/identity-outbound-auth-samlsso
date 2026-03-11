@@ -237,7 +237,7 @@ public class SAMLMetadataCertificateResolver extends AbstractAPIClientManager {
                 continue;
             }
             for (KeyDescriptor keyDescriptor : idpDescriptor.getKeyDescriptors()) {
-                if (keyDescriptor.getUse() != UsageType.SIGNING) {
+                if (keyDescriptor.getUse() != null && keyDescriptor.getUse() != UsageType.SIGNING) {
                     continue;
                 }
                 if (keyDescriptor.getKeyInfo() == null) {

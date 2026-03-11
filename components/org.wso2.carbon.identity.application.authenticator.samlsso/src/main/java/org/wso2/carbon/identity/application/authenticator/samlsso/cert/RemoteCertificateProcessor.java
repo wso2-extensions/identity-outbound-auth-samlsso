@@ -66,7 +66,7 @@ public class RemoteCertificateProcessor {
     /**
      * Number of locks for synchronizing metadata fetches.
      */
-    private static final int LOCK_COUNT = 64;
+    private static final int LOCK_COUNT = 32;
 
     /**
      * Array of locks used to synchronize metadata fetches for different metadata URLs.
@@ -562,7 +562,8 @@ public class RemoteCertificateProcessor {
                     return true;
                 }
             }
-            return false;
+            throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
+                    ErrorMessages.SIGNATURE_VALIDATION_FAILED.getMessage());
         } catch (SecurityException e) {
             throw new SAMLSSOException(ErrorMessages.SIGNATURE_VALIDATION_FAILED.getCode(),
                     ErrorMessages.SIGNATURE_VALIDATION_FAILED.getMessage(), e);

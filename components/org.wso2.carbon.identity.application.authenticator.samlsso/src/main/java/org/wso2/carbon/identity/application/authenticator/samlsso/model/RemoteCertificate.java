@@ -128,6 +128,12 @@ public class RemoteCertificate {
                 && certificatesMatch(other.certificates);
     }
 
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(validUntil, cacheDuration, buildCertFingerprints(certificates));
+    }
+
     /**
      * Compares the certificate list of this instance against the given list by matching each certificate's
      * serial number and issuer DN. Order is not significant.
