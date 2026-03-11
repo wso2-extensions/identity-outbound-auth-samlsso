@@ -43,6 +43,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorC
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
@@ -624,6 +625,68 @@ public class RemoteCertificateProcessorTest {
                 "isStale", RemoteCertificate.class);
         method.setAccessible(true);
         return (boolean) method.invoke(RemoteCertificateProcessor.getInstance(), cert);
+    }
+
+    @Test(description = "When getIdpProperties() returns null, "
+            + "resolveMetadataUrl should return null.")
+    public void testResolveMetadataUrl_NullIdpProperties_ReturnsNull() throws Exception {
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getIdpProperties()).thenReturn(null);
+
+        String result = invokeResolveMetadataUrl(idp);
+
+        assertNull(result, "Should return null when getIdpProperties() returns null.");
+    }
+
+    @Test(description = "When getIdpProperties() returns an empty array, "
+            + "resolveMetadataUrl should return null.")
+    public void testResolveMetadataUrl_EmptyIdpProperties_ReturnsNull() throws Exception {
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getIdpProperties()).thenReturn(new IdentityProviderProperty[0]);
+
+        String result = invokeResolveMetadataUrl(idp);
+
+        assertNull(result, "Should return null when getIdpProperties() returns an empty array.");
+    }
+
+    @Test(description = "When getIdpProperties() contains a null element but no matching property, "
+            + "resolveMetadataUrl should skip the null element and return null.")
+    public void testResolveMetadataUrl_NullElementInIdpProperties_ReturnsNull() throws Exception {
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getIdpProperties()).thenReturn(new IdentityProviderProperty[]{null});
+
+        String result = invokeResolveMetadataUrl(idp);
+
+        assertNull(result, "Should return null when the only element in getIdpProperties() is null.");
+    }
+
+    @Test(description = "When getIdpProperties() contains properties but none matches SAML_METADATA_URI, "
+            + "resolveMetadataUrl should return null.")
+    public void testResolveMetadataUrl_NoMatchingProperty_ReturnsNull() throws Exception {
+
+        IdentityProviderProperty otherProp = mock(IdentityProviderProperty.class);
+        when(otherProp.getName()).thenReturn("someOtherProperty");
+
+        IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getIdpProperties()).thenReturn(new IdentityProviderProperty[]{otherProp});
+
+        String result = invokeResolveMetadataUrl(idp);
+
+        assertNull(result, "Should return null when no property matches " + SSOConstants.SAML_METADATA_URI + ".");
+    }
+
+    /**
+     * Invokes the private resolveMetadataUrl method on the singleton instance via reflection.
+     */
+    private String invokeResolveMetadataUrl(IdentityProvider identityProvider) throws Exception {
+
+        Method method = RemoteCertificateProcessor.class.getDeclaredMethod(
+                "resolveMetadataUrl", IdentityProvider.class);
+        method.setAccessible(true);
+        return (String) method.invoke(RemoteCertificateProcessor.getInstance(), identityProvider);
     }
 
     @Test(description = "When the param map contains a valid numeric value for "
@@ -1574,26 +1637,29 @@ public class RemoteCertificateProcessorTest {
      */
     private IdentityProvider buildIdentityProvider(String metadataUrl, String entityId) {
 
-        List<Property> properties = new ArrayList<>();
+        List<IdentityProviderProperty> idpProperties = new ArrayList<>();
         if (metadataUrl != null) {
-            Property metadataProp = mock(Property.class);
+            IdentityProviderProperty metadataProp = mock(IdentityProviderProperty.class);
             when(metadataProp.getName()).thenReturn(SSOConstants.SAML_METADATA_URI);
             when(metadataProp.getValue()).thenReturn(metadataUrl);
-            properties.add(metadataProp);
+            idpProperties.add(metadataProp);
         }
+
+        List<Property> authConfigProperties = new ArrayList<>();
         if (entityId != null) {
             Property entityIdProp = mock(Property.class);
             when(entityIdProp.getName())
                     .thenReturn(IdentityApplicationConstants.Authenticator.SAML2SSO.IDP_ENTITY_ID);
             when(entityIdProp.getValue()).thenReturn(entityId);
-            properties.add(entityIdProp);
+            authConfigProperties.add(entityIdProp);
         }
 
         FederatedAuthenticatorConfig samlConfig = mock(FederatedAuthenticatorConfig.class);
         when(samlConfig.getName()).thenReturn(SSOConstants.AUTHENTICATOR_NAME);
-        when(samlConfig.getProperties()).thenReturn(properties.toArray(new Property[0]));
+        when(samlConfig.getProperties()).thenReturn(authConfigProperties.toArray(new Property[0]));
 
         IdentityProvider idp = mock(IdentityProvider.class);
+        when(idp.getIdpProperties()).thenReturn(idpProperties.toArray(new IdentityProviderProperty[0]));
         when(idp.getFederatedAuthenticatorConfigs())
                 .thenReturn(new FederatedAuthenticatorConfig[]{samlConfig});
         when(idp.getIdentityProviderName()).thenReturn("TestIdP");

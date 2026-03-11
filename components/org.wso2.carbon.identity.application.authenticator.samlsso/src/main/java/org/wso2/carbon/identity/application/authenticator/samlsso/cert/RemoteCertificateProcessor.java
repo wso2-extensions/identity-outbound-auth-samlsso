@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOErrorC
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 
@@ -402,7 +403,7 @@ public class RemoteCertificateProcessor {
     }
 
     /**
-     * Resolves the SAML metadata URL from the SAML SSO federated authenticator config of the given
+     * Resolves the SAML metadata URL from the IDP-level properties of the given
      * {@link IdentityProvider}.
      *
      * @param identityProvider The {@link IdentityProvider} to read from.
@@ -410,7 +411,16 @@ public class RemoteCertificateProcessor {
      */
     private String resolveMetadataUrl(IdentityProvider identityProvider) {
 
-        return resolveProperty(identityProvider, SSOConstants.SAML_METADATA_URI);
+        IdentityProviderProperty[] idpProperties = identityProvider.getIdpProperties();
+        if (idpProperties == null) {
+            return null;
+        }
+        for (IdentityProviderProperty property : idpProperties) {
+            if (property != null && SSOConstants.SAML_METADATA_URI.equals(property.getName())) {
+                return property.getValue();
+            }
+        }
+        return null;
     }
 
     /**
