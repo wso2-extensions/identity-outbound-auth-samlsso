@@ -19,30 +19,56 @@
 package org.wso2.carbon.identity.application.authenticator.samlsso.cert;
 
 import org.mockito.MockedStatic;
+import org.opensaml.core.xml.XMLObject;
+import org.joda.time.DateTime;
+import org.opensaml.saml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml.saml2.metadata.IDPSSODescriptor;
+import org.opensaml.saml.saml2.metadata.KeyDescriptor;
+import org.opensaml.security.credential.UsageType;
+import org.opensaml.xmlsec.signature.KeyInfo;
+import org.opensaml.xmlsec.signature.X509Data;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
+import org.wso2.carbon.identity.application.authenticator.samlsso.model.RemoteCertificate;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOConstants;
 import org.wso2.carbon.identity.application.authenticator.samlsso.util.SSOUtils;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
+import org.wso2.carbon.identity.external.api.client.api.exception.APIClientException;
+import org.wso2.carbon.identity.external.api.client.api.model.APIResponse;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 public class SAMLMetadataCertificateResolverTest {
 
     private static final String TEST_PARAM = "TestParam";
     private static final int INT_DEFAULT = 100;
     private static final long LONG_DEFAULT = 200L;
+    private static final String RAW_METADATA = "<EntityDescriptor/>"; // content irrelevant; SSOUtils.unmarshall is mocked
+    private static final String METADATA_URL = "https://idp.example.com/saml/metadata";
+    private static final String ENTITY_ID = "https://idp.example.com";
 
     private static final String VALID_BASE64_DER =
             "MIICpDCCAYwCCQDU+pQ4pHgSpDANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls"
@@ -223,12 +249,8 @@ public class SAMLMetadataCertificateResolverTest {
 
         X509Certificate mockCert = mock(X509Certificate.class);
 
-        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class);
-             MockedStatic<IdentityApplicationManagementUtil> utilMock =
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
                      mockStatic(IdentityApplicationManagementUtil.class)) {
-
-            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
-                    .thenReturn(Collections.emptyMap());
             utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(VALID_BASE64_DER))
                     .thenReturn(mockCert);
 
@@ -246,12 +268,8 @@ public class SAMLMetadataCertificateResolverTest {
         String expectedCleaned    = "MIICpDCCAYwCCQDU";
         X509Certificate mockCert  = mock(X509Certificate.class);
 
-        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class);
-             MockedStatic<IdentityApplicationManagementUtil> utilMock =
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
                      mockStatic(IdentityApplicationManagementUtil.class)) {
-
-            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
-                    .thenReturn(Collections.emptyMap());
             utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(expectedCleaned))
                     .thenReturn(mockCert);
 
@@ -265,12 +283,8 @@ public class SAMLMetadataCertificateResolverTest {
             + "decodeCertificate should wrap it in a SAMLSSOException with error code SAM-65147.")
     public void testDecodeCertificate_CertificateException_ThrowsSAMLSSOException() throws Exception {
 
-        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class);
-             MockedStatic<IdentityApplicationManagementUtil> utilMock =
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
                      mockStatic(IdentityApplicationManagementUtil.class)) {
-
-            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
-                    .thenReturn(Collections.emptyMap());
             utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(anyString()))
                     .thenThrow(new CertificateException("bad cert"));
 
@@ -294,12 +308,8 @@ public class SAMLMetadataCertificateResolverTest {
 
         CertificateException originalCause = new CertificateException("bad cert");
 
-        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class);
-             MockedStatic<IdentityApplicationManagementUtil> utilMock =
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
                      mockStatic(IdentityApplicationManagementUtil.class)) {
-
-            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
-                    .thenReturn(Collections.emptyMap());
             utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(anyString()))
                     .thenThrow(originalCause);
 
@@ -323,5 +333,601 @@ public class SAMLMetadataCertificateResolverTest {
                 .getDeclaredMethod("decodeCertificate", String.class);
         method.setAccessible(true);
         return (X509Certificate) method.invoke(SAMLMetadataCertificateResolver.getInstance(), base64Der);
+    }
+
+    @Test(description = "When SSOUtils.unmarshall returns an EntityDescriptor, "
+            + "toEntityDescriptor should return that same instance.")
+    public void testToEntityDescriptor_ValidEntityDescriptor_ReturnsSameInstance() throws Exception {
+
+        EntityDescriptor mockEntityDescriptor = mock(EntityDescriptor.class);
+
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.unmarshall(RAW_METADATA))
+                    .thenReturn(mockEntityDescriptor);
+
+            EntityDescriptor result = invokeToEntityDescriptor(RAW_METADATA, METADATA_URL);
+
+            assertSame(result, mockEntityDescriptor, "Should return the EntityDescriptor returned by unmarshall.");
+        }
+    }
+
+    @Test(description = "When SSOUtils.unmarshall returns a non-EntityDescriptor XMLObject, "
+            + "toEntityDescriptor should throw SAMLSSOException.")
+    public void testToEntityDescriptor_NonEntityDescriptorXmlObject_ThrowsSAMLSSOException() throws Exception {
+
+        XMLObject mockXmlObject = mock(XMLObject.class);
+
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.unmarshall(RAW_METADATA))
+                    .thenReturn(mockXmlObject);
+
+            try {
+                invokeToEntityDescriptor(RAW_METADATA, METADATA_URL);
+                throw new AssertionError("Expected SAMLSSOException was not thrown.");
+            } catch (InvocationTargetException ite) {
+                Throwable cause = ite.getCause();
+                assertNotNull(cause, "InvocationTargetException must have a cause.");
+                assertEquals(cause.getClass(), SAMLSSOException.class,
+                        "Cause must be a SAMLSSOException.");
+            }
+        }
+    }
+
+    /**
+     * Invokes the private toEntityDescriptor method on the singleton instance via reflection.
+     */
+    private EntityDescriptor invokeToEntityDescriptor(String rawMetadata, String metadataUrl) throws Exception {
+
+        Method method = SAMLMetadataCertificateResolver.class
+                .getDeclaredMethod("toEntityDescriptor", String.class, String.class);
+        method.setAccessible(true);
+        return (EntityDescriptor) method.invoke(SAMLMetadataCertificateResolver.getInstance(),
+                rawMetadata, metadataUrl);
+    }
+
+    @Test(description = "When EntityDescriptor has no IDPSSODescriptor, "
+            + "extractCertificates should return an empty list.")
+    public void testExtractCertificates_NoIDPSSODescriptor_ReturnsEmptyList() throws Exception {
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.emptyList());
+
+        List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+        assertNotNull(result, "Result should not be null.");
+        assertEquals(result.size(), 0, "Should return empty list when no IDPSSODescriptor is present.");
+    }
+
+    @Test(description = "When IDPSSODescriptor returns null for keyDescriptors, "
+            + "extractCertificates should return an empty list.")
+    public void testExtractCertificates_NullKeyDescriptors_ReturnsEmptyList() throws Exception {
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(null);
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+        assertEquals(result.size(), 0, "Should return empty list when keyDescriptors is null.");
+    }
+
+    @Test(description = "When a KeyDescriptor has ENCRYPTION usage type, "
+            + "it should be skipped and extractCertificates should return an empty list.")
+    public void testExtractCertificates_EncryptionKeyDescriptor_Skipped() throws Exception {
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(UsageType.ENCRYPTION);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+        assertEquals(result.size(), 0, "Encryption key descriptor should be skipped.");
+    }
+
+    @Test(description = "When a SIGNING KeyDescriptor has null KeyInfo, "
+            + "it should be skipped and extractCertificates should return an empty list.")
+    public void testExtractCertificates_NullKeyInfo_Skipped() throws Exception {
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor.getKeyInfo()).thenReturn(null);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+        assertEquals(result.size(), 0, "Null KeyInfo should be skipped.");
+    }
+
+    @Test(description = "When a SIGNING KeyDescriptor has KeyInfo with a null X509Data list, "
+            + "it should be skipped and extractCertificates should return an empty list.")
+    public void testExtractCertificates_NullX509DataList_Skipped() throws Exception {
+
+        KeyInfo mockKeyInfo = mock(KeyInfo.class);
+        when(mockKeyInfo.getX509Datas()).thenReturn(null);
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor.getKeyInfo()).thenReturn(mockKeyInfo);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+        assertEquals(result.size(), 0, "Null X509Data list should be skipped.");
+    }
+
+    @Test(description = "When X509Data has a null certificates list, "
+            + "it should be skipped and extractCertificates should return an empty list.")
+    public void testExtractCertificates_NullX509Certificates_Skipped() throws Exception {
+
+        X509Data mockX509Data = mock(X509Data.class);
+        when(mockX509Data.getX509Certificates()).thenReturn(null);
+
+        KeyInfo mockKeyInfo = mock(KeyInfo.class);
+        when(mockKeyInfo.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data));
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor.getKeyInfo()).thenReturn(mockKeyInfo);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+        assertEquals(result.size(), 0, "Null X509Certificates list should be skipped.");
+    }
+
+    @Test(description = "When an X509Certificate element has a blank value, "
+            + "it should be skipped and extractCertificates should return an empty list.")
+    public void testExtractCertificates_BlankCertValue_Skipped() throws Exception {
+
+        org.opensaml.xmlsec.signature.X509Certificate mockCertElement =
+                mock(org.opensaml.xmlsec.signature.X509Certificate.class);
+        when(mockCertElement.getValue()).thenReturn("   ");
+
+        X509Data mockX509Data = mock(X509Data.class);
+        when(mockX509Data.getX509Certificates()).thenReturn(Collections.singletonList(mockCertElement));
+
+        KeyInfo mockKeyInfo = mock(KeyInfo.class);
+        when(mockKeyInfo.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data));
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor.getKeyInfo()).thenReturn(mockKeyInfo);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+        assertEquals(result.size(), 0, "Blank certificate value should be skipped.");
+    }
+
+    @Test(description = "When a valid SIGNING KeyDescriptor with a certificate is present, "
+            + "extractCertificates should return the decoded certificate.")
+    public void testExtractCertificates_ValidSigningCert_ReturnsDecodedCertificate() throws Exception {
+
+        X509Certificate mockJavaCert = mock(X509Certificate.class);
+
+        org.opensaml.xmlsec.signature.X509Certificate mockCertElement =
+                mock(org.opensaml.xmlsec.signature.X509Certificate.class);
+        when(mockCertElement.getValue()).thenReturn(VALID_BASE64_DER);
+
+        X509Data mockX509Data = mock(X509Data.class);
+        when(mockX509Data.getX509Certificates()).thenReturn(Collections.singletonList(mockCertElement));
+
+        KeyInfo mockKeyInfo = mock(KeyInfo.class);
+        when(mockKeyInfo.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data));
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor.getKeyInfo()).thenReturn(mockKeyInfo);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
+                     mockStatic(IdentityApplicationManagementUtil.class)) {
+            utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(anyString()))
+                    .thenReturn(mockJavaCert);
+
+            List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+            assertEquals(result.size(), 1, "Should return exactly one certificate.");
+            assertSame(result.get(0), mockJavaCert, "Should be the decoded certificate.");
+        }
+    }
+
+    @Test(description = "When multiple certificates are present across multiple IDPSSODescriptors, "
+            + "extractCertificates should return all of them.")
+    public void testExtractCertificates_MultipleCerts_ReturnsAllCertificates() throws Exception {
+
+        X509Certificate mockJavaCert1 = mock(X509Certificate.class);
+        X509Certificate mockJavaCert2 = mock(X509Certificate.class);
+
+        org.opensaml.xmlsec.signature.X509Certificate mockCertElement1 =
+                mock(org.opensaml.xmlsec.signature.X509Certificate.class);
+        when(mockCertElement1.getValue()).thenReturn("CERTONE");
+
+        org.opensaml.xmlsec.signature.X509Certificate mockCertElement2 =
+                mock(org.opensaml.xmlsec.signature.X509Certificate.class);
+        when(mockCertElement2.getValue()).thenReturn("CERTTWO");
+
+        X509Data mockX509Data1 = mock(X509Data.class);
+        when(mockX509Data1.getX509Certificates()).thenReturn(Collections.singletonList(mockCertElement1));
+
+        X509Data mockX509Data2 = mock(X509Data.class);
+        when(mockX509Data2.getX509Certificates()).thenReturn(Collections.singletonList(mockCertElement2));
+
+        KeyInfo mockKeyInfo1 = mock(KeyInfo.class);
+        when(mockKeyInfo1.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data1));
+
+        KeyInfo mockKeyInfo2 = mock(KeyInfo.class);
+        when(mockKeyInfo2.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data2));
+
+        KeyDescriptor mockKeyDescriptor1 = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor1.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor1.getKeyInfo()).thenReturn(mockKeyInfo1);
+
+        KeyDescriptor mockKeyDescriptor2 = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor2.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor2.getKeyInfo()).thenReturn(mockKeyInfo2);
+
+        IDPSSODescriptor mockIdpDescriptor1 = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor1.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor1));
+
+        IDPSSODescriptor mockIdpDescriptor2 = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor2.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor2));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any()))
+                .thenReturn(Arrays.asList(mockIdpDescriptor1, mockIdpDescriptor2));
+
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
+                     mockStatic(IdentityApplicationManagementUtil.class)) {
+            utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate("CERTONE"))
+                    .thenReturn(mockJavaCert1);
+            utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate("CERTTWO"))
+                    .thenReturn(mockJavaCert2);
+
+            List<X509Certificate> result = invokeExtractCertificates(mockDescriptor);
+
+            assertEquals(result.size(), 2, "Should return two certificates.");
+            assertTrue(result.contains(mockJavaCert1), "Should contain the first certificate.");
+            assertTrue(result.contains(mockJavaCert2), "Should contain the second certificate.");
+        }
+    }
+
+    @Test(description = "When decodeCertificate fails, "
+            + "extractCertificates should propagate the SAMLSSOException.")
+    public void testExtractCertificates_DecodeCertificateFails_PropagatesSAMLSSOException() throws Exception {
+
+        org.opensaml.xmlsec.signature.X509Certificate mockCertElement =
+                mock(org.opensaml.xmlsec.signature.X509Certificate.class);
+        when(mockCertElement.getValue()).thenReturn(VALID_BASE64_DER);
+
+        X509Data mockX509Data = mock(X509Data.class);
+        when(mockX509Data.getX509Certificates()).thenReturn(Collections.singletonList(mockCertElement));
+
+        KeyInfo mockKeyInfo = mock(KeyInfo.class);
+        when(mockKeyInfo.getX509Datas()).thenReturn(Collections.singletonList(mockX509Data));
+
+        KeyDescriptor mockKeyDescriptor = mock(KeyDescriptor.class);
+        when(mockKeyDescriptor.getUse()).thenReturn(UsageType.SIGNING);
+        when(mockKeyDescriptor.getKeyInfo()).thenReturn(mockKeyInfo);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.singletonList(mockKeyDescriptor));
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        try (MockedStatic<IdentityApplicationManagementUtil> utilMock =
+                     mockStatic(IdentityApplicationManagementUtil.class)) {
+            utilMock.when(() -> IdentityApplicationManagementUtil.decodeCertificate(anyString()))
+                    .thenThrow(new CertificateException("invalid cert"));
+
+            try {
+                invokeExtractCertificates(mockDescriptor);
+                throw new AssertionError("Expected SAMLSSOException was not thrown.");
+            } catch (InvocationTargetException ite) {
+                assertEquals(ite.getCause().getClass(), SAMLSSOException.class,
+                        "Should propagate SAMLSSOException from decodeCertificate.");
+            }
+        }
+    }
+
+    /**
+     * Invokes the private extractCertificates method on the singleton instance via reflection.
+     */
+    @SuppressWarnings("unchecked")
+    private List<X509Certificate> invokeExtractCertificates(EntityDescriptor entityDescriptor) throws Exception {
+
+        Method method = SAMLMetadataCertificateResolver.class
+                .getDeclaredMethod("extractCertificates", EntityDescriptor.class);
+        method.setAccessible(true);
+        return (List<X509Certificate>) method.invoke(SAMLMetadataCertificateResolver.getInstance(),
+                entityDescriptor);
+    }
+
+    @Test(description = "When callAPI returns HTTP 200 with a non-blank body, "
+            + "fetchMetadata should return that body.")
+    public void testFetchMetadata_200WithBody_ReturnsBody() throws Exception {
+
+        String expectedBody = "<EntityDescriptor>...</EntityDescriptor>";
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, expectedBody)).when(spy).callAPI(any(), any());
+
+        String result = invokeFetchMetadata(spy, METADATA_URL);
+
+        assertEquals(result, expectedBody, "Should return the response body on HTTP 200.");
+    }
+
+    @Test(description = "When callAPI returns a non-200 HTTP status, "
+            + "fetchMetadata should throw SAMLSSOException with error code SAM-65142.")
+    public void testFetchMetadata_Non200Status_ErrorCodeIsSAM65142() throws Exception {
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(404, null)).when(spy).callAPI(any(), any());
+
+        try {
+            invokeFetchMetadata(spy, METADATA_URL);
+            throw new AssertionError("Expected SAMLSSOException was not thrown.");
+        } catch (InvocationTargetException ite) {
+            SAMLSSOException samlEx = (SAMLSSOException) ite.getCause();
+            assertEquals(samlEx.getErrorCode(), "SAM-65142",
+                    "Error code must be SAM-65142 (METADATA_FETCH_HTTP_ERROR).");
+        }
+    }
+
+    @Test(description = "When callAPI returns HTTP 200 but an empty body, "
+            + "fetchMetadata should throw SAMLSSOException with error code SAM-65143.")
+    public void testFetchMetadata_EmptyResponseBody_ErrorCodeIsSAM65143() throws Exception {
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, "")).when(spy).callAPI(any(), any());
+
+        try {
+            invokeFetchMetadata(spy, METADATA_URL);
+            throw new AssertionError("Expected SAMLSSOException was not thrown.");
+        } catch (InvocationTargetException ite) {
+            SAMLSSOException samlEx = (SAMLSSOException) ite.getCause();
+            assertEquals(samlEx.getErrorCode(), "SAM-65143",
+                    "Error code must be SAM-65143 (METADATA_EMPTY_RESPONSE_BODY).");
+        }
+    }
+
+    @Test(description = "When callAPI returns HTTP 200 but a whitespace-only body, "
+            + "fetchMetadata should throw SAMLSSOException with error code SAM-65143.")
+    public void testFetchMetadata_BlankResponseBody_ErrorCodeIsSAM65143() throws Exception {
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, "   ")).when(spy).callAPI(any(), any());
+
+        try {
+            invokeFetchMetadata(spy, METADATA_URL);
+            throw new AssertionError("Expected SAMLSSOException was not thrown.");
+        } catch (InvocationTargetException ite) {
+            SAMLSSOException samlEx = (SAMLSSOException) ite.getCause();
+            assertEquals(samlEx.getErrorCode(), "SAM-65143",
+                    "Error code must be SAM-65143 (METADATA_EMPTY_RESPONSE_BODY).");
+        }
+    }
+
+    @Test(description = "When callAPI throws an APIClientException, "
+            + "fetchMetadata should throw SAMLSSOException with error code SAM-65144.")
+    public void testFetchMetadata_APIClientException_ErrorCodeIsSAM65144() throws Exception {
+
+        APIClientException mockApiClientException = mock(APIClientException.class);
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doThrow(mockApiClientException).when(spy).callAPI(any(), any());
+
+        try {
+            invokeFetchMetadata(spy, METADATA_URL);
+            throw new AssertionError("Expected SAMLSSOException was not thrown.");
+        } catch (InvocationTargetException ite) {
+            SAMLSSOException samlEx = (SAMLSSOException) ite.getCause();
+            assertEquals(samlEx.getErrorCode(), "SAM-65144",
+                    "Error code must be SAM-65144 (METADATA_FETCH_FAILED).");
+        }
+    }
+
+    @Test(description = "When callAPI throws an APIClientException, "
+            + "the original exception should be preserved as the cause of the SAMLSSOException.")
+    public void testFetchMetadata_APIClientException_OriginalExceptionPreservedAsCause() throws Exception {
+
+        APIClientException mockApiClientException = mock(APIClientException.class);
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doThrow(mockApiClientException).when(spy).callAPI(any(), any());
+
+        try {
+            invokeFetchMetadata(spy, METADATA_URL);
+            throw new AssertionError("Expected SAMLSSOException was not thrown.");
+        } catch (InvocationTargetException ite) {
+            SAMLSSOException samlEx = (SAMLSSOException) ite.getCause();
+            assertSame(samlEx.getCause(), mockApiClientException,
+                    "The original APIClientException must be the cause of the SAMLSSOException.");
+        }
+    }
+
+    /**
+     * Invokes the private fetchMetadata method on the given instance via reflection.
+     */
+    private String invokeFetchMetadata(SAMLMetadataCertificateResolver instance, String metadataUrl)
+            throws Exception {
+
+        Method method = SAMLMetadataCertificateResolver.class
+                .getDeclaredMethod("fetchMetadata", String.class);
+        method.setAccessible(true);
+        return (String) method.invoke(instance, metadataUrl);
+    }
+
+    @Test(description = "When the metadata URL is blank, "
+            + "getSigningCertificatesFromMetadata should throw SAMLSSOException with error code SAM-65141.")
+    public void testGetSigningCertificatesFromMetadata_BlankUrl_ErrorCodeIsSAM65141() {
+
+        try {
+            SAMLMetadataCertificateResolver.getInstance()
+                    .getSigningCertificatesFromMetadata("  ", ENTITY_ID);
+            throw new AssertionError("Expected SAMLSSOException was not thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(), "SAM-65141",
+                    "Error code must be SAM-65141 (METADATA_URL_BLANK).");
+        }
+    }
+
+    @Test(description = "When the metadata URL is null, "
+            + "getSigningCertificatesFromMetadata should throw SAMLSSOException with error code SAM-65141.")
+    public void testGetSigningCertificatesFromMetadata_NullUrl_ErrorCodeIsSAM65141() {
+
+        try {
+            SAMLMetadataCertificateResolver.getInstance()
+                    .getSigningCertificatesFromMetadata(null, ENTITY_ID);
+            throw new AssertionError("Expected SAMLSSOException was not thrown.");
+        } catch (SAMLSSOException e) {
+            assertEquals(e.getErrorCode(), "SAM-65141",
+                    "Error code must be SAM-65141 (METADATA_URL_BLANK).");
+        }
+    }
+
+    @Test(description = "When the entity ID in the metadata does not match, "
+            + "the error code should be SAM-65148.")
+    public void testGetSigningCertificatesFromMetadata_EntityIdMismatch_ErrorCodeIsSAM65148()
+            throws Exception {
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getEntityID()).thenReturn("https://other-idp.example.com");
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.emptyList());
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, RAW_METADATA)).when(spy).callAPI(any(), any());
+
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
+                    .thenReturn(Collections.emptyMap());
+            ssoUtilsMock.when(() -> SSOUtils.unmarshall(RAW_METADATA))
+                    .thenReturn(mockDescriptor);
+
+            try {
+                spy.getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID);
+                throw new AssertionError("Expected SAMLSSOException was not thrown.");
+            } catch (SAMLSSOException e) {
+                assertEquals(e.getErrorCode(), "SAM-65148",
+                        "Error code must be SAM-65148 (METADATA_ENTITY_ID_MISMATCH).");
+            }
+        }
+    }
+
+    @Test(description = "When inputs are valid and entity IDs match, "
+            + "getSigningCertificatesFromMetadata should return a non-null RemoteCertificate with certificates.")
+    public void testGetSigningCertificatesFromMetadata_MatchingEntityId_ReturnsRemoteCertificate()
+            throws Exception {
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getEntityID()).thenReturn(ENTITY_ID);
+        when(mockDescriptor.getValidUntil()).thenReturn(null);
+        when(mockDescriptor.getCacheDuration()).thenReturn(null);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.emptyList());
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, RAW_METADATA)).when(spy).callAPI(any(), any());
+
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
+                    .thenReturn(Collections.emptyMap());
+            ssoUtilsMock.when(() -> SSOUtils.unmarshall(RAW_METADATA))
+                    .thenReturn(mockDescriptor);
+
+            RemoteCertificate result = spy.getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID);
+
+            assertNotNull(result, "RemoteCertificate must not be null.");
+            assertNotNull(result.getCertificates(), "Certificates list must not be null.");
+        }
+    }
+
+    @Test(description = "When the EntityDescriptor has a validUntil value, "
+            + "getSigningCertificatesFromMetadata should map it to an Instant in the RemoteCertificate.")
+    public void testGetSigningCertificatesFromMetadata_WithValidUntil_PopulatesValidUntil()
+            throws Exception {
+
+        long validUntilMillis = 1234567890000L;
+        DateTime mockValidUntil = mock(DateTime.class);
+        when(mockValidUntil.getMillis()).thenReturn(validUntilMillis);
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getEntityID()).thenReturn(ENTITY_ID);
+        when(mockDescriptor.getValidUntil()).thenReturn(mockValidUntil);
+        when(mockDescriptor.getCacheDuration()).thenReturn(null);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.emptyList());
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, RAW_METADATA)).when(spy).callAPI(any(), any());
+
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
+                    .thenReturn(Collections.emptyMap());
+            ssoUtilsMock.when(() -> SSOUtils.unmarshall(RAW_METADATA))
+                    .thenReturn(mockDescriptor);
+
+            RemoteCertificate result = spy.getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID);
+
+            assertEquals(result.getValidUntil(), Instant.ofEpochMilli(validUntilMillis),
+                    "validUntil should be mapped correctly from the EntityDescriptor.");
+        }
+    }
+
+    @Test(description = "When the EntityDescriptor has a cacheDuration value, "
+            + "getSigningCertificatesFromMetadata should map it to a Duration in the RemoteCertificate.")
+    public void testGetSigningCertificatesFromMetadata_WithCacheDuration_PopulatesCacheDuration()
+            throws Exception {
+
+        long cacheDurationMillis = 3600000L;
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getEntityID()).thenReturn(ENTITY_ID);
+        when(mockDescriptor.getValidUntil()).thenReturn(null);
+        when(mockDescriptor.getCacheDuration()).thenReturn(cacheDurationMillis);
+        when(mockDescriptor.getRoleDescriptors(any())).thenReturn(Collections.emptyList());
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, RAW_METADATA)).when(spy).callAPI(any(), any());
+
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
+                    .thenReturn(Collections.emptyMap());
+            ssoUtilsMock.when(() -> SSOUtils.unmarshall(RAW_METADATA))
+                    .thenReturn(mockDescriptor);
+
+            RemoteCertificate result = spy.getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID);
+
+            assertEquals(result.getCacheDuration(), Duration.ofMillis(cacheDurationMillis),
+                    "cacheDuration should be mapped correctly from the EntityDescriptor.");
+        }
     }
 }
