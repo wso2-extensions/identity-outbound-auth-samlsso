@@ -1059,11 +1059,21 @@ public class DefaultSAML2SSOManager implements SAML2SSOManager {
                     ErrorMessages.INVALID_SCHEMA_FOR_THE_SAML_2_RESPONSE.getMessage());
         }
 
-        // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
-        NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
-        if (assertionList != null && assertionList.getLength() > 1) {
-            throw new SAMLSSOException(ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getCode(),
-                    ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getMessage());
+        boolean allowNestedAssertions = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityConstants.ServerConfig.SAML_ALLOW_NESTED_ASSERTIONS_IN_RESPONSE));
+        if (allowNestedAssertions && response instanceof Response) {
+            Response samlResponse = (Response) response;
+            if (samlResponse.getAssertions() != null && samlResponse.getAssertions().size() > 1) {
+                throw new SAMLSSOException(ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getCode(),
+                        ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getMessage());
+            }
+        } else {
+            // Checking for multiple Assertions. This is done to thwart possible XSW attacks.
+            NodeList assertionList = response.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
+            if (assertionList != null && assertionList.getLength() > 1) {
+                throw new SAMLSSOException(ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getCode(),
+                        ErrorMessages.PROCESSING_SAML2_MULTIPLE_ASSERTION_ELEMENT_FOUND.getMessage());
+            }
         }
     }
 
