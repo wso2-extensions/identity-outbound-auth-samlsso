@@ -97,8 +97,10 @@ public class SAMLMetadataCertificateResolver extends AbstractAPIClientManager {
      *
      * @param metadataUrl The URL of the SAML metadata endpoint.
      * @param entityId    The entity ID to match against the metadata's EntityDescriptor.
-     * @return A {@link RemoteCertificate} containing the resolved signing certificates together with the validUntil
-     *         and cacheDuration values from the metadata and the timestamp of this retrieval.
+     * @return A {@link RemoteCertificate} containing the resolved signing certificates together with the effective
+     *         validUntil and cacheDuration. These are derived by taking the most restrictive values —
+     *         earliest validUntil and shortest cacheDuration — across both the EntityDescriptor and each
+     *         IDPSSODescriptor found in the metadata.
      * @throws SAMLSSOException If the URL is invalid, the entity ID does not match, the metadata cannot be
      *                          fetched, the XML cannot be parsed, or a certificate value cannot be decoded.
      */
@@ -126,13 +128,15 @@ public class SAMLMetadataCertificateResolver extends AbstractAPIClientManager {
                 + metadataUrl);
         }
 
-        Instant validUntil = entityDescriptor.getValidUntil() != null
-                ? Instant.ofEpochMilli(entityDescriptor.getValidUntil().getMillis())
-                : null;
+        List<IDPSSODescriptor> idpDescriptors = entityDescriptor
+                .getRoleDescriptors(IDPSSODescriptor.DEFAULT_ELEMENT_NAME)
+                .stream()
+                .filter(IDPSSODescriptor.class::isInstance)
+                .map(IDPSSODescriptor.class::cast)
+                .collect(Collectors.toList());
 
-        Duration cacheDuration = entityDescriptor.getCacheDuration() != null
-                ? Duration.ofMillis(entityDescriptor.getCacheDuration())
-                : null;
+        Instant validUntil = resolveEffectiveValidUntil(entityDescriptor, idpDescriptors);
+        Duration cacheDuration = resolveEffectiveCacheDuration(entityDescriptor, idpDescriptors);
 
         return new RemoteCertificate.Builder(certificates)
                 .validUntil(validUntil)
@@ -270,6 +274,59 @@ public class SAMLMetadataCertificateResolver extends AbstractAPIClientManager {
         }
 
         return certificates;
+    }
+
+    /**
+     * Resolves the effective validUntil instant by taking the earliest non-null value from
+     * the EntityDescriptor and all IDPSSODescriptors.
+     *
+     * @param entityDescriptor The root metadata EntityDescriptor.
+     * @param idpDescriptors   IDPSSODescriptors contained in the EntityDescriptor.
+     * @return The earliest non-null validUntil as an {@link Instant}, or null if none is present.
+     */
+    private Instant resolveEffectiveValidUntil(EntityDescriptor entityDescriptor,
+            List<IDPSSODescriptor> idpDescriptors) {
+
+        Instant effectiveValidUntil = entityDescriptor.getValidUntil() != null
+                ? Instant.ofEpochMilli(entityDescriptor.getValidUntil().getMillis())
+                : null;
+
+        for (IDPSSODescriptor idpDescriptor : idpDescriptors) {
+            if (idpDescriptor.getValidUntil() != null) {
+                Instant idpValidUntil = Instant.ofEpochMilli(idpDescriptor.getValidUntil().getMillis());
+                if (effectiveValidUntil == null || idpValidUntil.isBefore(effectiveValidUntil)) {
+                    effectiveValidUntil = idpValidUntil;
+                }
+            }
+        }
+        return effectiveValidUntil;
+    }
+
+    /**
+     * Resolves the effective cacheDuration by taking the shortest non-null value from the
+     * EntityDescriptor and all IDPSSODescriptors.
+     *
+     * @param entityDescriptor The root metadata EntityDescriptor.
+     * @param idpDescriptors   IDPSSODescriptors contained in the EntityDescriptor.
+     * @return The shortest non-null cacheDuration as a {@link Duration}, or null if none is present.
+     */
+    private Duration resolveEffectiveCacheDuration(EntityDescriptor entityDescriptor,
+            List<IDPSSODescriptor> idpDescriptors) {
+
+        Duration effectiveCacheDuration = entityDescriptor.getCacheDuration() != null
+                ? Duration.ofMillis(entityDescriptor.getCacheDuration())
+                : null;
+
+        for (IDPSSODescriptor idpDescriptor : idpDescriptors) {
+            if (idpDescriptor.getCacheDuration() != null) {
+                Duration idpCacheDuration = Duration.ofMillis(idpDescriptor.getCacheDuration());
+                if (effectiveCacheDuration == null
+                        || idpCacheDuration.compareTo(effectiveCacheDuration) < 0) {
+                    effectiveCacheDuration = idpCacheDuration;
+                }
+            }
+        }
+        return effectiveCacheDuration;
     }
 
     /**

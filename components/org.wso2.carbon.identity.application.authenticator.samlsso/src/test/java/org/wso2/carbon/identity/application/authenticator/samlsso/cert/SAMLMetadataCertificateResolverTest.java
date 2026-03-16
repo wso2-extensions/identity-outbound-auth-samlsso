@@ -27,6 +27,7 @@ import org.opensaml.saml.saml2.metadata.KeyDescriptor;
 import org.opensaml.security.credential.UsageType;
 import org.opensaml.xmlsec.signature.KeyInfo;
 import org.opensaml.xmlsec.signature.X509Data;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authenticator.samlsso.exception.SAMLSSOException;
 import org.wso2.carbon.identity.application.authenticator.samlsso.model.RemoteCertificate;
@@ -56,6 +57,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -78,6 +80,17 @@ public class SAMLMetadataCertificateResolverTest {
           + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDAQABo1MwUTAdBgNVHQ4EFgQU"
           + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0wHwYDVR0jBBgwFoAUAAAAAAAAAAAAAAAA"
           + "AAAAAAAAAAAAAAAAA0wDQYJKoZIhvcNAQELBQADggEBAAAAAAAAAAAAAAAAAAAAAA==";
+
+    @BeforeClass
+    public void setUpClass() {
+
+        System.setProperty("carbon.home", getClass().getResource("/").getPath());
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
+                    .thenReturn(Collections.emptyMap());
+            SAMLMetadataCertificateResolver.getInstance();
+        }
+    }
 
     @Test(description = "When the param key is absent from the config map, "
             + "getClientIntParam should return the supplied default value.")
@@ -1008,6 +1021,345 @@ public class SAMLMetadataCertificateResolverTest {
 
             assertEquals(result.getCacheDuration(), Duration.ofMillis(cacheDurationMillis),
                     "cacheDuration should be mapped correctly from the EntityDescriptor.");
+        }
+    }
+
+    @Test(description = "When both EntityDescriptor and all IDPSSODescriptors have null validUntil, "
+            + "resolveEffectiveValidUntil should return null.")
+    public void testResolveEffectiveValidUntil_BothNull_ReturnsNull() throws Exception {
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getValidUntil()).thenReturn(null);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getValidUntil()).thenReturn(null);
+
+        Instant result = invokeResolveEffectiveValidUntil(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertNull(result, "Should return null when no validUntil is set anywhere.");
+    }
+
+    @Test(description = "When only the EntityDescriptor has a validUntil and IDPSSODescriptor has none, "
+            + "resolveEffectiveValidUntil should return the EntityDescriptor's value.")
+    public void testResolveEffectiveValidUntil_OnlyEntityDescriptor_ReturnsEntityDescriptorValue()
+            throws Exception {
+
+        long millis = 1000000000000L;
+        DateTime mockDateTime = mock(DateTime.class);
+        when(mockDateTime.getMillis()).thenReturn(millis);
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getValidUntil()).thenReturn(mockDateTime);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getValidUntil()).thenReturn(null);
+
+        Instant result = invokeResolveEffectiveValidUntil(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Instant.ofEpochMilli(millis),
+                "Should return the EntityDescriptor's validUntil when IDPSSODescriptor has none.");
+    }
+
+    @Test(description = "When only the IDPSSODescriptor has a validUntil and EntityDescriptor has none, "
+            + "resolveEffectiveValidUntil should return the IDPSSODescriptor's value.")
+    public void testResolveEffectiveValidUntil_OnlyIDPSSODescriptor_ReturnsIDPSSODescriptorValue()
+            throws Exception {
+
+        long idpMillis = 2000000000000L;
+        DateTime mockIdpDateTime = mock(DateTime.class);
+        when(mockIdpDateTime.getMillis()).thenReturn(idpMillis);
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getValidUntil()).thenReturn(null);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getValidUntil()).thenReturn(mockIdpDateTime);
+
+        Instant result = invokeResolveEffectiveValidUntil(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Instant.ofEpochMilli(idpMillis),
+                "Should return the IDPSSODescriptor's validUntil when EntityDescriptor has none.");
+    }
+
+    @Test(description = "When the IDPSSODescriptor has an earlier validUntil than the EntityDescriptor, "
+            + "resolveEffectiveValidUntil should return the IDPSSODescriptor's (earlier) value.")
+    public void testResolveEffectiveValidUntil_IDPSSODescriptorEarlier_ReturnsIDPSSODescriptorValue()
+            throws Exception {
+
+        long entityMillis = 2000000000000L; // later.
+        long idpMillis    = 1000000000000L; // earlier.
+
+        DateTime mockEntityDateTime = mock(DateTime.class);
+        when(mockEntityDateTime.getMillis()).thenReturn(entityMillis);
+
+        DateTime mockIdpDateTime = mock(DateTime.class);
+        when(mockIdpDateTime.getMillis()).thenReturn(idpMillis);
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getValidUntil()).thenReturn(mockEntityDateTime);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getValidUntil()).thenReturn(mockIdpDateTime);
+
+        Instant result = invokeResolveEffectiveValidUntil(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Instant.ofEpochMilli(idpMillis),
+                "IDPSSODescriptor's earlier validUntil should win over EntityDescriptor's later value.");
+    }
+
+    @Test(description = "When the EntityDescriptor has an earlier validUntil than the IDPSSODescriptor, "
+            + "resolveEffectiveValidUntil should return the EntityDescriptor's (earlier) value.")
+    public void testResolveEffectiveValidUntil_EntityDescriptorEarlier_ReturnsEntityDescriptorValue()
+            throws Exception {
+
+        long entityMillis = 1000000000000L; // earlier.
+        long idpMillis    = 2000000000000L; // later.
+
+        DateTime mockEntityDateTime = mock(DateTime.class);
+        when(mockEntityDateTime.getMillis()).thenReturn(entityMillis);
+
+        DateTime mockIdpDateTime = mock(DateTime.class);
+        when(mockIdpDateTime.getMillis()).thenReturn(idpMillis);
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getValidUntil()).thenReturn(mockEntityDateTime);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getValidUntil()).thenReturn(mockIdpDateTime);
+
+        Instant result = invokeResolveEffectiveValidUntil(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Instant.ofEpochMilli(entityMillis),
+                "EntityDescriptor's earlier validUntil should win over IDPSSODescriptor's later value.");
+    }
+
+    @Test(description = "When multiple IDPSSODescriptors are present, "
+            + "resolveEffectiveValidUntil should return the earliest value across all of them.")
+    public void testResolveEffectiveValidUntil_MultipleIDPSSODescriptors_ReturnsEarliest()
+            throws Exception {
+
+        long entityMillis = 3000000000000L;
+        long idp1Millis   = 1000000000000L; // earliest.
+        long idp2Millis   = 2000000000000L;
+
+        DateTime mockEntityDateTime = mock(DateTime.class);
+        when(mockEntityDateTime.getMillis()).thenReturn(entityMillis);
+
+        DateTime mockIdp1DateTime = mock(DateTime.class);
+        when(mockIdp1DateTime.getMillis()).thenReturn(idp1Millis);
+
+        DateTime mockIdp2DateTime = mock(DateTime.class);
+        when(mockIdp2DateTime.getMillis()).thenReturn(idp2Millis);
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getValidUntil()).thenReturn(mockEntityDateTime);
+
+        IDPSSODescriptor mockIdp1 = mock(IDPSSODescriptor.class);
+        when(mockIdp1.getValidUntil()).thenReturn(mockIdp1DateTime);
+
+        IDPSSODescriptor mockIdp2 = mock(IDPSSODescriptor.class);
+        when(mockIdp2.getValidUntil()).thenReturn(mockIdp2DateTime);
+
+        Instant result = invokeResolveEffectiveValidUntil(mockDescriptor,
+                Arrays.asList(mockIdp1, mockIdp2));
+
+        assertEquals(result, Instant.ofEpochMilli(idp1Millis),
+                "Should return the globally earliest validUntil across all descriptors.");
+    }
+
+    /**
+     * Invokes the private resolveEffectiveValidUntil method via reflection.
+     */
+    private Instant invokeResolveEffectiveValidUntil(EntityDescriptor entityDescriptor,
+            List<IDPSSODescriptor> idpDescriptors) throws Exception {
+
+        Method method = SAMLMetadataCertificateResolver.class
+                .getDeclaredMethod("resolveEffectiveValidUntil", EntityDescriptor.class, List.class);
+        method.setAccessible(true);
+        return (Instant) method.invoke(SAMLMetadataCertificateResolver.getInstance(),
+                entityDescriptor, idpDescriptors);
+    }
+
+    @Test(description = "When both EntityDescriptor and all IDPSSODescriptors have null cacheDuration, "
+            + "resolveEffectiveCacheDuration should return null.")
+    public void testResolveEffectiveCacheDuration_BothNull_ReturnsNull() throws Exception {
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getCacheDuration()).thenReturn(null);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getCacheDuration()).thenReturn(null);
+
+        Duration result = invokeResolveEffectiveCacheDuration(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertNull(result, "Should return null when no cacheDuration is set anywhere.");
+    }
+
+    @Test(description = "When only the EntityDescriptor has a cacheDuration and IDPSSODescriptor has none, "
+            + "resolveEffectiveCacheDuration should return the EntityDescriptor's value.")
+    public void testResolveEffectiveCacheDuration_OnlyEntityDescriptor_ReturnsEntityDescriptorValue()
+            throws Exception {
+
+        long entityDuration = 7200000L;
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getCacheDuration()).thenReturn(entityDuration);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getCacheDuration()).thenReturn(null);
+
+        Duration result = invokeResolveEffectiveCacheDuration(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Duration.ofMillis(entityDuration),
+                "Should return the EntityDescriptor's cacheDuration when IDPSSODescriptor has none.");
+    }
+
+    @Test(description = "When only the IDPSSODescriptor has a cacheDuration and EntityDescriptor has none, "
+            + "resolveEffectiveCacheDuration should return the IDPSSODescriptor's value.")
+    public void testResolveEffectiveCacheDuration_OnlyIDPSSODescriptor_ReturnsIDPSSODescriptorValue()
+            throws Exception {
+
+        long idpDuration = 3600000L;
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getCacheDuration()).thenReturn(null);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getCacheDuration()).thenReturn(idpDuration);
+
+        Duration result = invokeResolveEffectiveCacheDuration(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Duration.ofMillis(idpDuration),
+                "Should return the IDPSSODescriptor's cacheDuration when EntityDescriptor has none.");
+    }
+
+    @Test(description = "When the IDPSSODescriptor has a shorter cacheDuration than the EntityDescriptor, "
+            + "resolveEffectiveCacheDuration should return the IDPSSODescriptor's (shorter) value.")
+    public void testResolveEffectiveCacheDuration_IDPSSODescriptorShorter_ReturnsIDPSSODescriptorValue()
+            throws Exception {
+
+        long entityDuration = 7200000L; // longer.
+        long idpDuration    = 1800000L; // shorter.
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getCacheDuration()).thenReturn(entityDuration);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getCacheDuration()).thenReturn(idpDuration);
+
+        Duration result = invokeResolveEffectiveCacheDuration(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Duration.ofMillis(idpDuration),
+                "IDPSSODescriptor's shorter cacheDuration should win over EntityDescriptor's longer value.");
+    }
+
+    @Test(description = "When the EntityDescriptor has a shorter cacheDuration than the IDPSSODescriptor, "
+            + "resolveEffectiveCacheDuration should return the EntityDescriptor's (shorter) value.")
+    public void testResolveEffectiveCacheDuration_EntityDescriptorShorter_ReturnsEntityDescriptorValue()
+            throws Exception {
+
+        long entityDuration = 1800000L; // shorter.
+        long idpDuration    = 7200000L; // longer.
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getCacheDuration()).thenReturn(entityDuration);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getCacheDuration()).thenReturn(idpDuration);
+
+        Duration result = invokeResolveEffectiveCacheDuration(mockDescriptor,
+                Collections.singletonList(mockIdpDescriptor));
+
+        assertEquals(result, Duration.ofMillis(entityDuration),
+                "EntityDescriptor's shorter cacheDuration should win over IDPSSODescriptor's longer value.");
+    }
+
+    @Test(description = "When multiple IDPSSODescriptors are present, "
+            + "resolveEffectiveCacheDuration should return the shortest value across all of them.")
+    public void testResolveEffectiveCacheDuration_MultipleIDPSSODescriptors_ReturnsShortest()
+            throws Exception {
+
+        long entityDuration = 7200000L;
+        long idp1Duration   =  900000L; // shortest.
+        long idp2Duration   = 3600000L;
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getCacheDuration()).thenReturn(entityDuration);
+
+        IDPSSODescriptor mockIdp1 = mock(IDPSSODescriptor.class);
+        when(mockIdp1.getCacheDuration()).thenReturn(idp1Duration);
+
+        IDPSSODescriptor mockIdp2 = mock(IDPSSODescriptor.class);
+        when(mockIdp2.getCacheDuration()).thenReturn(idp2Duration);
+
+        Duration result = invokeResolveEffectiveCacheDuration(mockDescriptor,
+                Arrays.asList(mockIdp1, mockIdp2));
+
+        assertEquals(result, Duration.ofMillis(idp1Duration),
+                "Should return the globally shortest cacheDuration across all descriptors.");
+    }
+
+    /**
+     * Invokes the private resolveEffectiveCacheDuration method via reflection.
+     */
+    private Duration invokeResolveEffectiveCacheDuration(EntityDescriptor entityDescriptor,
+            List<IDPSSODescriptor> idpDescriptors) throws Exception {
+
+        Method method = SAMLMetadataCertificateResolver.class
+                .getDeclaredMethod("resolveEffectiveCacheDuration", EntityDescriptor.class, List.class);
+        method.setAccessible(true);
+        return (Duration) method.invoke(SAMLMetadataCertificateResolver.getInstance(),
+                entityDescriptor, idpDescriptors);
+    }
+
+    @Test(description = "When the IDPSSODescriptor has an earlier validUntil than the EntityDescriptor, "
+            + "getSigningCertificatesFromMetadata should use the IDPSSODescriptor's value.")
+    public void testGetSigningCertificatesFromMetadata_IDPSSODescriptorEarlierValidUntil_UsesIDPSSODescriptorValue()
+            throws Exception {
+
+        long entityMillis = 2000000000000L; // later.
+        long idpMillis    = 1000000000000L; // earlier.
+
+        DateTime mockEntityDateTime = mock(DateTime.class);
+        when(mockEntityDateTime.getMillis()).thenReturn(entityMillis);
+
+        DateTime mockIdpDateTime = mock(DateTime.class);
+        when(mockIdpDateTime.getMillis()).thenReturn(idpMillis);
+
+        IDPSSODescriptor mockIdpDescriptor = mock(IDPSSODescriptor.class);
+        when(mockIdpDescriptor.getValidUntil()).thenReturn(mockIdpDateTime);
+        when(mockIdpDescriptor.getCacheDuration()).thenReturn(null);
+        when(mockIdpDescriptor.getKeyDescriptors()).thenReturn(Collections.emptyList());
+
+        EntityDescriptor mockDescriptor = mock(EntityDescriptor.class);
+        when(mockDescriptor.getEntityID()).thenReturn(ENTITY_ID);
+        when(mockDescriptor.getValidUntil()).thenReturn(mockEntityDateTime);
+        when(mockDescriptor.getCacheDuration()).thenReturn(null);
+        when(mockDescriptor.getRoleDescriptors(any()))
+                .thenReturn(Collections.singletonList(mockIdpDescriptor));
+
+        SAMLMetadataCertificateResolver spy = spy(SAMLMetadataCertificateResolver.getInstance());
+        doReturn(new APIResponse(200, RAW_METADATA)).when(spy).callAPI(any(), any());
+
+        try (MockedStatic<SSOUtils> ssoUtilsMock = mockStatic(SSOUtils.class)) {
+            ssoUtilsMock.when(() -> SSOUtils.getAuthenticatorParamMap(anyString()))
+                    .thenReturn(Collections.emptyMap());
+            ssoUtilsMock.when(() -> SSOUtils.unmarshall(RAW_METADATA))
+                    .thenReturn(mockDescriptor);
+
+            RemoteCertificate result = spy.getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID);
+
+            assertEquals(result.getValidUntil(), Instant.ofEpochMilli(idpMillis),
+                    "IDPSSODescriptor's earlier validUntil should be used.");
         }
     }
 }
