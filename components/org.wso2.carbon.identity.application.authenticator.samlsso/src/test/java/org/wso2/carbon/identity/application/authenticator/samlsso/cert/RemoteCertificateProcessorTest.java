@@ -175,7 +175,7 @@ public class RemoteCertificateProcessorTest {
                     "Should return the certificates fetched from the metadata resolver on a cache miss.");
             verify(mockResolver).getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID);
             verify(mockCache).clearCacheEntry(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN));
-            verify(mockCache).addToCache(any(SAMLCertCacheKey.class), any(SAMLCertCacheEntry.class),
+            verify(mockCache).addToCacheOnRead(any(SAMLCertCacheKey.class), any(SAMLCertCacheEntry.class),
                     eq(TENANT_DOMAIN));
         }
     }
@@ -214,7 +214,7 @@ public class RemoteCertificateProcessorTest {
                     "Should return fresh certificates after the stale cache entry is replaced.");
             verify(mockResolver).getSigningCertificatesFromMetadata(METADATA_URL, ENTITY_ID);
             verify(mockCache).clearCacheEntry(any(SAMLCertCacheKey.class), eq(TENANT_DOMAIN));
-            verify(mockCache).addToCache(any(SAMLCertCacheKey.class), any(SAMLCertCacheEntry.class),
+            verify(mockCache).addToCacheOnRead(any(SAMLCertCacheKey.class), any(SAMLCertCacheEntry.class),
                     eq(TENANT_DOMAIN));
         }
     }

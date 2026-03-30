@@ -329,7 +329,7 @@ public class RemoteCertificateProcessor {
                     .getSigningCertificatesFromMetadata(metadataUrl, entityId);
 
             cache.clearCacheEntry(cacheKey, tenantDomain);
-            cache.addToCache(cacheKey, new SAMLCertCacheEntry(remoteCertificate), tenantDomain);
+            cache.addToCacheOnRead(cacheKey, new SAMLCertCacheEntry(remoteCertificate), tenantDomain);
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Fetched and cached " + remoteCertificate.getCertificates().size()
