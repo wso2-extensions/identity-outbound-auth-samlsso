@@ -35,6 +35,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.authenticator.samlsso.logout.context.SAMLMessageContext;
+import org.wso2.carbon.identity.application.authenticator.samlsso.logout.exception.SAMLLogoutException;
 
 import static org.opensaml.saml.common.SAMLVersion.VERSION_20;
 import static org.testng.Assert.assertEquals;
@@ -108,7 +109,54 @@ public class LogoutRequestValidatorTest {
                         mockedEncId,
                         "false",
                         true
+                },
+                // Issuer Format is optional per SAML 2.0 Core (defaults to entity) - a null Format must be accepted.
+                {
+                        VERSION_20,
+                        SP_ENTITY_ID,
+                        null,
+                        mockedNameId,
+                        mockedBaseId,
+                        mockedEncId,
+                        "false",
+                        true
+                },
+                // A blank Issuer Format must be accepted as well.
+                {
+                        VERSION_20,
+                        SP_ENTITY_ID,
+                        "",
+                        mockedNameId,
+                        mockedBaseId,
+                        mockedEncId,
+                        "false",
+                        true
                 }
         };
+    }
+
+    /**
+     * A Format that is present but is not the entity format must still be rejected.
+     */
+    @Test(expectedExceptions = SAMLLogoutException.class)
+    public void testIsValidWithInvalidIssuerFormat() throws SAMLLogoutException {
+
+        SAMLMessageContext mockedContext = new SAMLMessageContext(mockedIdentityRequest, new HashMap());
+        mockedContext.setValidStatus(true);
+
+        LogoutRequest logReq = new LogoutRequestBuilder().buildObject();
+        logReq.setVersion(VERSION_20);
+
+        Issuer issuer = new IssuerBuilder().buildObject();
+        issuer.setValue(SP_ENTITY_ID);
+        issuer.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
+        logReq.setIssuer(issuer);
+        logReq.setNameID(mockedNameId);
+
+        Map<String, String> mockedFedIdPConfigs = new HashMap<>();
+        mockedFedIdPConfigs.put(IS_LOGOUT_REQ_SIGNED, "false");
+        mockedContext.setFedIdPConfigs(mockedFedIdPConfigs);
+
+        new LogoutRequestValidator(mockedContext).isValidate(logReq);
     }
 }
