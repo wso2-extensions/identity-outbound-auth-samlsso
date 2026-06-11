@@ -123,7 +123,7 @@ public class LogoutRequestValidator {
             throw new SAMLLogoutException(notification, errorResponse, logoutRequest.getDestination(),
                     samlMessageContext.getRelayState());
         }
-        if (StringUtils.isBlank(logoutRequest.getIssuer().getFormat()) ||
+        if (StringUtils.isNotBlank(logoutRequest.getIssuer().getFormat()) &&
                 !(ISSUER_FORMAT.equals(logoutRequest.getIssuer().getFormat()))) {
             String notification = "Invalid Issuer Format in the logout request";
             if (log.isDebugEnabled()) {
