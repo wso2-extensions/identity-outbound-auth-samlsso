@@ -48,6 +48,7 @@ import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
+import org.wso2.carbon.idp.mgt.model.SharedIdPResolveType;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -263,8 +264,10 @@ public class SAMLLogoutRequestProcessorTest {
         
         MockedStatic<IdentityProviderManager> identityProviderManagerMock = mockStatic(IdentityProviderManager.class);
         identityProviderManagerMock.when(IdentityProviderManager::getInstance).thenReturn(mockedIdPManager);
-        when(mockedIdPManager.getIdPByName(IDP_NAME, SUPER_TENANT_DOMAIN)).thenReturn(mockIdp);
-        when(mockedIdPManager.getIdPById(IDP_ID, SUPER_TENANT_DOMAIN)).thenReturn(mockIdp);
+        when(mockedIdPManager.getIdPByName(IDP_NAME, SUPER_TENANT_DOMAIN, false,
+                SharedIdPResolveType.FULL_RESOLVED)).thenReturn(mockIdp);
+        when(mockedIdPManager.getIdPById(IDP_ID, SUPER_TENANT_DOMAIN, false,
+                SharedIdPResolveType.FULL_RESOLVED)).thenReturn(mockIdp);
         return identityProviderManagerMock;
     }
 

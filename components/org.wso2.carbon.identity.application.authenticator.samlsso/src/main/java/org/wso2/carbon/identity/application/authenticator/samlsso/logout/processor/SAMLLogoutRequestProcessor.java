@@ -55,6 +55,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
+import org.wso2.carbon.idp.mgt.model.SharedIdPResolveType;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.io.UnsupportedEncodingException;
@@ -298,7 +299,8 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     private IdentityProvider getIdentityProviderById(String idpId, String tenantDomain) throws SAMLLogoutException {
 
         try {
-            return IdentityProviderManager.getInstance().getIdPById(idpId, tenantDomain);
+            return IdentityProviderManager.getInstance().getIdPById(idpId, tenantDomain, false,
+                    SharedIdPResolveType.FULL_RESOLVED);
         } catch (IdentityProviderManagementException e) {
             throw new SAMLLogoutException("Error when getting the Identity Provider by IdP ID: " + idpId
                     + " with tenant domain: " + tenantDomain, e);
@@ -308,8 +310,8 @@ public class SAMLLogoutRequestProcessor extends IdentityProcessor {
     private IdentityProvider getIdentityProviderByName(String idpName, String tenantDomain) throws SAMLLogoutException {
 
         try {
-            return IdentityProviderManager.getInstance().getIdPByName(
-                    idpName, tenantDomain);
+            return IdentityProviderManager.getInstance().getIdPByName(idpName, tenantDomain, false,
+                    SharedIdPResolveType.FULL_RESOLVED);
         } catch (IdentityProviderManagementException e) {
             throw new SAMLLogoutException("Error when getting the Identity Provider by IdP name: " + idpName
                     + " with tenant domain: " + tenantDomain, e);
